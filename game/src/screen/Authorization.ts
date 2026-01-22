@@ -2,6 +2,10 @@ import App from "../App";
 import Screen from "./Screen";
 import { getBackgroundImg } from "../utils/Resources";
 import { isMobile } from "../../../core/src/utils/mobile";
+import { createElement } from "../../../core/src/utils/DOM";
+import PacketDataKeys from "../../../core/src/PacketDataKeys";
+import MessageBox from "../dialog/MessageBox";
+import PromptBox from "../dialog/PromptBox";
 
 export default class Authorization extends Screen {
   constructor(){
@@ -41,6 +45,27 @@ export default class Authorization extends Screen {
     password.onfocus = () => password.readOnly = false
     div.appendChild(password);
     div.appendChild(document.createElement('br'));
+
+    const forgetPass = createElement('div', {
+      css: {
+        margin: '3px',
+        textAlign: 'center',
+        fontSize: '15px',
+        color: '#8888f8',
+        textDecoration: 'underline',
+        cursor: 'pointer',
+        userSelect: 'none'
+      },
+      html: 'Забыл пароль?'
+    });
+    forgetPass.onclick = async() => {
+      const email = await PromptBox(`Для сброса пароля, пожалуйста, введите зарегистрированный в игре email`, { height: 200 });
+      App.server.send(PacketDataKeys.USER_RESET_PASSWORD, {
+        [PacketDataKeys.EMAIL]: email,
+        [PacketDataKeys.APP_LANGUAGE]: 'RUS'
+      });
+    }
+    div.appendChild(forgetPass);
 
     const or = document.createElement('p');
     or.textContent = 'или';
@@ -87,5 +112,15 @@ export default class Authorization extends Screen {
       btnCloseGame.addEventListener('click', () => App.win.close());
       div.appendChild(btnCloseGame);
     }
+
+    this.on('message', json => {
+      if(json[PacketDataKeys.TYPE] == PacketDataKeys.USER_RESET_PASSWORD_SENDED) {
+        MessageBox(`Отправлено письмо на сброс пароля`);
+      } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USER_WITH_EMAIL_NOT_EXISTS) {
+        MessageBox(`Пользователь с таким email не найден. Возможно, вы забыли свой email?`);
+      } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USTMR) {
+        MessageBox(`Вы можете запросить сброс пароля после ${json[PacketDataKeys.USRSFR]} секунд`);
+      }
+    });
   }
 }

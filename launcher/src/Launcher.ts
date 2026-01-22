@@ -876,9 +876,9 @@ export default class Launcher {
           self.statusText.textContent = `Проверка (${total}/${size})`;
       },
     });
-    this.win.unlock();
     self.statusText.textContent = updated ? `Обновлено` : '';
     self.addVersion(version);
+    this.win.unlock();
   }
 
   downloadFileVersion(){
