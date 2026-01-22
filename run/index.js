@@ -3104,6 +3104,7 @@ class Launcher {
         const version = await this.readVersion(src);
         if (version)
           await this.downloadVersion({ ...version, scriptPath: src });
+        this.win.unlock();
       } catch (e) {
         console.error(e);
         this.win.unlock();
@@ -3195,7 +3196,7 @@ class Launcher {
           }
         });
         this.listProfiles = document.createElement(`select`);
-        this.listProfiles.size = 3;
+        this.listProfiles.size = 4;
         this.listProfiles.style.width = "100%";
         this.listProfiles.onchange = (e) => {
           const p = this.profiles.find((e2) => e2.name == this.listProfiles.value);
@@ -3253,6 +3254,8 @@ class Launcher {
             this.statusText.innerHTML = `Профиль ${profile.name} удален`;
             this.win.unlock();
             update();
+          } else {
+            alert("Выбран никакой профиль");
           }
         };
         elem.appendChild(removeProfileBtn);
@@ -3260,7 +3263,7 @@ class Launcher {
       }), true);
       addTab("Версии", createElement("div", {}, (elem) => {
         this.listVersions = document.createElement(`select`);
-        this.listVersions.size = 3;
+        this.listVersions.size = 4;
         this.listVersions.style.width = "100%";
         function update() {
           self2.listVersions.innerHTML = "";
@@ -3327,7 +3330,9 @@ class Launcher {
       if (v) {
         this.runGame(v, p);
       } else {
-        alert(`Не найдена версия`);
+        alert(`Не найдена версия
+
+Обратитесь в техподдержку`);
       }
     };
     btns.appendChild(this.playBtn);
@@ -3853,11 +3858,11 @@ class Launcher {
         total++;
         self2.progressBar.value = total;
         if (write) {
-          self2.statusText.textContent = `Скачан файл (${total}/${size})`;
+          self2.statusText.textContent = `Скачан файл (${Math.floor(total / size * 100)}%)`;
           console.log(`downloading..`, path);
           updated = true;
         } else
-          self2.statusText.textContent = `Проверка (${total}/${size})`;
+          self2.statusText.textContent = `Проверка (${Math.floor(total / size * 100)}%)`;
       }
     });
     self2.statusText.textContent = updated ? `Обновлено` : "";

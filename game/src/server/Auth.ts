@@ -31,12 +31,23 @@ export default class Auth {
     userId: string
   }
 
-  constructor(private server: Server) { }
+  constructor(private server: Server) {}
 
   async addProfile({ name, email, password, token, userId }: { name?: string, email?: string, password?: string, token?: string, userId?: string }): Promise<boolean> {
     const profiles = JSON.parse(await fs.readFile(App.getPathProfiles())) as Profile[];
 
-    if(profiles.find(e => e.email == email || e.token == token || e.userId == userId)) return false;
+    const existing = profiles.findIndex(e => e.email == email || e.token == token || e.userId == userId);
+    if(existing != -1) {
+      profiles[existing] = {
+        name: name ?? '',
+        email,
+        password,
+        token,
+        userId
+      }
+      await fs.writeFile(App.getPathProfiles(), JSON.stringify(profiles));
+      return true;
+    }
 
     profiles.push({
       name: name ?? '',

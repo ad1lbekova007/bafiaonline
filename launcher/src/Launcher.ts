@@ -90,7 +90,8 @@ export default class Launcher {
       try{
         const src = `https://raw.githubusercontent.com/lumik0/bafiaonline/refs/heads/master/run/images/vanilla.js?v=${Math.random()}`;
         const version = await this.readVersion(src);
-        if(version) await this.downloadVersion({...version, scriptPath: src});
+        if(version) await this.downloadVersion({ ...version, scriptPath: src });
+        this.win.unlock();
       }catch(e){
         console.error(e);
         this.win.unlock();
@@ -190,7 +191,7 @@ export default class Launcher {
         });
 
         this.listProfiles = document.createElement(`select`);
-        this.listProfiles.size = 3
+        this.listProfiles.size = 4
         this.listProfiles.style.width = '100%';
         this.listProfiles.onchange = e => {
           const p = this.profiles.find(e => e.name == this.listProfiles.value);
@@ -249,6 +250,8 @@ export default class Launcher {
             this.statusText.innerHTML = `Профиль ${profile.name} удален`;
             this.win.unlock();
             update();
+          } else {
+            alert('Выбран никакой профиль');
           }
         }
         elem.appendChild(removeProfileBtn);
@@ -256,7 +259,7 @@ export default class Launcher {
       }), true);
       addTab('Версии', createElement('div', {}, elem => {
         this.listVersions = document.createElement(`select`);
-        this.listVersions.size = 3
+        this.listVersions.size = 4
         this.listVersions.style.width = '100%';
         function update() {
           self.listVersions.innerHTML = '';
@@ -324,7 +327,7 @@ export default class Launcher {
       if(v) {
         this.runGame(v, p);
       } else {
-        alert(`Не найдена версия`);
+        alert(`Не найдена версия\n\nОбратитесь в техподдержку`);
       }
     };
     btns.appendChild(this.playBtn);
@@ -869,11 +872,11 @@ export default class Launcher {
         total++
         self.progressBar.value = total
         if(write) {
-          self.statusText.textContent = `Скачан файл (${total}/${size})`;
+          self.statusText.textContent = `Скачан файл (${Math.floor((total / size) * 100)}%)`;
           console.log(`downloading..`, path);
           updated = true;
         } else
-          self.statusText.textContent = `Проверка (${total}/${size})`;
+          self.statusText.textContent = `Проверка (${Math.floor((total / size) * 100)}%)`;
       },
     });
     self.statusText.textContent = updated ? `Обновлено` : '';
