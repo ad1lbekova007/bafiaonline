@@ -820,29 +820,24 @@ class IndexedDB {
     return result;
   }
   async erase() {
-    const store = this.transaction();
     return new Promise((res, rej) => {
-      const request = store.openCursor();
-      request.onsuccess = (event) => {
-        const db = event.target.result;
-        const transaction = this.db.transaction(Array.from(db.objectStoreNames), "readwrite");
-        const storeNames = Array.from(db.objectStoreNames);
-        for (let storeName of storeNames) {
-          const store2 = transaction.objectStore(storeName);
-          const clearRequest = store2.clear();
-          clearRequest.onsuccess = () => {};
-          clearRequest.onerror = (event2) => {
-            rej(new Error(`Error deleting store "${storeName}":`, event2.target.error));
-            return;
-          };
+      const request = indexedDB.open(this.db.name);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(db.objectStoreNames, "readwrite");
+        for (let storeName of db.objectStoreNames) {
+          transaction.objectStore(storeName).clear();
         }
         transaction.oncomplete = () => {
           db.close();
           res(true);
         };
+        transaction.onerror = () => {
+          rej(transaction.error);
+        };
       };
       request.onerror = (event) => {
-        rej(new Error("Error opening db", event.target.error));
+        rej(request.error);
       };
     });
   }

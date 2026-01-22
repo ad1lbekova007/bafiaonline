@@ -318,39 +318,30 @@ export class IndexedDB implements FSBackend {
     return result;
   }
   public async erase(): Promise<boolean> {
-    const store = this.transaction();
-
     return new Promise((res, rej) => {
-      const request = store.openCursor();
+      const request = indexedDB.open(this.db.name);
 
-      request.onsuccess = event => {
-        const db = (event.target as IDBOpenDBRequest).result;
+      request.onsuccess = () => {
+        const db = request.result;
 
-        const transaction = this.db.transaction(
-          Array.from(db.objectStoreNames),
-          'readwrite'
-        );
+        const transaction = db.transaction(db.objectStoreNames, "readwrite");
 
-        const storeNames = Array.from(db.objectStoreNames);
-        for(let storeName of storeNames) {
-          const store = transaction.objectStore(storeName);
-          const clearRequest = store.clear();
-
-          clearRequest.onsuccess = () => {};
-          clearRequest.onerror = event => {
-            rej(new Error(`Error deleting store "${storeName}":`, (event.target as IDBRequest).error!));
-            return;
-          };
+        for(let storeName of db.objectStoreNames){
+          transaction.objectStore(storeName).clear();
         }
 
         transaction.oncomplete = () => {
           db.close();
           res(true);
-        };
+        }
+
+        transaction.onerror = () => {
+          rej(transaction.error);
+        }
       };
 
       request.onerror = event => {
-        rej(new Error('Error opening db', (event.target as IDBRequest).error!));
+        rej(request.error);
       };
     });
   }
