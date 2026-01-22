@@ -90,12 +90,14 @@ export default class Launcher {
       try{
         const src = `https://raw.githubusercontent.com/lumik0/bafiaonline/refs/heads/master/run/images/vanilla.js?v=${Math.random()}`;
         const version = await this.readVersion(src);
-        if(version) await this.downloadVersion({ ...version, scriptPath: src });
-        this.win.unlock();
+        if(version) {
+          await this.downloadVersion({ ...version, scriptPath: src });
+          this.options.version = version.name;
+        }
       }catch(e){
         console.error(e);
-        this.win.unlock();
       }
+      this.win.unlock();
     }
   }
 
@@ -881,6 +883,7 @@ export default class Launcher {
     });
     self.statusText.textContent = updated ? `Обновлено` : '';
     self.addVersion(version);
+    await new Promise(res => setTimeout(res, 100));
     this.win.unlock();
   }
 
