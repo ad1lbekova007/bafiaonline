@@ -11,11 +11,9 @@
     "c": "esbuild game/src/index.ts --bundle --minify --outfile=game/image/main.js && bun run build",
     "e": "esbuild launcher/src/index.ts --bundle --outfile=run/index.js",
     "cb": "bun run c && bun run b",
-
     "g": "bun build game/src/index.ts --bundle --minify --outfile=game/image/main.js",
     "l": "bun build launcher/src/index.ts --bundle --outfile=run/index.js",
     "s": "bun run g && bun run l && bun run build && bun ./server/index.ts",
-
     "build": "bun build/generateImage"
   }
 }

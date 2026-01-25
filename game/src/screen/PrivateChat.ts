@@ -186,7 +186,6 @@ export default class PrivateChat extends Screen {
       this.messagesElem.appendChild(div);
       this.lastMessageDate = { userObjectId, elem: div };
     }
-    // console.log(this.messages.scrollTop, this.messages.scrollHeight)
     if(this.messagesElem.scrollHeight - App.height - this.messagesElem.scrollTop < 75)
       this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: 'smooth' });
 

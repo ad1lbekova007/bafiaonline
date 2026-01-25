@@ -106,9 +106,9 @@ export default class Box extends Events<BoxEvents> {
     }
 
     wait(50).then(() => {
-        this.background.style.opacity = '.6';
-        // this.element.style.opacity = '1';
-        // this.element.style.transform = 'translate(-50%, -50%)';
+      this.background.style.opacity = '.6';
+      // this.element.style.opacity = '1';
+      // this.element.style.transform = 'translate(-50%, -50%)';
     });
 
     this.loop = App.on('tick', dt => this.emit('tick', dt));

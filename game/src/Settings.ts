@@ -1,3 +1,4 @@
+import { Logger } from "tslog";
 import fs from "../../core/src/fs/fs";
 import { isMobile } from "../../core/src/utils/mobile";
 import { when, wrap } from "../../core/src/utils/TypeScript";
@@ -5,6 +6,8 @@ import App from "./App";
 import MessageBox from "./dialog/MessageBox";
 
 export default class Settings {
+  logger = new Logger({ name: 'Settings' })
+
   data = {
     version: 5,
     debug: false,
@@ -58,7 +61,7 @@ export default class Settings {
   }
 
   async write() {
-    // console.log(JSON.stringify(this.data));
+    // this.logger.info(JSON.stringify(this.data));
     await fs.writeFile(`${App.config.path}/settings.json`, JSON.stringify(this.data));
   }
 
@@ -74,7 +77,7 @@ export default class Settings {
 
     Object.assign(this.data, migratedData);
 
-    console.log(`Settings:`, this.data);
+    this.logger.info(this.data);
 
     this.#wrapObject(this.data);
   }

@@ -358,7 +358,7 @@ export default class Dashboard extends Screen {
         const uu = await PromptBox(`Для игры и общения с другими игроками у вас должен быть установлен Никнэйм`);
 
         App.server.send(PacketDataKeys.USERNAME_SET, {
-          [PacketDataKeys.OBJECT_ID]: App.user.objectId,
+          [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
           [PacketDataKeys.TOKEN]: App.user.token,
           [PacketDataKeys.USERNAME]: uu
         });
@@ -389,6 +389,9 @@ export default class Dashboard extends Screen {
 
           await fs.writeFile(App.getPathProfiles(), JSON.stringify(profiles));
           App.screen = new Dashboard();
+        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.SIGN_IN_ERROR) {
+          await MessageBox(`Что-то не пошло так\nКод ошибки: ${json[PacketDataKeys.ERROR]}`);
+          await send();
         }
       });
 

@@ -369,7 +369,7 @@ export default class Room extends Screen {
 
             await fs.writeFile(`${App.config.path}/history.json`, JSON.stringify(history));
 
-            console.log(`Saved`);
+            App.logger.info(`Saved`);
           }
         }
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.ROLES){

@@ -27,6 +27,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   id?: string
   text?: string
   html?: string
+  hide?: boolean
   type?: string
   checked?: boolean
   value?: string
@@ -39,6 +40,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   if(options.id) elem.id = options.id;
   if(options.text) elem.textContent = options.text;
   if(options.html) elem.innerHTML = options.html;
+  if(options.hide) elem.style.display = 'none';
   if(options.type) (elem as HTMLInputElement).type = options.type;
   if(options.checked) (elem as HTMLInputElement).checked = options.checked;
   if(options.value) (elem as HTMLInputElement).value = options.value;

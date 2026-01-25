@@ -3,10 +3,12 @@ import Screen from "./Screen";
 import { wrap } from "../../../core/src/utils/TypeScript";
 import fs from "../../../core/src/fs/fs";
 import { getBackgroundImg, getTexture } from "../utils/Resources";
+import { createElement } from "../../../core/src/utils/DOM";
 
 export default class Loading extends Screen {
   loadingElem!: HTMLImageElement
-  rotation = 0
+  reconnectBtn!: HTMLButtonElement
+  rotation = 0;
 
   constructor(public title: string){
     super('Loading');
@@ -22,28 +24,53 @@ export default class Loading extends Screen {
     logo.innerHTML = 'Бафия онлайн';
     header.appendChild(logo);
 
-    const div = document.createElement('div');
-    div.style.textAlign = 'center';
+    const div = createElement('div', {
+      css: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }
+    });
     this.element.appendChild(div);
 
     const text = document.createElement('p');
     text.innerHTML = title;
     div.appendChild(text);
 
+    this.loadingElem = createElement('img', {
+      width: 100,
+      height: 100
+    });
+    getTexture(`loading/2f.png`).then(e => this.loadingElem.src = e);
+    div.appendChild(this.loadingElem);
+
+    this.reconnectBtn = createElement('button', {
+      text: 'Переподключиться',
+      css: {
+        opacity: '0',
+        display: 'none',
+        transition: 'opacity .5s'
+      }
+    });
+    this.reconnectBtn.onclick = () => {
+      this.reconnectBtn.style.opacity = '0';
+      App.server.connect();
+    }
+    div.appendChild(this.reconnectBtn);
+
     wrap(this, 'title', (v: string) => text.innerHTML = v);
 
     this.on('back', () => App.destroy());
-
-    (async()=>{
-      this.loadingElem = document.createElement('img');
-      this.loadingElem.src = await getTexture(`loading/2f.png`);
-      div.appendChild(this.loadingElem);
-    })();
   }
 
   tick(dt: number){
     if(dt % 2 < 1) return;
     if(this.loadingElem) this.loadingElem.style.transform = `rotateZ(${this.rotation % 360}deg)`
-    this.rotation+=30;
+    this.rotation += 30;
+
+    if(this.rotation % 1000 == 970) {
+      this.reconnectBtn.style.display = 'block';
+      this.reconnectBtn.style.opacity = '1';
+    }
   }
 }

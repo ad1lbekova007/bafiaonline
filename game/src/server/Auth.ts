@@ -128,6 +128,8 @@ export default class Auth {
   async signUp({ email, password }: { email: string, password: string }) {
     if(!email || !password) return;
 
+    await MessageBox('Эта регистрация может не работать', { btnText: 'ЛАДНО' });
+
     let response: Response
     let result: any
 

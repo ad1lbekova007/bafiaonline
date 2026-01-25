@@ -1649,8 +1649,8 @@ class Events {
 }
 // core/version.json
 var version_default = {
-  launcher: "Alpha 1.2.3",
-  vanilla: "Alpha 1.2.3"
+  launcher: "Alpha 1.2.4",
+  vanilla: "Alpha 1.2.4"
 };
 
 // launcher/src/App.ts
@@ -1775,6 +1775,8 @@ function createElement(tagName, options, callback = () => {}) {
     elem.textContent = options.text;
   if (options.html)
     elem.innerHTML = options.html;
+  if (options.hide)
+    elem.style.display = "none";
   if (options.type)
     elem.type = options.type;
   if (options.checked)
@@ -3153,10 +3155,14 @@ class Launcher {
         });
         btn.onclick = () => {
           Array.from(contents.children).forEach((e) => e.style.display = "none");
+          Array.from(btns2.children).forEach((e) => e.style.background = "linear-gradient(to bottom, var(--tw-gradient-stops))");
           content.style.display = "block";
+          btn.style.background = "#bababa";
         };
         if (!defaultSelected)
           content.style.display = "none";
+        else
+          btn.style.background = "#bababa";
         btns2.appendChild(btn);
         contents.appendChild(content);
         size++;
@@ -3195,9 +3201,13 @@ class Launcher {
         this.listProfiles.size = 4;
         this.listProfiles.style.width = "100%";
         this.listProfiles.onchange = (e) => {
-          const p = this.profiles.find((e2) => e2.name == this.listProfiles.value);
+          const p = this.profiles.find((e2) => e2.name == this.listProfiles.value || this.listProfiles.value == `Новый аккаунт (${e2.email})`);
           if (p) {
-            selectedProfile.textContent = `Выбран: ` + noXSS(p.name);
+            const isNew = this.listProfiles.value == `Новый аккаунт (${p.email})`;
+            if (isNew)
+              selectedProfile.textContent = `Выбран: ` + noXSS(`Новый: ${p.email}`);
+            else
+              selectedProfile.textContent = `Выбран: ` + noXSS(p.name);
           } else {
             selectedProfile.textContent = `Выбран: никакой`;
           }
@@ -3208,7 +3218,7 @@ class Launcher {
             const el = document.createElement("option");
             el.innerHTML = pr.name;
             if (pr.name == "") {
-              pr.name = "Новый аккаунт";
+              el.innerHTML = `Новый аккаунт (${pr.email})`;
               el.style.background = "#57e057";
             }
             self2.listProfiles.appendChild(el);
@@ -3241,7 +3251,7 @@ class Launcher {
           }
         });
         removeProfileBtn.onclick = async () => {
-          const p = this.profiles.findIndex((e) => e.name == this.listProfiles.value);
+          const p = this.profiles.findIndex((e) => e.name == this.listProfiles.value || this.listProfiles.value == `Новый аккаунт (${e.email})`);
           if (p != -1) {
             this.win.lock();
             const profile = this.profiles[p];
@@ -3322,7 +3332,7 @@ class Launcher {
     this.playBtn.style.margin = "1px";
     this.playBtn.onclick = async () => {
       const v = this.versions.find((e) => e.name == this.listVersions.value);
-      const p = this.profiles.find((e) => e.name == this.listProfiles.value);
+      const p = this.profiles.find((e) => e.name == this.listProfiles.value || this.listProfiles.value == `Новый аккаунт (${e.email})`);
       if (v) {
         this.runGame(v, p);
       } else {

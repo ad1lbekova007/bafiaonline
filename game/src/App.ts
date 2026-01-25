@@ -14,6 +14,7 @@ import Component from "./component/Component";
 import IWindow from "../../core/src/IWindow";
 import versions from "../../core/version.json";
 import MessageBox from "./dialog/MessageBox";
+import { Logger } from "tslog";
 
 interface AppEvents {
   tick: (dt: number) => void;
@@ -32,6 +33,7 @@ interface AppEvents {
 // @ts-ignore
 class App extends Events<AppEvents> {
   version = versions.vanilla;
+  logger = new Logger({ name: 'App' });
 
   isAlive = true;
   appId = 0
@@ -78,8 +80,6 @@ class App extends Events<AppEvents> {
       this.screen?.destroy();
       this.element.appendChild(v.element);
       history.pushState({ screen: v.name }, v.name, "");
-      // console.log(this.screen?.name, v.name);
-      // console.log(this.customListeners);
     });
 
     let dt = 0;

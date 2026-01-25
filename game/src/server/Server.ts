@@ -8,6 +8,7 @@ import Dashboard from "../screen/Dashboard";
 import format from '../../../core/src/utils/format';
 import ConfirmBox from "../dialog/ConfirmBox";
 import { wait } from "../../../core/src/utils/utils";
+import { Logger } from "tslog";
 
 interface ServerEvents {
   connect: () => void
@@ -17,6 +18,8 @@ interface ServerEvents {
 
 // @ts-ignore
 export default class Server extends Events<ServerEvents> {
+  logger = new Logger({ name: 'Server' });
+
   webSocket!: WebSocket
 
   auth = new Auth(this);
@@ -37,16 +40,17 @@ export default class Server extends Events<ServerEvents> {
     super();
 
     this.on('close', async() => {
-      console.log(`Connection is closed.. Reconnecting in 1 second..`);
+      this.logger.info(`Connection is closed.. Reconnecting in 1 second..`);
       await wait(50);
-      this.#connect();
+      this.connect();
     });
 
-    this.#connect();
+    this.connect();
   }
 
-  #connect(){
-    console.log(`Connecting to server.. ${App.config.uriServer}`);
+  connect() {
+    if(this.webSocket && (this.webSocket.readyState == WebSocket.OPEN || this.webSocket.readyState == WebSocket.CONNECTING)) return;
+    this.logger.info(`Connecting to server.. ${App.config.uriServer}`);
     this.webSocket = new WebSocket(App.config.uriServer);
     this.webSocket.addEventListener('open', this.#init.bind(this));
     this.webSocket.addEventListener('error', (e) => console.error(e));
@@ -79,14 +83,14 @@ export default class Server extends Events<ServerEvents> {
       this.call('message', json);
       if(App.settings.data.debug) {
         if(json[PacketDataKeys.TIMER] && Object.keys(json).length == 1) return;
-        console.log(json, decodePacket(json));
+        this.logger.info(json, decodePacket(json));
       }
     });
   }
 
   async #init(){
     this.call('connect');
-    console.log(`Connected to server`);
+    this.logger.info(`Connected to server`);
 
     if(App.config.auth){
       await this.auth.auth();

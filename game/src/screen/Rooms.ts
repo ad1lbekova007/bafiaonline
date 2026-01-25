@@ -18,6 +18,7 @@ import md5salt from "../../../core/src/utils/md5";
 import format, { formatDate } from "../../../core/src/utils/format";
 import ConfirmBox from "../dialog/ConfirmBox";
 import { History } from "./History";
+import RoomPlayers from "../dialog/RoomPlayers";
 
 export default class Rooms extends Screen {
   div!: HTMLDivElement
@@ -252,9 +253,17 @@ export default class Rooms extends Screen {
     const myStatus = isProfileInfo ? 2 : room[PacketDataKeys.ROOM_STATUS];
     const rank = level == 3 ? 2 : level == 5 ? 3 : level == 7 ? 4 : level == 9 ? 5 : level == 11 ? 6 : 1;
     const selectedRoles = room[PacketDataKeys.SELECTED_ROLES] ?? [];
-    const hasPassword = room[PacketDataKeys.PASSWORD]
+    const hasPassword = room[PacketDataKeys.PASSWORD];
 
-    async function join(){
+    let clickType = '';
+
+    async function join() {
+      await new Promise(res => setTimeout(res, 0));
+      if(clickType) {
+        RoomPlayers(objectId);
+        clickType = '';
+        return;
+      }
       if(hasPassword){
         let password = await PromptBox(`Эта комната под замком\n\nПожалуйста введите пароль`, { btnText: `Применить`, placeholder: `Пароль`, title: 'ВВЕСТИ ПАРОЛЬ', height: 200 });
         if(password == '') return;
@@ -378,7 +387,8 @@ export default class Rooms extends Screen {
       img.onmousedown = e => e.preventDefault();
       div.appendChild(img);
     }
-    btnPlayers.textContent = typeof room[PacketDataKeys.MIN_PLAYERS] == 'number' ? `Игроки: ${room[PacketDataKeys.PLAYERS_NUM]} [${room[PacketDataKeys.MIN_PLAYERS]}/${room[PacketDataKeys.MAX_PLAYERS]}] ⭣` : `Игроки: [${room[PacketDataKeys.PLAYERS_NUM]}]`
+    btnPlayers.textContent = typeof room[PacketDataKeys.MIN_PLAYERS] == 'number' ? `Игроки: ${room[PacketDataKeys.PLAYERS_NUM]} [${room[PacketDataKeys.MIN_PLAYERS]}/${room[PacketDataKeys.MAX_PLAYERS]}] ⭣` : `Игроки: [${room[PacketDataKeys.PLAYERS_NUM]}]`;
+    btnPlayers.onclick = () => clickType = 'btnPlayers';
     div.appendChild(btnPlayers);
     return div;
   }
