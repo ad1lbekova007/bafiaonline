@@ -212,6 +212,7 @@ export default class Dashboard extends Screen {
       [PacketDataKeys.PHOTO]: App.user.photo,
     }).then(e => avatar.src = e);
     nick.textContent = App.user.username;
+    if(App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
     div.appendChild(avatar);
     div.appendChild(document.createElement('br'));
     div.appendChild(nick);
@@ -351,7 +352,6 @@ export default class Dashboard extends Screen {
     App.user.sliverCoins = db[PacketDataKeys.USER_ACCOUNT_COINS][PacketDataKeys.SILVER_COINS];
 
     nick.textContent = du[PacketDataKeys.USERNAME];
-
 
     if(du[PacketDataKeys.USERNAME] == '') (async () => {
       async function send() {

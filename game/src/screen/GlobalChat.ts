@@ -137,11 +137,13 @@ export default class GlobalChat extends Screen {
     const objectId = user ? user[PacketDataKeys.OBJECT_ID] : '';
 
     if(user){
-      if(this.lastMessage && this.lastMessage.divM && this.lastMessage.user[PacketDataKeys.USERNAME] == user[PacketDataKeys.USERNAME]){
+      if(this.lastMessage && this.lastMessage.divM && this.lastMessage.user[PacketDataKeys.USERNAME] == user[PacketDataKeys.USERNAME]) {
         const msg = document.createElement('span');
         // @ts-ignore
-        if(users[objectId] == 'dev') msg.innerHTML = text
-        else msg.innerHTML = noXSS(text);
+        let cleanText = (users[objectId] == 'dev') ? text : noXSS(text);
+        if(text.includes(`[${App.user.username}]`))
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+        msg.innerHTML = cleanText;
         msg.className = 'black';
         msg.style.userSelect = 'text';
         this.lastMessage.divM.appendChild(msg);
@@ -164,12 +166,15 @@ export default class GlobalChat extends Screen {
         avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
         const nick = document.createElement('span');
         nick.textContent = noXSS(user[PacketDataKeys.USERNAME]);
+        if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.className = 'black';
         nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);
         const msg = document.createElement('span');
         // @ts-ignore
-        if(users[objectId] == 'dev') msg.innerHTML = text
-        else msg.innerHTML = noXSS(text);
+        let cleanText = (users[objectId] == 'dev') ? text : noXSS(text);
+        if(text.includes(`[${App.user.username}]`))
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+        msg.innerHTML = cleanText;
         msg.style.color = type == 9 ? '#186400' : type == 11 ? 'gray' : type == 17 ? '#113B81' : type == 27 ? '#940000' : 'black';
         msg.style.userSelect = 'text';
         div.appendChild(avatar);
@@ -181,7 +186,9 @@ export default class GlobalChat extends Screen {
       }
     } else {
       const div = document.createElement('div');
-      div.textContent = noXSS(type == 2 ? `Игрок ${text} вошёл` : type == 3 ? `Игрок ${text} вышел` : text);
+      const nickElement = `<span style="${text == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text}</span>`;
+      if(type == 2 || type == 3) div.innerHTML = type == 2 ? `Игрок ${nickElement} вошёл` : `Игрок ${nickElement} вышел`;
+      else div.textContent = noXSS(text);
       div.style.color = type == 2 ? '#22640A' : type == 3 ? '#940000' : 'black';
       div.style.userSelect = 'text';
       div.style.margin = '3px'
@@ -258,6 +265,7 @@ export default class GlobalChat extends Screen {
       avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
       const nick = document.createElement('span');
       nick.textContent = noXSS(user[PacketDataKeys.USERNAME]);
+      if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
       nick.className = 'black';
       nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);
       div.appendChild(avatar);

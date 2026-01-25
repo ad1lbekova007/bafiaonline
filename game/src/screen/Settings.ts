@@ -13,7 +13,7 @@ export default class Settings extends Screen{
 
     App.title = 'Настройки';
 
-    (async()=> this.element.style.background = `url(${await getBackgroundImg('menu3')}) 0% 0% / cover`)();
+    (async() => this.element.style.background = `url(${await getBackgroundImg('menu3')}) 0% 0% / cover`)();
 
     const header = document.createElement('div');
     header.className = 'header';
@@ -155,6 +155,9 @@ export default class Settings extends Screen{
     addCheckbox('Сохранять историю комнаты после конца игры?', v => {
       App.settings.data.game.saveHistory = v;
     }, App.settings.data.game.saveHistory);
+    addCheckbox('Скрывать никнейм везде', v => {
+      App.settings.data.hideUsername = v;
+    }, App.settings.data.hideUsername);
     addCheckbox('Для разработчиков\nЭто удобно для создания мода и т.д.', v => {
       App.settings.data.developer = v;
     }, App.settings.data.developer);

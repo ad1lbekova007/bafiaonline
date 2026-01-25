@@ -604,6 +604,7 @@ export default class Room extends Screen {
           css: {
             fontSize: 'smaller',
             textAlign: 'center',
+            filter: App.settings.data.hideUsername ? 'blur(5px)' : '',
             padding: '1px'
           }
         });
@@ -996,9 +997,11 @@ export default class Room extends Screen {
       if(this.lastMessage && this.lastMessage.divM && this.lastMessage.username == username){
         const msg = document.createElement('span');
         // @ts-ignore
-        if(users[objectId] == 'dev') msg.innerHTML = msgText
-        else msg.innerHTML = noXSS(msgText);
-        msg.style.color = color;
+        let cleanText = (users[objectId] == 'dev') ? msgText : noXSS(msgText);
+        if(msgText.includes(`[${App.user.username}]`))
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+        msg.innerHTML = cleanText;
+        msg.className = 'black';
         msg.style.userSelect = 'text';
         this.lastMessage.divM.appendChild(msg);
       } else {
@@ -1020,12 +1023,15 @@ export default class Room extends Screen {
         divM.style.wordBreak = 'auto-phrase';
         const nick = document.createElement('span');
         nick.textContent = noXSS(username);
+        if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.style.color = type == 17 ? '#4B4483' : type == 11 ? '#545454' : 'black'
         nick.onclick = () => this.addNickToInput(username)
         const msg = document.createElement('span');
         // @ts-ignore
-        if(users[objectId] == 'dev') msg.innerHTML = msgText
-        else msg.innerHTML = noXSS(msgText);
+        let cleanText = (users[objectId] == 'dev') ? msgText : noXSS(msgText);
+        if(msgText.includes(`[${App.user.username}]`))
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+        msg.innerHTML = cleanText;
         msg.style.color = color
         msg.style.userSelect = 'text';
         div.appendChild(avatar);
@@ -1037,23 +1043,26 @@ export default class Room extends Screen {
       }
     } else {
       const div = document.createElement('div');
-      let msg = text, color = 'black', xssAllowed = false;
-      if(type == 2) { msg = `Игрок ${text} вошёл`; color = '#186400' }
-      else if(type == 3) { msg = `Игрок ${text} вышел`; color = '#940000' }
+      let msg = text, color = 'black', xssAllowed = false,
+        nickElement = `<span style="${text == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text}</span>`,
+        nick1Element = text && text.split('#').length > 1 ? `<span style="${text.split('#')[0] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text.split('#')[0]}</span>` : '',
+        nick2Element = text && text.split('#').length > 1 ? `<span style="${text.split('#')[2] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text.split('#')[2]}</span>` : '';
+      if(type == 2) { msg = `Игрок ${nickElement} вошёл`; color = '#186400'; xssAllowed = true }
+      else if(type == 3) { msg = `Игрок ${nickElement} вышел`; color = '#940000'; xssAllowed = true }
       else if(type == 4) { msg = `Игра началась` }
       else if(type == 5) { msg = `Наступила ночь [МАФИЯ в чате]`; color = '#113B81' }
       else if(type == 6) { msg = `[МАФИЯ выбирает жертву]`; color = '#113B81' }
       else if(type == 7) { msg = `Наступил день [Все общаются в чате]`; color = '#C46509' }
       else if(type == 8) { msg = `[Все голосуют] Выберите игрока, которого хотите казнить`; color = '#C46509' }
-      else if(type == 12) { msg = `Игрок [${text}] УБИТ!`; color = '#940000' }
+      else if(type == 12) { msg = `Игрок [${nickElement}] УБИТ!`; color = '#940000'; xssAllowed = true }
       else if(type == 14) { msg = `ВСЕ остались живы. Никого не удалось убить!`; color = '#186400' }
       else if(type == 15) { msg = `Игра окончена! МИРНЫЕ ЖИТЕЛИ победили!`; color = '#186400' }
       else if(type == 16) { msg = `Игра окончена! МАФИЯ победила!`; color = '#186400' }
-      else if(type == 19) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${text.split('#')[0]}] и [${text.split('#')[2]}] играют в одной команде`; color = '#940000' }
-      else if(type == 20) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${text.split('#')[0]}] и [${text.split('#')[2]}] играют в разных командах`; color = '#940000' }
+      else if(type == 19) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${nick1Element}] и [${nick2Element}] играют в одной команде`; color = '#940000'; xssAllowed = true }
+      else if(type == 20) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${nick1Element}] и [${nick2Element}] играют в разных командах`; color = '#940000'; xssAllowed = true }
       else if(type == 22) { msg = `ничья` }
       else if(type == 23) {
-        msg = `[${text.split('#')[0]}] начал голосование, чтобы выгнать игрока [${text.split('#')[2]}] из комнаты\n`;
+        msg = `[${text.split('#')[0]}] начал голосование, чтобы выгнать игрока [${nick2Element}] из комнаты\n`;
         xssAllowed = true;
         color = '#113B81';
       }
@@ -1178,6 +1187,7 @@ export default class Room extends Screen {
       avatar.onmousedown = e => e.preventDefault();
       avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
       nick.textContent = noXSS(user[PacketDataKeys.USERNAME]);
+      if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
       nick.className = 'black';
       nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);
       div.style.display = 'flex';

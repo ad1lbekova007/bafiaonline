@@ -160,6 +160,7 @@ export default class PrivateChat extends Screen {
         avatar.onclick = () => ProfileInfo(userObjectId);
         const nick = document.createElement('span');
         nick.textContent = noXSS(username);
+        if(App.settings.data.hideUsername && username == App.user.username) nick.style.filter = 'blur(5px)';
         nick.className = 'black';
         nick.onclick = () => this.addNickToInput(username);
         const msg = document.createElement('span');

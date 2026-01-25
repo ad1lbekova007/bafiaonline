@@ -12,6 +12,7 @@ export default class Settings {
     version: 5,
     debug: false,
     developer: false,
+    hideUsername: false,
     window: {
       zoom: isMobile() ? .6 : 1
     },
