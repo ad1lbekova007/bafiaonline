@@ -142,7 +142,7 @@ export default class GlobalChat extends Screen {
         // @ts-ignore
         let cleanText = (users[objectId] == 'dev') ? text : noXSS(text);
         if(text.includes(`[${App.user.username}]`))
-          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
         msg.innerHTML = cleanText;
         msg.className = 'black';
         msg.style.userSelect = 'text';
@@ -173,7 +173,7 @@ export default class GlobalChat extends Screen {
         // @ts-ignore
         let cleanText = (users[objectId] == 'dev') ? text : noXSS(text);
         if(text.includes(`[${App.user.username}]`))
-          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
         msg.innerHTML = cleanText;
         msg.style.color = type == 9 ? '#186400' : type == 11 ? 'gray' : type == 17 ? '#113B81' : type == 27 ? '#940000' : 'black';
         msg.style.userSelect = 'text';

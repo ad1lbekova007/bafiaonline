@@ -999,7 +999,7 @@ export default class Room extends Screen {
         // @ts-ignore
         let cleanText = (users[objectId] == 'dev') ? msgText : noXSS(msgText);
         if(msgText.includes(`[${App.user.username}]`))
-          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
         msg.innerHTML = cleanText;
         msg.className = 'black';
         msg.style.userSelect = 'text';
@@ -1030,7 +1030,7 @@ export default class Room extends Screen {
         // @ts-ignore
         let cleanText = (users[objectId] == 'dev') ? msgText : noXSS(msgText);
         if(msgText.includes(`[${App.user.username}]`))
-          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #9e9e48'}">${App.user.username}</span>`);
+          cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
         msg.innerHTML = cleanText;
         msg.style.color = color
         msg.style.userSelect = 'text';
