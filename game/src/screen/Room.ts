@@ -1001,7 +1001,7 @@ export default class Room extends Screen {
         if(msgText.includes(`[${App.user.username}]`))
           cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
         msg.innerHTML = cleanText;
-        msg.className = 'black';
+        msg.style.color = color;
         msg.style.userSelect = 'text';
         this.lastMessage.divM.appendChild(msg);
       } else {

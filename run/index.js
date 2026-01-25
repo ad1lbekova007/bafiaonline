@@ -3280,6 +3280,10 @@ class Launcher {
               updateVersions.push(ver);
             self2.listVersions.appendChild(el);
           }
+          if (!self2.options.version) {
+            self2.options.version = self2.versions[0].name;
+            self2.writeData();
+          }
           self2.listVersions.value = self2.options.version;
         }
         update();

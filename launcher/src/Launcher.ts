@@ -276,6 +276,10 @@ export default class Launcher {
             if(ver.scriptPath && checkVersions) updateVersions.push(ver);
             self.listVersions.appendChild(el);
           }
+          if(!self.options.version) {
+            self.options.version = self.versions[0].name;
+            self.writeData();
+          }
           self.listVersions.value = self.options.version;
         }
         update()
