@@ -17,6 +17,7 @@ export interface FSBackend {
   readFile(path: string): Promise<string>;
   readFileBytes(path: string): Promise<Uint8Array>;
   readFileB64(path: string): Promise<string>;
+  readFileMeta(path: string): Promise<{ createdAt?: number; modifiedAt?: number; sha1?: string }>;
   createDir(path: string): Promise<void>;
   existsDir(path: string): Promise<boolean>;
   existsFile(path: string): Promise<boolean>;
@@ -131,6 +132,7 @@ class FS implements FSBackend {
   readFile(path: string) { return this.backend.readFile(path); }
   readFileBytes(path: string) { return this.backend.readFileBytes(path); }
   readFileB64(path: string) { return this.backend.readFileB64(path); }
+  readFileMeta(path: string) { return this.backend.readFileMeta(path); }
   createDir(path: string) { return this.backend.createDir(path); }
   existsDir(path: string) { return this.backend.existsDir(path); }
   existsFile(path: string) { return this.backend.existsFile(path); }

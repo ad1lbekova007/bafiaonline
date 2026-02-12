@@ -1,6 +1,6 @@
 import FS, { FSBackend } from "./fs";
 
-interface FileEntry { type: 'file'; content: Blob; }
+interface FileEntry { type: 'file'; content: Blob; createdAt?: number; modifiedAt?: number; sha1?: string }
 interface DirEntry { type: 'dir'; }
 type Entry = FileEntry | DirEntry;
 export class IndexedDB implements FSBackend {
@@ -30,9 +30,7 @@ export class IndexedDB implements FSBackend {
     });
   }
   private transaction() {
-    // Fixed: Use this.objectStore instead of "files"
     return this.db.transaction([this.objectStore], "readwrite").objectStore(this.objectStore);
-    // return this.db.transaction("files", "readwrite").objectStore(this.objectStore);
   }
   private getPath(path: string): string{
     path = String(path);
@@ -46,20 +44,48 @@ export class IndexedDB implements FSBackend {
   }
   async writeFile(path: string, data: string | Blob | Uint8Array) {
     path = this.getPath(path);
-    const store = this.transaction();
     return new Promise<void>((res, rej) => {
       // @ts-ignore
       const content = data instanceof Blob ? data : new Blob([data instanceof Uint8Array ? data : String(data)]);
-      const entry: FileEntry = { type: 'file', content };
-      const request = store.put(entry, path);
-      request.onsuccess = () => {
-        this.log(`Writed file [${path}] = ${data instanceof Uint8Array ? `${data.length} length of uint8array` : data instanceof Blob ? `${data.size} length of blob` : typeof data == 'object' ? '' : `${data.length} length of string`}`);
-        res();
-      }
-      request.onerror = () => {
-        this.log(`Can't write file [${path}]`);
-        rej(request.error);
-      }
+
+      const readStore = this.db.transaction([this.objectStore], 'readonly').objectStore(this.objectStore);
+      const getReq = readStore.get(path);
+      getReq.onsuccess = () => {
+        const existing = getReq.result as Entry | undefined;
+        const createdAt = existing && (existing as FileEntry).type === 'file' && (existing as FileEntry).createdAt ? (existing as FileEntry).createdAt : Date.now();
+        const entry: FileEntry = { type: 'file', content, createdAt, modifiedAt: Date.now() };
+
+        const computeHashThenPut = async () => {
+          try {
+            if(typeof crypto !== 'undefined' && (crypto as any).subtle) {
+              const buf = await content.arrayBuffer();
+              // @ts-ignore
+              const hashBuffer = await (crypto as any).subtle.digest('SHA-1', buf);
+              const hashArray = Array.from(new Uint8Array(hashBuffer));
+              entry.sha1 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } else {
+              entry.sha1 = Math.random().toString();
+            }
+
+            const writeStore = this.db.transaction([this.objectStore], 'readwrite').objectStore(this.objectStore);
+            const putReq = writeStore.put(entry, path);
+            putReq.onsuccess = () => {
+              this.log(`Writed file [${path}] = ${data instanceof Uint8Array ? `${data.length} length of uint8array` : data instanceof Blob ? `${data.size} length of blob` : typeof data == 'object' ? '' : `${(data as any).length} length of string`}`);
+              res();
+            }
+            putReq.onerror = () => {
+              this.log(`Can't write file [${path}]`);
+              rej(putReq.error);
+            }
+          } catch(e) {
+            rej(e);
+          }
+        }
+
+        computeHashThenPut();
+      };
+
+      getReq.onerror = () => rej(getReq.error);
     });
   }
   async readFile(path: string): Promise<string> {
@@ -234,7 +260,7 @@ export class IndexedDB implements FSBackend {
   }
   async listDir(path: string): Promise<string[]> {
     path = this.getPath(path);
-    const store = this.db.transaction("files", "readonly").objectStore("files");
+    const store = this.db.transaction([this.objectStore], "readonly").objectStore(this.objectStore);
     const entries = new Set<string>();
     const prefix = path.endsWith("/") ? path : path + "/";
 
@@ -347,12 +373,58 @@ export class IndexedDB implements FSBackend {
   }
   async getSHA1(path: string): Promise<string> {
     path = this.getPath(path);
-    const bytes = await this.readFileBytes(path);
+    const store = this.transaction();
+    return new Promise((res, rej) => {
+      const req = store.get(path);
+      req.onsuccess = async () => {
+        const result = req.result as Entry | undefined;
+        if(result && result.type === 'file') {
+          const fileEntry = result as FileEntry;
+          if(fileEntry.sha1) return res(fileEntry.sha1);
 
-    if(typeof crypto.subtle == 'undefined') return Math.random().toString();
-    // @ts-ignore
-    const hashBuffer = await crypto.subtle.digest("SHA-1", bytes);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+          try {
+            const buf = await fileEntry.content.arrayBuffer();
+            if(typeof crypto === 'undefined' || !(crypto as any).subtle) {
+              const fallback = Math.random().toString();
+              fileEntry.sha1 = fallback;
+              const writeStore = this.db.transaction([this.objectStore], 'readwrite').objectStore(this.objectStore);
+              writeStore.put(fileEntry, path);
+              return res(fallback);
+            }
+            // @ts-ignore
+            const hashBuffer = await (crypto as any).subtle.digest('SHA-1', buf);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            fileEntry.sha1 = hex;
+            fileEntry.modifiedAt = fileEntry.modifiedAt || Date.now();
+            const writeStore = this.db.transaction([this.objectStore], 'readwrite').objectStore(this.objectStore);
+            writeStore.put(fileEntry, path);
+            return res(hex);
+          } catch(e) {
+            return rej(e);
+          }
+        }
+        rej(new Error('File not found or not a file'));
+      };
+      req.onerror = () => rej(req.error);
+    });
+  }
+
+  async readFileMeta(path: string): Promise<{ createdAt?: number; modifiedAt?: number; sha1?: string }> {
+    path = this.getPath(path);
+    const store = this.db.transaction([this.objectStore], 'readonly').objectStore(this.objectStore);
+    return new Promise((res, rej) => {
+      const req = store.get(path);
+      req.onsuccess = () => {
+        const result = req.result as Entry | undefined;
+        if(result && result.type === 'file') {
+          const f = result as FileEntry;
+          res({ createdAt: f.createdAt, modifiedAt: f.modifiedAt, sha1: f.sha1 });
+        } else {
+          rej(new Error('File not found or not a file'));
+        }
+      };
+      req.onerror = () => rej(req.error);
+    });
   }
 }

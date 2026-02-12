@@ -8,7 +8,7 @@
   <style>
     body {
       -webkit-overflow-scrolling: touch;
-      background-color: black;
+      background-color: rgb(36, 36, 36);
       margin: 0;
       overflow: hidden;
       color: black;
@@ -16,9 +16,9 @@
       zoom: 1.5
     }
     .win {
-        color: white;
-      outline: 1px solid white;
-      border-radius: 5px;
+      color: white;
+      /* outline: 1px solid white; */
+      /* border-radius: 9px; */
       box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.2);
       & > .content {
         background-color: black;
@@ -27,17 +27,21 @@
     }
     .titleBar {
       color: black;
-      height: 16.5px;
+      height: 20px;
       width: 100%;
       --tw-gradient-from: #EAE8EA;
       --tw-gradient-to: #D3D1D3;
       --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
       background: linear-gradient(to bottom, var(--tw-gradient-stops));
-      border-radius: 0.25em 0.25em 0 0;
+      border-radius: 7px 7px 0 0;
       border: 1px solid #B7B6B7;
       position: relative;
       z-index: 1;
       user-select: none;
+      display: grid;
+      align-items: center;
+      grid-template: "start title end";
+      grid-template-columns: .5fr 2fr .5fr;
       &.dark {
         color: white;
         --tw-gradient-from: #282828;
@@ -47,6 +51,7 @@
       & > .title {
         width: 100%;
         height: 100%;
+        margin: 0;
         text-align: center;
         display: flex;
         font-size: 12px;
@@ -54,55 +59,51 @@
         flex-direction: column-reverse;
         justify-content: center
       }
-      & > .closeBtn {
-        position: absolute;
-        background: #FC5753;
-        background-size: 35px 23px;
-        background-position: 0 0;
-        border: 0.5px solid #DF4744;
-        border-radius: 100%;
-        display: block;
-        width: 10px;
-        height: 10px;
-        left: 6px;
-        top: 3px;
-        &:disabled {
-          background: gray;
-          border: 0.5px solid #646464
+      & > .btns {
+        display: flex;
+        list-style: none;
+        gap: 6px;
+        grid-area: start;
+        justify-content: start;
+        padding-inline-start: 7px;
+        margin: 0;
+        & > li {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border-radius: 9px;
+          width: 9px;
+          height: 9px;
         }
-      }
-      & > .minBtn {
-        position: absolute;
-        background: #FDBC40;
-        background-size: 35px 22.5px;
-        background-position: 57.5px 0px;
-        border: 0.5px solid #DE9F34;
-        border-radius: 100%;
-        display: block;
-        width: 10px;
-        height: 10px;
-        left: 23px;
-        top: 3px;
-        &:disabled {
-          background: gray;
-          border: 0.5px solid #646464
+        & > .closeBtn {
+          background: #ff605c;
+          background-size: 35px 23px;
+          background-position: 0 0;
+          outline: 0.25px solid #f55653;
+          &:disabled {
+            background: gray;
+            outline: 0.25px solid #646464
+          }
         }
-      }
-      & > .maxBtn {
-        position: absolute;
-        background: #36C84B;
-        background-size: 35px 22.5px;
-        background-position: 10px 0;
-        border: 0.5px solid #27AA35;
-        border-radius: 100%;
-        display: block;
-        width: 10px;
-        height: 10px;
-        left: 40px;
-        top: 3px;
-        &:disabled {
-          background: gray;
-          border: 0.5px solid #646464
+        & > .minBtn {
+          background: #ffbd44;
+          background-size: 35px 22.5px;
+          background-position: 57.5px 0px;
+          outline: 0.25px solid #f2b23c;
+          &:disabled {
+            background: gray;
+            outline: 0.25px solid #646464
+          }
+        }
+        & > .maxBtn {
+          background: #00ca4e;
+          background-size: 35px 22.5px;
+          background-position: 10px 0;
+          outline: 0.25px solid #00ca4e;
+          &:disabled {
+            background: gray;
+            outline: 0.25px solid #646464
+          }
         }
       }
     }

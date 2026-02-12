@@ -5,7 +5,7 @@ import { noXSS } from "../../../core/src/utils/utils";
 import App from "../App";
 import ProfileInfo from "../dialog/ProfileInfo";
 import { MessageStyle } from "../enums";
-import { insertAtCaret } from '../../../core/src/utils/DOM'
+import { createElement, insertAtCaret } from '../../../core/src/utils/DOM'
 import { getAvatarImg, getBackgroundImg, getTexture } from "../utils/Resources";
 import Friends from "./Friends";
 import Screen from "./Screen";
@@ -159,7 +159,12 @@ export default class PrivateChat extends Screen {
         avatar.onmousedown = e => e.preventDefault();
         avatar.onclick = () => ProfileInfo(userObjectId);
         const nick = document.createElement('span');
-        nick.textContent = noXSS(username);
+        if(user[PacketDataKeys.VIP]) {
+          const img = createElement('img', { width: 20, height: 20 });
+          getTexture(`vip/0M.png`).then(e => img.src = e);
+          nick.appendChild(img);
+        }
+        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
         if(App.settings.data.hideUsername && username == App.user.username) nick.style.filter = 'blur(5px)';
         nick.className = 'black';
         nick.onclick = () => this.addNickToInput(username);

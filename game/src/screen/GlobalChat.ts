@@ -3,15 +3,19 @@ import { MessageStyle } from "../enums";
 import PacketDataKeys from "../../../core/src/PacketDataKeys";
 import Dashboard from "./Dashboard";
 import Screen from "./Screen";
-import { insertAtCaret } from '../../../core/src/utils/DOM'
+import { createElement, insertAtCaret, processEmojis } from '../../../core/src/utils/DOM'
 import ProfileInfo from "../dialog/ProfileInfo";
 import fs from "../../../core/src/fs/fs";
 import { getAvatarImg, getBackgroundImg, getTexture } from "../utils/Resources";
-import { noXSS, wait } from "../../../core/src/utils/utils";
+import { getZoom, noXSS, wait } from "../../../core/src/utils/utils";
 import { isMobile } from "../../../core/src/utils/mobile";
 import users from '../../../core/users.json'
 
 export default class GlobalChat extends Screen {
+  // хз как назвать
+  listPlayersFromInput!: HTMLDivElement
+  showListPlayersFromInput = false
+
   playersListElem!: HTMLDivElement
   messagesElem!: HTMLDivElement
   input!: HTMLInputElement
@@ -46,66 +50,142 @@ export default class GlobalChat extends Screen {
       [PacketDataKeys.TOKEN]: App.user.token
     });
 
-    this.playersListElem = document.createElement('div');
-    this.playersListElem.style.height = '155px';//(App.height - 225) + 'px';
-    this.playersListElem.style.overflow = 'overlay';
-    this.playersListElem.style.margin = '10px';
-    this.playersListElem.style.outline = '2px solid #c0c0c0';
-    this.playersListElem.style.borderRadius = '3px';
-    this.playersListElem.style.background = 'rgba(255,255,255,.5)';
-    this.playersListElem.style.display = 'flex';
-    this.playersListElem.style.flexWrap = 'wrap';
-    this.playersListElem.style.flexDirection = 'column';
-    this.element.appendChild(this.playersListElem);
+    this.listPlayersFromInput = createElement('div', {
+      css: {
+        position: 'absolute',
+        background: 'rgba(255,255,255,.5)'
+      }
+    });
+    this.element.appendChild(this.listPlayersFromInput);
 
-    this.messagesElem = document.createElement('div');
-    this.messagesElem.style.height = (App.height - (isMobile() ? 270 : 250)) + 'px';
-    this.messagesElem.style.textAlign = 'center';
-    this.messagesElem.style.overflowX = 'hidden';
-    this.messagesElem.style.overflowY = 'overlay';
-    this.messagesElem.style.margin = '10px 10px 5px 10px';
-    this.messagesElem.style.outline = '2px solid #c0c0c0';
-    this.messagesElem.style.borderRadius = '3px';
-    this.messagesElem.style.background = 'rgba(255,255,255,.5)';
-    this.messagesElem.style.display = 'flex';
-    this.messagesElem.style.flexDirection = 'column';
-    this.messagesElem.style.justifyContent = 'flex-start';
-    this.element.appendChild(this.messagesElem);
+    this.playersListElem = createElement('div', {
+      css: {
+        height: '155px',
+        overflow: 'overlay',
+        margin: '10px',
+        outline: '2px solid #c0c0c0',
+        borderRadius: '3px',
+        background: 'rgba(255,255,255,.5)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        flexDirection: 'column'
+      },
+      appendTo: this.element
+    });
+
+    this.messagesElem = createElement('div', {
+      css: {
+        height: (App.height - (isMobile() ? 270 : 250)) + 'px',
+        textAlign: 'center',
+        overflowX: 'hidden',
+        overflowY: 'overlay',
+        margin: '10px 10px 5px 10px',
+        outline: '2px solid #c0c0c0',
+        borderRadius: '3px',
+        background: 'rgba(255,255,255,.5)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-start'
+      },
+      appendTo: this.element
+    });
 
     const data = await App.server.awaitPacket(PacketDataKeys.MESSAGES);
     for(const m of data[PacketDataKeys.MESSAGES]) this.addMessage(m, false);
 
     this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
 
-    const footer = document.createElement('div');
-    footer.style.width = '100%';
-    this.element.appendChild(footer);
+    const footer = createElement('div', {
+      css: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%'
+      },
+      appendTo: this.element
+    });
+    const footer2 = createElement('div', {
+      css: {
+        display: 'flex',
+        width: '100%'
+      },
+      appendTo: footer
+    });
 
     this.input = document.createElement('input');
     this.input.className = 'input-chat'
     this.input.type = `text`;
     this.input.placeholder = `Сообщение`;
-    this.input.addEventListener('keydown', e => {
+    this.input.onkeydown = e => {
       if(e.key == 'Enter' && this.input.value != ''){
         const msg = this.input.value;
         this.input.value = '';
         this.sendMessage(msg);
       }
+    }
+    this.input.oninput = () => {
+      const winZoom = App.zoom;
+      const zoom = getZoom();
+      const e = this.input.value.substring((this.input.selectionStart ?? 1)-1);
+      if(e == '@'){
+        this.showListPlayersFromInput = true;
+        this.listPlayersFromInput.style.display = 'block';
+        // надо там где курсор
+        
+        this.listPlayersFromInput.style.left = ((this.input.offsetLeft + this.input.offsetWidth - 10) / winZoom / zoom) + 'px';
+        this.listPlayersFromInput.style.top = ((this.input.offsetTop + 20) / winZoom / zoom) + 'px';
+      } else if(e == ' ') {
+        this.showListPlayersFromInput = false;
+        this.listPlayersFromInput.style.display = 'none';
+      }
+    }
+    // if(isMobile()){
+    //   this.input.onfocus = () => {
+    //     App.width = innerWidth;
+    //     App.height = innerHeight-1;
+    //   }
+    //   this.input.onblur = () => {
+    //     App.width = innerWidth;
+    //     App.height = innerHeight-2;
+    //   }
+    // }
+
+    const emojiPanel = createElement('div', {
+      css: {
+        display: 'none'
+      },
+      appendTo: footer
     });
-    if(isMobile()){
-      this.input.addEventListener('focus', () => {
-        App.width = innerWidth;
-        App.height = innerHeight-1;
-        // this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+    for(const e of ['sm1','sm2','sm3','sm4','sm5','sm6']) {
+      const img = createElement('img', {
+        width: 50, height: 50,
+        css: {},
+        appendTo: emojiPanel
       });
-      this.input.addEventListener('blur', () => {
-        App.width = innerWidth;
-        App.height = innerHeight-2;
-      });
+      getTexture(`emoji/${e}.png`).then(e => img.src = e);
+      img.onclick = () => {
+        insertAtCaret(this.input, `:${e}:`);
+        // emojiPanel.style.display = 'none';
+        // this.messagesElem.style.height = (App.height - (isMobile() ? 270 : 250)) + 'px';
+      }
+    }
+
+    const emojiBtn = createElement('img', {
+      width: isMobile() ? 40 : 25, height: isMobile() ? 40 : 25,
+      css: {},
+      appendTo: footer2
+    });
+    getTexture('emoji/sm1.png').then(e => emojiBtn.src = e);
+    emojiBtn.onclick = () => {
+      emojiPanel.style.display = emojiPanel.style.display == 'none' ? 'block' : 'none';
+      if(emojiPanel.style.display == 'block') {
+        this.messagesElem.style.height = (App.height - (isMobile() ? 270 : 250)-60) + 'px';
+      } else {
+        this.messagesElem.style.height = (App.height - (isMobile() ? 270 : 250)) + 'px';
+      }
     }
 
     this.on('keydown', e => e.key == 'Enter' && this.input.focus());
-    footer.appendChild(this.input);
+    footer2.appendChild(this.input);
 
     this.on('message', data => {
       if(data[PacketDataKeys.TYPE] == PacketDataKeys.MESSAGE){
@@ -143,7 +223,7 @@ export default class GlobalChat extends Screen {
         let cleanText = (users[objectId] == 'dev') ? text : noXSS(text);
         if(text.includes(`[${App.user.username}]`))
           cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
-        msg.innerHTML = cleanText;
+        processEmojis(msg, cleanText);
         msg.className = 'black';
         msg.style.userSelect = 'text';
         this.lastMessage.divM.appendChild(msg);
@@ -165,7 +245,12 @@ export default class GlobalChat extends Screen {
         avatar.onmousedown = e => e.preventDefault();
         avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
         const nick = document.createElement('span');
-        nick.textContent = noXSS(user[PacketDataKeys.USERNAME]);
+        if(user[PacketDataKeys.VIP]) {
+          const img = createElement('img', { width: 20, height: 20 });
+          getTexture(`vip/0M.png`).then(e => img.src = e);
+          nick.appendChild(img);
+        }
+        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
         if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.className = 'black';
         nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);
@@ -174,7 +259,7 @@ export default class GlobalChat extends Screen {
         let cleanText = (users[objectId] == 'dev') ? text : noXSS(text);
         if(text.includes(`[${App.user.username}]`))
           cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
-        msg.innerHTML = cleanText;
+        processEmojis(msg, cleanText);
         msg.style.color = type == 9 ? '#186400' : type == 11 ? 'gray' : type == 17 ? '#113B81' : type == 27 ? '#940000' : 'black';
         msg.style.userSelect = 'text';
         div.appendChild(avatar);
@@ -250,6 +335,7 @@ export default class GlobalChat extends Screen {
 
   updateUsers(users: any[]){
     this.playersListElem.innerHTML = '';
+
     for(let i = 0; i < users.length; i++){
       const user = users[i];
       const div = document.createElement('div');
@@ -264,7 +350,12 @@ export default class GlobalChat extends Screen {
       avatar.onmousedown = e => e.preventDefault();
       avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
       const nick = document.createElement('span');
-      nick.textContent = noXSS(user[PacketDataKeys.USERNAME]);
+      if(user[PacketDataKeys.VIP]) {
+        const img = createElement('img', { width: 20, height: 20, css: { verticalAlign: 'text-bottom' } });
+        getTexture(`vip/0M.png`).then(e => img.src = e);
+        nick.appendChild(img);
+      }
+      createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
       if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
       nick.className = 'black';
       nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);

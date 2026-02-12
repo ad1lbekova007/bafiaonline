@@ -1,3 +1,5 @@
+import { getTexture } from "../../../game/src/utils/Resources";
+
 export function insertAtCaret(element: HTMLInputElement, text: string) {
   // @ts-ignore
   if(document.selection) {
@@ -22,6 +24,72 @@ export function insertAtCaret(element: HTMLInputElement, text: string) {
   }
 }
 
+// export function processEmojis(element: HTMLElement, text: string, size = 20) {
+//   element.innerHTML = '';
+  
+//   const parts = text.split(/(:sm[1-6]:)/g);
+  
+//   for(const part of parts) {
+//     if(part.match(/:sm[1-6]:/)) {
+//       const emojiName = part.slice(1, -1);
+//       const img = document.createElement('img');
+//       img.width = img.height = size;
+//       img.style.pointerEvents = 'none';
+//       img.style.verticalAlign = 'middle';
+//       getTexture(`emoji/${emojiName}.png`).then(src => img.src = src);
+//       element.appendChild(img);
+//     } else if(part) {
+//       element.appendChild(document.createTextNode(part));
+//     }
+//   }
+// }
+export function processEmojis(element: HTMLElement, html: string, size = 20) {
+  element.innerHTML = '';
+  
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  
+  function processNode(node: Node) {
+    if(node.nodeType == Node.TEXT_NODE) {
+      const text = node.textContent || '';
+      const parts = text.split(/(:sm[1-6]:)/g);
+      
+      for(const part of parts) {
+        if(part.match(/:sm[1-6]:/)) {
+          const emojiName = part.slice(1, -1);
+          const img = document.createElement('img');
+          img.width = img.height = size;
+          img.style.verticalAlign = 'middle';
+          img.style.margin = '0 2px';
+          getTexture(`emoji/${emojiName}.png`).then(src => img.src = src);
+          element.appendChild(img);
+        } else if(part) {
+          element.appendChild(document.createTextNode(part));
+        }
+      }
+    } else if(node.nodeType == Node.ELEMENT_NODE) {
+      const el = document.createElement(node.nodeName);
+      for(const attr of (node as Element).attributes) {
+        el.setAttribute(attr.name, attr.value);
+      }
+      
+      const tempElement = document.createElement('div');
+      
+      Array.from(node.childNodes).forEach(child => {
+        const savedElement = element;
+        element = tempElement;
+        processNode(child);
+        element = savedElement;
+      });
+      
+      el.innerHTML = tempElement.innerHTML;
+      element.appendChild(el);
+    }
+  }
+  
+  Array.from(temp.childNodes).forEach(processNode);
+}
+
 export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K, options: {
   className?: string
   id?: string
@@ -33,6 +101,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   value?: string
   width?: number
   height?: number
+  appendTo?: HTMLElement
   css?: CSSStyleDeclaration|object
 }, callback: (elem: HTMLElementTagNameMap[K]) => void = () => {}): HTMLElementTagNameMap[K] {
   const elem = document.createElement(tagName);
@@ -54,6 +123,8 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   }
 
   callback(elem);
+
+  if(options.appendTo) options.appendTo.appendChild(elem);
 
   return elem;
 }

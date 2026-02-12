@@ -1,5 +1,5 @@
 import App from '../App';
-import { Role } from '../enums';
+import { Role, Sex } from '../enums';
 import PacketDataKeys from "../../../core/src/PacketDataKeys";
 import Box from './Box';
 import fs from '../../../core/src/fs/fs';
@@ -285,9 +285,6 @@ export default async function ProfileInfo(userObjectId: string){
 
   const dataStats = calculateStatsWithRoles(profile);
 
-  add(stat, 'Серебро', profile.sliver);
-  if(typeof profile.gold == 'number') add(stat, 'Золото', profile.gold);
-
   add(stat, 'Сыграно игр', profile.playedGames);
   add(stat, 'Сыграно игр за Мафию', dataStats.gamesAsMafia);
   add(stat, 'Сыграно игр за Мирных', dataStats.gamesAsPeaceful);
@@ -333,6 +330,12 @@ export default async function ProfileInfo(userObjectId: string){
   statDev.style.flexDirection = 'column';
   statDev.style.alignItems = 'stretch';
   statDev.style.width = '95%';
+
+  add(statDev, 'Серебро', profile.sliver);
+  if(typeof profile.gold == 'number') add(statDev, 'Золото', profile.gold);
+  add(statDev, 'Пол', profile.sex == Sex.WOMEN ? 'Женский' : 'Мужской');
+  add(statDev, 'Уровень', profile.level + ` (${profile.prevLevelExperience}/${profile.nextLevelExperience})`);
+
   add(statDev, `ID Объекта`, userObjectId);
   add(statDev, `Последний вход`, formatDate(profile.updated));
   add(statDev, `Сервер`, profile.serverLanguage);

@@ -82,8 +82,9 @@ export default class Auth {
         }
         App.screen = new Authorization();
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_SIGN_IN) {
-        const token = auth.token ?? data[PacketDataKeys.USER][PacketDataKeys.TOKEN];
-        const userId = auth.userId ?? data[PacketDataKeys.USER][PacketDataKeys.OBJECT_ID];
+        const name = data[PacketDataKeys.USER][PacketDataKeys.USERNAME];
+        const token = auth.token || data[PacketDataKeys.USER][PacketDataKeys.TOKEN];
+        const userId = auth.userId || data[PacketDataKeys.USER][PacketDataKeys.OBJECT_ID];
 
         const isReconnect = this.lastAuth && this.lastAuth.userId == userId;
 
@@ -93,7 +94,7 @@ export default class Auth {
         }
 
         this.addProfile({
-          name: data[PacketDataKeys.USER][PacketDataKeys.USERNAME],
+          name,
           email: auth.email,
           password: auth.password,
           token,

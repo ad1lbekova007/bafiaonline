@@ -19,6 +19,7 @@ import format, { formatDate } from "../../../core/src/utils/format";
 import ConfirmBox from "../dialog/ConfirmBox";
 import { History } from "./History";
 import RoomPlayers from "../dialog/RoomPlayers";
+import { createElement } from "../../../core/src/utils/DOM";
 
 export default class Rooms extends Screen {
   div!: HTMLDivElement
@@ -254,6 +255,7 @@ export default class Rooms extends Screen {
     const rank = level == 3 ? 2 : level == 5 ? 3 : level == 7 ? 4 : level == 9 ? 5 : level == 11 ? 6 : 1;
     const selectedRoles = room[PacketDataKeys.SELECTED_ROLES] ?? [];
     const hasPassword = room[PacketDataKeys.PASSWORD];
+    const friends = room[PacketDataKeys.FRIEND_IN_ROOM];
 
     let clickType = '';
 
@@ -387,7 +389,12 @@ export default class Rooms extends Screen {
       img.onmousedown = e => e.preventDefault();
       div.appendChild(img);
     }
-    btnPlayers.textContent = typeof room[PacketDataKeys.MIN_PLAYERS] == 'number' ? `Игроки: ${room[PacketDataKeys.PLAYERS_NUM]} [${room[PacketDataKeys.MIN_PLAYERS]}/${room[PacketDataKeys.MAX_PLAYERS]}] ⭣` : `Игроки: [${room[PacketDataKeys.PLAYERS_NUM]}]`;
+    if(friends > 0) {
+      const img = createElement('img', { width: 20, height: 20, css: { verticalAlign: 'text-bottom' } });
+      getTexture(`ui/4v.png`).then(e => img.src = e);
+      btnPlayers.appendChild(img);
+    }
+    createElement('span', { css: { marginLeft: '2px' }, text: typeof room[PacketDataKeys.MIN_PLAYERS] == 'number' ? `Игроки: ${room[PacketDataKeys.PLAYERS_NUM]} [${room[PacketDataKeys.MIN_PLAYERS]}/${room[PacketDataKeys.MAX_PLAYERS]}] ⭣` : `Игроки: [${room[PacketDataKeys.PLAYERS_NUM]}]`, appendTo: btnPlayers });
     btnPlayers.onclick = () => clickType = 'btnPlayers';
     div.appendChild(btnPlayers);
     return div;

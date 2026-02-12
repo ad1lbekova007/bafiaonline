@@ -2,7 +2,7 @@ import App from "../App";
 import { MessageStyle, Role, RuRoles } from "../enums";
 import PacketDataKeys from "../../../core/src/PacketDataKeys";
 import Screen from "./Screen";
-import { createElement, insertAtCaret } from '../../../core/src/utils/DOM'
+import { createElement, insertAtCaret, processEmojis } from '../../../core/src/utils/DOM'
 import Rooms from "./Rooms";
 import MessageBox from "../dialog/MessageBox";
 import { when } from "../../../core/src/utils/TypeScript";
@@ -522,9 +522,21 @@ export default class Room extends Screen {
 
     for(const m of this.localFirstMessages) wait(50).then(() => this.addMessage(m, false));
 
-    const footer = document.createElement('div');
-    footer.style.width = '100%';
-    this.element.appendChild(footer);
+    const footer = createElement('div', {
+      css: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%'
+      },
+      appendTo: this.element
+    });
+    const footer2 = createElement('div', {
+      css: {
+        display: 'flex',
+        width: '100%'
+      },
+      appendTo: footer
+    });
 
     this.input = document.createElement('input');
     this.input.className = 'input-chat'
@@ -537,19 +549,54 @@ export default class Room extends Screen {
         this.sendMessage(msg);
       }
     });
-    if(isMobile()){
-      this.input.addEventListener('focus', () => {
-        App.width = innerWidth;
-        App.height = innerHeight-1;
-        // this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+    // if(isMobile()){
+    //   this.input.addEventListener('focus', () => {
+    //     App.width = innerWidth;
+    //     App.height = innerHeight-1;
+    //   });
+    //   this.input.addEventListener('blur', () => {
+    //     App.width = innerWidth;
+    //     App.height = innerHeight-2;
+    //   });
+    // }
+    
+    const emojiPanel = createElement('div', {
+      css: {
+        display: 'none'
+      },
+      appendTo: footer
+    });
+    for(const e of ['sm1','sm2','sm3','sm4','sm5','sm6']) {
+      const img = createElement('img', {
+        width: 50, height: 50,
+        css: {},
+        appendTo: emojiPanel
       });
-      this.input.addEventListener('blur', () => {
-        App.width = innerWidth;
-        App.height = innerHeight-2;
-      });
+      getTexture(`emoji/${e}.png`).then(e => img.src = e);
+      img.onclick = () => {
+        insertAtCaret(this.input, `:${e}:`);
+        // emojiPanel.style.display = 'none';
+        // this.messagesElem.style.height = (App.height - (isMobile() ? 270 : 250)) + 'px';
+      }
     }
+
+    const emojiBtn = createElement('img', {
+      width: isMobile() ? 40 : 25, height: isMobile() ? 40 : 25,
+      css: {},
+      appendTo: footer2
+    });
+    getTexture('emoji/sm1.png').then(e => emojiBtn.src = e);
+    emojiBtn.onclick = () => {
+      emojiPanel.style.display = emojiPanel.style.display == 'none' ? 'block' : 'none';
+      if(emojiPanel.style.display == 'block') {
+        this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265)-60) + 'px';
+      } else {
+        this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265)) + 'px';
+      }
+    }
+
     this.on('keydown', e => e.key == 'Enter' && this.input.focus());
-    footer.appendChild(this.input);
+    footer2.appendChild(this.input);
 
     this.on('resize', () => {
       this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265)) + 'px';
@@ -1000,7 +1047,7 @@ export default class Room extends Screen {
         let cleanText = (users[objectId] == 'dev') ? msgText : noXSS(msgText);
         if(msgText.includes(`[${App.user.username}]`))
           cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
-        msg.innerHTML = cleanText;
+        processEmojis(msg, cleanText);
         msg.style.color = color;
         msg.style.userSelect = 'text';
         this.lastMessage.divM.appendChild(msg);
@@ -1022,7 +1069,12 @@ export default class Room extends Screen {
         divM.style.justifyContent = 'center';
         divM.style.wordBreak = 'auto-phrase';
         const nick = document.createElement('span');
-        nick.textContent = noXSS(username);
+        if(user[PacketDataKeys.VIP]) {
+          const img = createElement('img', { width: 20, height: 20 });
+          getTexture(`vip/0M.png`).then(e => img.src = e);
+          nick.appendChild(img);
+        }
+        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
         if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.style.color = type == 17 ? '#4B4483' : type == 11 ? '#545454' : 'black'
         nick.onclick = () => this.addNickToInput(username)
@@ -1031,7 +1083,7 @@ export default class Room extends Screen {
         let cleanText = (users[objectId] == 'dev') ? msgText : noXSS(msgText);
         if(msgText.includes(`[${App.user.username}]`))
           cleanText = cleanText.replaceAll(`${App.user.username}`, `<span style="${App.settings.data.hideUsername ? 'filter: blur(5px)' : 'color: #ab1457; font-weight: bold'}">${App.user.username}</span>`);
-        msg.innerHTML = cleanText;
+        processEmojis(msg, cleanText);
         msg.style.color = color
         msg.style.userSelect = 'text';
         div.appendChild(avatar);
@@ -1179,14 +1231,19 @@ export default class Room extends Screen {
       const user = player[PacketDataKeys.USER];
       const div = document.createElement('div');
       const avatar = document.createElement('img');
-      const nick = document.createElement('span');
       getAvatarImg(user).then(e => avatar.src = e);
       avatar.style.borderRadius = '100%'
       avatar.width = avatar.height = 25;
       avatar.style.margin = '5px';
       avatar.onmousedown = e => e.preventDefault();
       avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
-      nick.textContent = noXSS(user[PacketDataKeys.USERNAME]);
+      const nick = document.createElement('span');
+      if(user[PacketDataKeys.VIP]) {
+        const img = createElement('img', { width: 20, height: 20, css: { verticalAlign: 'text-bottom' } });
+        getTexture(`vip/0M.png`).then(e => img.src = e);
+        nick.appendChild(img);
+      }
+      createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
       if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
       nick.className = 'black';
       nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);

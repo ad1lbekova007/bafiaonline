@@ -41,8 +41,8 @@ function formatSize(bytes: number): string {
 }
 
 (async() => {
-  const name = Bun.argv[2] ?? 'vanilla';
-  const path = Bun.argv[3] ?? "./game/image";
+  const name = process.argv[2] ?? 'vanilla';
+  const path = process.argv[3] ?? "./game/image";
   const base = resolve(path);
   const entries = await walk(base, base);
   const raw = encode(entries);

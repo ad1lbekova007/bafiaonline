@@ -21,6 +21,33 @@ function tokenHex(nBytes: number): string {
   return [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+const loadImage = (url: string) =>
+  new Promise<string>((resolve) => {
+    const img = new Image();
+    let finished = false;
+
+    img.onload = () => {
+      if(finished) return;
+      finished = true;
+      resolve(url);
+    };
+
+    img.onerror = async () => {
+      if(finished) return;
+      finished = true;
+      resolve(null as any);
+    };
+
+    img.src = url;
+
+    setTimeout(() => {
+      if(!finished) {
+        finished = true;
+        resolve(null as any);
+      }
+    }, 10000);
+  });
+
 export default class Launcher {
   win: Window
 
@@ -33,11 +60,13 @@ export default class Launcher {
   }
   versions: Version[] = [];
   profiles: Profile[] = [];
+  selectedVersion: Version | null = null;
+  selectedProfile: string | null = null;
 
   statusText!: HTMLDivElement
   progressBar!: HTMLProgressElement
   listVersions!: HTMLSelectElement
-  listProfiles!: HTMLSelectElement
+  listProfiles!: HTMLDivElement
   playBtn!: HTMLButtonElement
   updateBtn!: HTMLButtonElement
   settingsBtn!: HTMLButtonElement
@@ -150,6 +179,8 @@ export default class Launcher {
 
       const btns = createElement('div', {
         css: {
+          display: 'flex',
+          justifyContent: 'center',
           width: '100%'
         }
       });
@@ -167,7 +198,9 @@ export default class Launcher {
         const btn = createElement('button', {
           text: name,
           css: {
-            borderRadius: size == 0 ? '5px 0 0 0' : size == maxSize-1 ? '0 5px 0 0' : '0'
+            // borderRadius: size == 0 ? '5px 0 0 0' : size == maxSize-1 ? '0 5px 0 0' : '0'
+            borderRadius: size == 0 ? '5px 0 0 5px' : size == maxSize-1 ? '0 5px 5px 0' : '0',
+            margin: '1px'
           }
         });
         btn.onclick = () => {
@@ -186,83 +219,144 @@ export default class Launcher {
       }
 
       addTab('Профили', createElement('div', {}, elem => {
-        const selectedProfile = createElement('span', {
-          text: 'Выбран: никакой',
+        const p1 = createElement('p', {
+          text: 'Выберите профиль',
           css: {
-            margin: '5px',
-            verticalAlign: 'text-bottom',
-            fontSize: '12px'
+            margin: '5px'
           }
         });
+        elem.appendChild(p1);
 
-        this.listProfiles = document.createElement(`select`);
-        this.listProfiles.size = 4
-        this.listProfiles.style.width = '100%';
-        this.listProfiles.onchange = e => {
-          const p = this.profiles.find(e => e.name == this.listProfiles.value || this.listProfiles.value == `Новый аккаунт (${e.email})`);
-          if(p) {
-            const isNew = this.listProfiles.value == `Новый аккаунт (${p.email})`;
-            if(isNew) selectedProfile.textContent = `Выбран: ` + noXSS(`Новый: ${p.email}`);
-            else selectedProfile.textContent = `Выбран: ` + noXSS(p.name);
-          } else {
-            selectedProfile.textContent = `Выбран: никакой`;
+        this.listProfiles = createElement(`div`, {
+          css: {
+            width: '100%',
+            height: '75px',
+            background: '#171515',
+            padding: '10px 0',
+            borderRadius: '5px',
+            display: 'flex',
+            color: 'black'
           }
-        }
+        });
+        this.listProfiles.style.width = '100%';
         function update() {
+          const selected = 'linear-gradient(232deg, #6bd393, #188341)'
+          const notSelected = '#f3e3e3'
+          const elems: HTMLDivElement[] = [];
           self.listProfiles.innerHTML = '';
           for(const pr of self.profiles){
-            const el = document.createElement('option');
-            el.innerHTML = pr.name;
-            if(pr.name == '') {
-              el.innerHTML = `Новый аккаунт (${pr.email})`;
-              el.style.background = '#57e057';
+            const el = createElement('div', {
+              css: {
+                width: '50px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                margin: '2px',
+                padding: '5px',
+                borderRadius: '5px',
+                background: pr.name == '' ? '#57e057' : pr.name == self.selectedProfile ? selected : notSelected
+              }
+            });
+            const avatar = createElement('img', {
+              width: 40,
+              height: 40,
+              css: {
+                borderRadius: '100%'
+              }
+            });
+            loadImage(`https://dottap.com/mafia/profile_photo/${pr.userId}.jpg?v=${Math.random()}`).then(e => avatar.src = e);
+            const nick = createElement('span', {
+              text: pr.name || `Новый аккаунт (${pr.email})`,
+              css: {
+                fontSize: '12px'
+              }
+            });
+            el.onclick = () => {
+              self.selectedProfile = pr.name;
+              elems.forEach(e => e.style.background = notSelected);
+              el.style.background = selected;
             }
+            el.appendChild(avatar);
+            el.appendChild(nick);
             self.listProfiles.appendChild(el);
+            elems.push(el);
           }
-          self.listProfiles.value = self.options.profile;
-          selectedProfile.textContent = `Выбран: ` + noXSS(self.options.profile);
+
+          const add = createElement('div', {
+            css: {
+              width: '50px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              margin: '2px',
+              padding: '5px',
+              borderRadius: '5px',
+              background: notSelected
+            }
+          });
+          add.onclick = () => self.addProfile();
+          const plus = createElement('span', {
+            html: '+',
+            css: {
+              fontSize: '32px'
+            }
+          });
+          const addText = createElement('span', {
+            html: 'Новый',
+            css: {
+              fontSize: '12px'
+            }
+          });
+          add.appendChild(plus);
+          add.appendChild(addText);
+          self.listProfiles.appendChild(add);
+          
+          const remove = createElement('div', {
+            css: {
+              width: '50px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              margin: '2px',
+              padding: '5px',
+              borderRadius: '5px',
+              background: notSelected
+            }
+          });
+          remove.onclick = async () => {
+            const p = self.profiles.findIndex(e => e.name == self.selectedProfile || self.selectedProfile == `Новый аккаунт (${e.email})`);
+            if(p != -1) {
+              const profile = self.profiles[p];
+              if(!confirm('Вы уверены что хотите удалить профиль "'+profile.name+'"?')) return;
+              self.win.lock();
+              self.profiles.splice(p, 1);
+              await self.writeData();
+              self.statusText.innerHTML = `Профиль ${profile.name} удален`;
+              self.win.unlock();
+              update();
+            } else {
+              alert('Для начала выберите профиль который хотите удалить');
+            }
+          }
+          const minus = createElement('span', {
+            html: '-',
+            css: {
+              fontSize: '32px'
+            }
+          });
+          const removeText = createElement('span', {
+            html: 'Удалить',
+            css: {
+              fontSize: '12px'
+            }
+          });
+          remove.appendChild(minus);
+          remove.appendChild(removeText);
+          self.listProfiles.appendChild(remove);
         }
+        self.selectedProfile = self.options.profile;
         update()
         elem.appendChild(this.listProfiles);
-
-        const addProfileBtn = createElement('button', {
-          text: '+',
-          css: {
-            width: '20px',
-            height: '20px',
-            borderRadius: '5px 0 0 5px',
-            fontFamily: 'monospace',
-            padding: '0'
-          }
-        });
-        addProfileBtn.onclick = () => this.addProfile();
-        elem.appendChild(addProfileBtn);
-        const removeProfileBtn = createElement('button', {
-          text: '-',
-          css: {
-            width: '20px',
-            height: '20px',
-            borderRadius: '0 5px 5px 0',
-            fontFamily: 'monospace',
-            padding: '0'
-          }
-        });
-        removeProfileBtn.onclick = async () => {
-          const p = this.profiles.findIndex(e => e.name == this.listProfiles.value || this.listProfiles.value == `Новый аккаунт (${e.email})`);
-          if(p != -1) {
-            this.win.lock();
-            const profile = this.profiles[p];
-            this.profiles.splice(p, 1);
-            await this.writeData();
-            this.statusText.innerHTML = `Профиль ${profile.name} удален`;
-            this.win.unlock();
-            update();
-          } else {
-            alert('Выбран никакой профиль');
-          }
-        }
-        elem.appendChild(removeProfileBtn);
-        elem.appendChild(selectedProfile);
       }), true);
       addTab('Версии', createElement('div', {}, elem => {
         this.listVersions = document.createElement(`select`);
@@ -332,10 +426,14 @@ export default class Launcher {
     this.playBtn = document.createElement('button');
     this.playBtn.innerHTML = `Играть`;
     this.playBtn.style.margin = '1px';
+    this.playBtn.style.width = '100%';
+    this.playBtn.style.padding = '10px';
+    this.playBtn.style.background = '#b3f8b3'
     this.playBtn.onclick = async() => {
       const v = this.versions.find(e => e.name == this.listVersions.value);
-      const p = this.profiles.find(e => e.name == this.listProfiles.value || this.listProfiles.value == `Новый аккаунт (${e.email})`);
+      const p = this.profiles.find(e => e.name == this.selectedProfile);
       if(v) {
+        console.log(p);
         this.runGame(v, p);
       } else {
         alert(`Не найдена версия\n\nОбратитесь в техподдержку`);
@@ -973,5 +1071,8 @@ export default class Launcher {
     this.openedWindows.push(win);
 
     this.win.unlock();
+    
+    await win.wait('close');
+    this.#initContent();
   }
 }

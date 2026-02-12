@@ -196,15 +196,17 @@ class App extends Events<AppEvents> {
   private tick(dt: number) {
     this.emit("tick", dt);
 
-    if(
-      this.width != this.element.clientWidth ||
-      this.height != this.element.clientHeight
-    ) {
-      const oldWidth = this.width;
-      const oldHeight = this.height;
-      this.width = this.element.clientWidth;
-      this.height = this.element.clientHeight;
-      this.emit("resize", { oldWidth, oldHeight });
+    if(this.element) {
+      if(
+        this.width != this.element.clientWidth ||
+        this.height != this.element.clientHeight
+      ) {
+        const oldWidth = this.width;
+        const oldHeight = this.height;
+        this.width = this.element.clientWidth;
+        this.height = this.element.clientHeight;
+        this.emit("resize", { oldWidth, oldHeight });
+      }
     }
 
     this.screen?.tick(dt);

@@ -263,7 +263,7 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     this.minHeight = options.minHeight ?? 100
     this.x = options.center ? (window.innerWidth / zoom - this.width) / 2 : options.x ?? 0
     this.y = options.center ? (window.innerHeight / zoom - this.height) / 2 : options.y ?? 0
-    this.titleBarHeight = options.titleBarHeight ?? 16
+    this.titleBarHeight = options.titleBarHeight ?? 20
     this.resizable = options.resizable ?? true
     this.moveable = options.moveable ?? true
     this.hasTitleBar = options.hasTitleBar ?? true
@@ -320,22 +320,24 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     this.titleBar.classList.add('titleBar');
     this.titleBar.style.display = this.hasTitleBar ? 'display' : 'none';
     this.titleBar.onmousedown = e => this.drag(e)
-    const closeBtn = document.createElement('div');
+    const btns = document.createElement('ul');
+    btns.classList.add('btns');
+    const closeBtn = document.createElement('li');
     closeBtn.classList.add('closeBtn');
-    closeBtn.style.display = !this.closeButton ? 'none' : 'block';
-    closeBtn.style.top = (((this.titleBarHeight-10)/2)-1)+'px'
+    closeBtn.style.display = !this.closeButton ? 'none' : 'flex';
+    // closeBtn.style.top = (((this.titleBarHeight-10)/2)-1)+'px'
     closeBtn.onclick = () => this.close();
-    const minBtn = document.createElement('div');
+    const minBtn = document.createElement('li');
     minBtn.classList.add('minBtn');
-    minBtn.style.display = !this.minButton ? 'none' : 'block';
-    minBtn.style.top = (((this.titleBarHeight-10)/2)-1)+'px'
+    minBtn.style.display = !this.minButton ? 'none' : 'flex';
+    // minBtn.style.top = (((this.titleBarHeight-10)/2)-1)+'px'
     minBtn.onclick = () => this.min();
-    const maxBtn = document.createElement('div');
+    const maxBtn = document.createElement('li');
     maxBtn.classList.add('maxBtn');
-    maxBtn.style.display = !this.maxButton ? 'none' : 'block';
-    maxBtn.style.top = (((this.titleBarHeight-10)/2)-1)+'px'
+    maxBtn.style.display = !this.maxButton ? 'none' : 'flex';
+    // maxBtn.style.top = (((this.titleBarHeight-10)/2)-1)+'px'
     maxBtn.onclick = () => this.max();
-    const title = document.createElement('div');
+    const title = document.createElement('p');
     title.classList.add('title');
     title.innerHTML = this.title;
     wrap(this, 'title', (v: string) => title.textContent = noXSS(v));
@@ -355,10 +357,10 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     }
 
     const edges = [
-        { dir: "e", style: { background: 'transparent', position: 'absolute', zIndex: '5', right: "0px", top: "0px", bottom: "0px", width: "2px", cursor: "ew-resize" } },
-        { dir: "w", style: { background: 'transparent', position: 'absolute', zIndex: '5', left: "0px", top: "0px", bottom: "0px", width: "2px", cursor: "ew-resize" } },
-        { dir: "n", style: { background: 'transparent', position: 'absolute', zIndex: '5', top: "0px", left: "0px", right: "0px", height: "2px", cursor: "ns-resize" } },
-        { dir: "s", style: { background: 'transparent', position: 'absolute', zIndex: '5', bottom: "0px", left: "0px", right: "0px", height: "2px", cursor: "ns-resize" } }
+      { dir: "e", style: { background: 'transparent', position: 'absolute', zIndex: '5', right: "0px", top: "0px", bottom: "0px", width: "2px", cursor: "ew-resize" } },
+      { dir: "w", style: { background: 'transparent', position: 'absolute', zIndex: '5', left: "0px", top: "0px", bottom: "0px", width: "2px", cursor: "ew-resize" } },
+      { dir: "n", style: { background: 'transparent', position: 'absolute', zIndex: '5', top: "0px", left: "0px", right: "0px", height: "2px", cursor: "ns-resize" } },
+      { dir: "s", style: { background: 'transparent', position: 'absolute', zIndex: '5', bottom: "0px", left: "0px", right: "0px", height: "2px", cursor: "ns-resize" } }
     ] as const;
     for(const edge of edges) {
       const handle = document.createElement('div');
@@ -372,6 +374,7 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     content.classList.add('content');
     content.tabIndex = 1;
     content.style.height = `calc(100% - ${this.titleBarHeight}px)`;
+    content.style.borderRadius = '0 0 7px 7px';
     content.onmousedown = e => this.activate.bind(this);
     this.content = document.createElement('div');
     this.content.style.display = 'block';
@@ -379,9 +382,10 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     this.content.style.zoom = this.zoom+'';
     content.appendChild(this.content);
 
-    this.titleBar.appendChild(closeBtn);
-    this.titleBar.appendChild(minBtn);
-    this.titleBar.appendChild(maxBtn);
+    btns.appendChild(closeBtn);
+    btns.appendChild(minBtn);
+    btns.appendChild(maxBtn);
+    this.titleBar.appendChild(btns);
     this.titleBar.appendChild(title);
     this.el.appendChild(this.titleBar);
     this.el.appendChild(content);

@@ -14,6 +14,12 @@
     "g": "bun build game/src/index.ts --bundle --minify --outfile=game/image/main.js",
     "l": "bun build launcher/src/index.ts --bundle --outfile=run/index.js",
     "s": "bun run g && bun run l && bun run build && bun ./server/index.ts",
-    "build": "bun build/generateImage"
+
+    "build": "bun build/generateImage",
+    "nbuild": "node build/generateImage",
+    "nbuildgame": "esbuild game/src/index.ts --bundle --minify --outfile=game/image/main.js && pnpm run nbuild",
+    "buildtest": "esbuild build/generateImage.ts --bundle --minify --platform=node --outfile=build/generateImage.js",
+    "dev": "pnpm run a && pnpm run nbuild && pnpm run b",
+    "devLauncher": "pnpm run b"
   }
 }

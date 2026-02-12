@@ -22,6 +22,8 @@ export default class Server extends Events<ServerEvents> {
 
   webSocket!: WebSocket
 
+  isReconnectingEnabled = true;
+
   auth = new Auth(this);
   config = {
     CONNECTION_CHECKER_PERIOD: 2000,
@@ -40,6 +42,7 @@ export default class Server extends Events<ServerEvents> {
     super();
 
     this.on('close', async() => {
+      if(!this.isReconnectingEnabled) return;
       this.logger.info(`Connection is closed.. Reconnecting in 1 second..`);
       await wait(50);
       this.connect();
@@ -83,7 +86,8 @@ export default class Server extends Events<ServerEvents> {
       this.call('message', json);
       if(App.settings.data.debug) {
         if(json[PacketDataKeys.TIMER] && Object.keys(json).length == 1) return;
-        this.logger.info(json, decodePacket(json));
+        // this.logger.info(json, decodePacket(json));
+        this.logger.info(json);
       }
     });
   }
