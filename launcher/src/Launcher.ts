@@ -9,7 +9,6 @@ import PacketDataKeys from '../../core/src/PacketDataKeys'
 import MD5 from '../../core/src/utils/md5'
 import { isMobile } from '../../core/src/utils/mobile';
 import App from './App';
-import { Alert } from './dialog/Alert';
 import { createElement } from '../../core/src/utils/DOM';
 
 function uuidv4() {
