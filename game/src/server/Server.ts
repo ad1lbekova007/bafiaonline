@@ -87,7 +87,8 @@ export default class Server extends Events<ServerEvents> {
       if(App.settings.data.debug) {
         if(json[PacketDataKeys.TIMER] && Object.keys(json).length == 1) return;
         // this.logger.info(json, decodePacket(json));
-        this.logger.info(json);
+        // this.logger.info(json);
+        console.log(json);
       }
     });
   }

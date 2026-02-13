@@ -250,11 +250,14 @@ export function getAllProps(obj: any) {
   return [...props];
 }
 export function noXSS(input: string): string {
-  return String(input)
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, "\"")
-    .replace(/&#39;/g, "'")
-    .replace(/&#x2F;/gi, "/");
+  // return String(input)
+  //   .replace(/&lt;/g, "<")
+  //   .replace(/&gt;/g, ">")
+  //   .replace(/&amp;/g, "&")
+  //   .replace(/&quot;/g, "\"")
+  //   .replace(/&#39;/g, "'")
+  //   .replace(/&#x2F;/gi, "/");
+  const div = document.createElement('div');
+  div.textContent = input;
+  return div.innerHTML;
 }

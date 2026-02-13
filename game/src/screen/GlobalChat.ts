@@ -138,16 +138,6 @@ export default class GlobalChat extends Screen {
         this.listPlayersFromInput.style.display = 'none';
       }
     }
-    // if(isMobile()){
-    //   this.input.onfocus = () => {
-    //     App.width = innerWidth;
-    //     App.height = innerHeight-1;
-    //   }
-    //   this.input.onblur = () => {
-    //     App.width = innerWidth;
-    //     App.height = innerHeight-2;
-    //   }
-    // }
 
     const emojiPanel = createElement('div', {
       css: {
@@ -164,8 +154,6 @@ export default class GlobalChat extends Screen {
       getTexture(`emoji/${e}.png`).then(e => img.src = e);
       img.onclick = () => {
         insertAtCaret(this.input, `:${e}:`);
-        // emojiPanel.style.display = 'none';
-        // this.messagesElem.style.height = (App.height - (isMobile() ? 270 : 250)) + 'px';
       }
     }
 

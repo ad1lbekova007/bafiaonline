@@ -36,6 +36,7 @@ export default class Room extends Screen {
   resizablePLElem!: HTMLDivElement
   messagesElem!: HTMLDivElement
   infoElem!: HTMLDivElement;
+  emojiPanel!: HTMLDivElement;
   input!: HTMLInputElement
 
   meElem?: HTMLElement
@@ -203,6 +204,7 @@ export default class Room extends Screen {
       App.screen = new Rooms();
       MessageBox('Комната переполнена');
       return;
+    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_CREATED) {
     } else if(rData[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_ENTER) {
       App.screen = new Rooms();
       MessageBox('Ошибка.. ' + JSON.stringify(rData));
@@ -296,7 +298,7 @@ export default class Room extends Screen {
         this.players.push(data[PacketDataKeys.PLAYER]);
         this.updatePlayersWaiting(this.players);
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.REMOVE_PLAYER && !this.isGame){
-        this.players.splice(this.players.findIndex(e => e[PacketDataKeys.USER][PacketDataKeys.USER_OBJECT_ID] == data[PacketDataKeys.USER_OBJECT_ID]), 1);
+        this.players = this.players.filter(e => e[PacketDataKeys.USER][PacketDataKeys.OBJECT_ID] !== data[PacketDataKeys.USER_OBJECT_ID]);
         this.updatePlayersWaiting(this.players);
       } else if(typeof data[PacketDataKeys.TIMER] == 'number' && typeof data[PacketDataKeys.TYPE] == 'undefined' && !this.isGame){
         this.infoElem.textContent = noXSS(`Игра начнётся через ${data[PacketDataKeys.TIMER]}`);
@@ -549,18 +551,8 @@ export default class Room extends Screen {
         this.sendMessage(msg);
       }
     });
-    // if(isMobile()){
-    //   this.input.addEventListener('focus', () => {
-    //     App.width = innerWidth;
-    //     App.height = innerHeight-1;
-    //   });
-    //   this.input.addEventListener('blur', () => {
-    //     App.width = innerWidth;
-    //     App.height = innerHeight-2;
-    //   });
-    // }
     
-    const emojiPanel = createElement('div', {
+    this.emojiPanel = createElement('div', {
       css: {
         display: 'none'
       },
@@ -570,13 +562,11 @@ export default class Room extends Screen {
       const img = createElement('img', {
         width: 50, height: 50,
         css: {},
-        appendTo: emojiPanel
+        appendTo: this.emojiPanel
       });
       getTexture(`emoji/${e}.png`).then(e => img.src = e);
       img.onclick = () => {
         insertAtCaret(this.input, `:${e}:`);
-        // emojiPanel.style.display = 'none';
-        // this.messagesElem.style.height = (App.height - (isMobile() ? 270 : 250)) + 'px';
       }
     }
 
@@ -587,19 +577,15 @@ export default class Room extends Screen {
     });
     getTexture('emoji/sm1.png').then(e => emojiBtn.src = e);
     emojiBtn.onclick = () => {
-      emojiPanel.style.display = emojiPanel.style.display == 'none' ? 'block' : 'none';
-      if(emojiPanel.style.display == 'block') {
-        this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265)-60) + 'px';
-      } else {
-        this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265)) + 'px';
-      }
+      this.emojiPanel.style.display = this.emojiPanel.style.display == 'none' ? 'block' : 'none';
+      this.#changeHeightMessagesElem();
     }
 
     this.on('keydown', e => e.key == 'Enter' && this.input.focus());
     footer2.appendChild(this.input);
 
     this.on('resize', () => {
-      this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265)) + 'px';
+      this.#changeHeightMessagesElem();
     }).key('waiting');
 
     this.isInitialized = true
@@ -608,6 +594,17 @@ export default class Room extends Screen {
     if(this.isGame) this.initGame();
 
     this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+  }
+  
+  #changeHeightMessagesElem(){
+    const ch = this.emojiPanel.style.display == 'block' ? 60 : 0;
+    if(this.isGame) {
+      this.messagesElem.style.height = (App.height - (isMobile() ? 235 : 215) - ch) + 'px';
+      this.playersListElem.style.height = (App.height - (isMobile() ? 100 : 80) - ch) + 'px';
+      this.resizablePLElem.style.height = (App.height - (isMobile() ? 100 : 80) - ch) + 'px';
+    } else {
+      this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265) - ch) + 'px';
+    }
   }
 
   async initGame(){
@@ -635,9 +632,7 @@ export default class Room extends Screen {
     this.changeDayTime();
 
     this.on('resize', () => {
-      this.playersListElem.style.height = (App.height - (isMobile() ? 100 : 80)) + 'px';
-      this.resizablePLElem.style.height = (App.height - (isMobile() ? 100 : 80)) + 'px';
-      this.messagesElem.style.height = (App.height - (isMobile() ? 235 : 215)) + 'px';
+      this.#changeHeightMessagesElem();
     });
 
     const yourRoleMsg = `Вы<br/>${RuRoles[this.playersData[App.user.objectId].role! - 1]}`;

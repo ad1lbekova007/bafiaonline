@@ -1861,7 +1861,9 @@
     });
   }
   function noXSS(input) {
-    return String(input).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x2F;/gi, "/");
+    const div = document.createElement("div");
+    div.textContent = input;
+    return div.innerHTML;
   }
 
   // game/src/screen/Screen.ts
@@ -2893,6 +2895,7 @@
     resizablePLElem;
     messagesElem;
     infoElem;
+    emojiPanel;
     input;
     meElem;
     yourRoleElem;
@@ -2975,6 +2978,7 @@
         App_default2.screen = new Rooms();
         MessageBox_default("\u041A\u043E\u043C\u043D\u0430\u0442\u0430 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u043D\u0435\u043D\u0430");
         return;
+      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_CREATED) {
       } else if (rData[PacketDataKeys_default.TYPE] != PacketDataKeys_default.ROOM_ENTER) {
         App_default2.screen = new Rooms();
         MessageBox_default("\u041E\u0448\u0438\u0431\u043A\u0430.. " + JSON.stringify(rData));
@@ -3061,7 +3065,7 @@
           this.players.push(data[PacketDataKeys_default.PLAYER]);
           this.updatePlayersWaiting(this.players);
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.REMOVE_PLAYER && !this.isGame) {
-          this.players.splice(this.players.findIndex((e) => e[PacketDataKeys_default.USER][PacketDataKeys_default.USER_OBJECT_ID] == data[PacketDataKeys_default.USER_OBJECT_ID]), 1);
+          this.players = this.players.filter((e) => e[PacketDataKeys_default.USER][PacketDataKeys_default.OBJECT_ID] !== data[PacketDataKeys_default.USER_OBJECT_ID]);
           this.updatePlayersWaiting(this.players);
         } else if (typeof data[PacketDataKeys_default.TIMER] == "number" && typeof data[PacketDataKeys_default.TYPE] == "undefined" && !this.isGame) {
           this.infoElem.textContent = noXSS(`\u0418\u0433\u0440\u0430 \u043D\u0430\u0447\u043D\u0451\u0442\u0441\u044F \u0447\u0435\u0440\u0435\u0437 ${data[PacketDataKeys_default.TIMER]}`);
@@ -3290,7 +3294,7 @@
           this.sendMessage(msg);
         }
       });
-      const emojiPanel = createElement("div", {
+      this.emojiPanel = createElement("div", {
         css: {
           display: "none"
         },
@@ -3301,7 +3305,7 @@
           width: 50,
           height: 50,
           css: {},
-          appendTo: emojiPanel
+          appendTo: this.emojiPanel
         });
         getTexture(`emoji/${e}.png`).then((e2) => img.src = e2);
         img.onclick = () => {
@@ -3316,22 +3320,28 @@
       });
       getTexture("emoji/sm1.png").then((e) => emojiBtn.src = e);
       emojiBtn.onclick = () => {
-        emojiPanel.style.display = emojiPanel.style.display == "none" ? "block" : "none";
-        if (emojiPanel.style.display == "block") {
-          this.messagesElem.style.height = App_default2.height - (isMobile() ? 285 : 265) - 60 + "px";
-        } else {
-          this.messagesElem.style.height = App_default2.height - (isMobile() ? 285 : 265) + "px";
-        }
+        this.emojiPanel.style.display = this.emojiPanel.style.display == "none" ? "block" : "none";
+        this.#changeHeightMessagesElem();
       };
       this.on("keydown", (e) => e.key == "Enter" && this.input.focus());
       footer2.appendChild(this.input);
       this.on("resize", () => {
-        this.messagesElem.style.height = App_default2.height - (isMobile() ? 285 : 265) + "px";
+        this.#changeHeightMessagesElem();
       }).key("waiting");
       this.isInitialized = true;
       this.preInitCallback();
       if (this.isGame) this.initGame();
       this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+    }
+    #changeHeightMessagesElem() {
+      const ch = this.emojiPanel.style.display == "block" ? 60 : 0;
+      if (this.isGame) {
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 235 : 215) - ch + "px";
+        this.playersListElem.style.height = App_default2.height - (isMobile() ? 100 : 80) - ch + "px";
+        this.resizablePLElem.style.height = App_default2.height - (isMobile() ? 100 : 80) - ch + "px";
+      } else {
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 285 : 265) - ch + "px";
+      }
     }
     async initGame() {
       this.element.removeChild(this.infoElem);
@@ -3353,9 +3363,7 @@
       this.messagesElem.style.height = App_default2.height - (isMobile() ? 235 : 215) + "px";
       this.changeDayTime();
       this.on("resize", () => {
-        this.playersListElem.style.height = App_default2.height - (isMobile() ? 100 : 80) + "px";
-        this.resizablePLElem.style.height = App_default2.height - (isMobile() ? 100 : 80) + "px";
-        this.messagesElem.style.height = App_default2.height - (isMobile() ? 235 : 215) + "px";
+        this.#changeHeightMessagesElem();
       });
       const yourRoleMsg = `\u0412\u044B<br/>${RuRoles[this.playersData[App_default2.user.objectId].role - 1]}`;
       let timer, mafia, mir, giveUpButton;
@@ -4870,6 +4878,7 @@
       this.list.innerHTML = "";
       let inputSearch;
       if (this.isSearch) {
+        console.log(data);
         inputSearch = createElement("input", {
           value: this.searchValue,
           css: {
@@ -4888,12 +4897,14 @@
       }
       for (const f of data) {
         const isFriend = !!f[PacketDataKeys_default.FRIEND];
-        const user = isFriend ? f[PacketDataKeys_default.FRIEND] : f[PacketDataKeys_default.USER];
         const objectId = f[PacketDataKeys_default.OBJECT_ID];
-        const userObjectId = user && user[PacketDataKeys_default.OBJECT_ID];
-        const username = user ? user[PacketDataKeys_default.USERNAME] : f[PacketDataKeys_default.USERNAME];
+        const user = isFriend ? f[PacketDataKeys_default.FRIEND] : this.isSearch ? {
+          photo: f[PacketDataKeys_default.PHOTO],
+          objectId
+        } : f[PacketDataKeys_default.USER];
+        const userObjectId = !this.isSearch ? user[PacketDataKeys_default.OBJECT_ID] : objectId;
+        const username = !this.isSearch ? user[PacketDataKeys_default.USERNAME] : f[PacketDataKeys_default.USERNAME];
         const newMessages = Number(f[PacketDataKeys_default.NEW_MESSAGES]);
-        const isSearchUser = !user;
         let isClicked = false;
         const e = document.createElement("div");
         e.style.background = "rgba(200,200,200,.4)";
@@ -4903,7 +4914,7 @@
         e.style.display = "flex";
         e.onclick = () => {
           wait(5).then(() => {
-            if (isSearchUser) {
+            if (this.isSearch) {
               ProfileInfo(userObjectId);
               return;
             }
@@ -4977,7 +4988,7 @@
           }
           btns.appendChild(div1);
         }
-        if (!isSearchUser) {
+        if (!this.isSearch) {
           const btnRemoveFriend = createElement("button", {
             className: "gray",
             text: "X",
@@ -8139,7 +8150,7 @@
         this.call("message", json);
         if (App_default2.settings.data.debug) {
           if (json[PacketDataKeys_default.TIMER] && Object.keys(json).length == 1) return;
-          this.logger.info(json);
+          console.log(json);
         }
       });
     }

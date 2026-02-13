@@ -144,6 +144,7 @@ export default class Friends extends Screen {
 
     let inputSearch!: HTMLInputElement;
     if(this.isSearch){
+      console.log(data);
       inputSearch = createElement('input', {
         value: this.searchValue,
         css: {
@@ -164,12 +165,14 @@ export default class Friends extends Screen {
 
     for(const f of data){
       const isFriend = !!f[PacketDataKeys.FRIEND];
-      const user = isFriend ? f[PacketDataKeys.FRIEND] : f[PacketDataKeys.USER];
       const objectId = f[PacketDataKeys.OBJECT_ID];
-      const userObjectId = user && user[PacketDataKeys.OBJECT_ID];
-      const username = user ? user[PacketDataKeys.USERNAME] : f[PacketDataKeys.USERNAME];
+      const user = isFriend ? f[PacketDataKeys.FRIEND] : this.isSearch ? {
+        photo: f[PacketDataKeys.PHOTO],
+        objectId
+      } : f[PacketDataKeys.USER];
+      const userObjectId = !this.isSearch ? user[PacketDataKeys.OBJECT_ID] : objectId;
+      const username = !this.isSearch ? user[PacketDataKeys.USERNAME] : f[PacketDataKeys.USERNAME];
       const newMessages = Number(f[PacketDataKeys.NEW_MESSAGES]);
-      const isSearchUser = !user;
       let isClicked = false;
 
       const e = document.createElement('div');
@@ -180,7 +183,7 @@ export default class Friends extends Screen {
       e.style.display = 'flex';
       e.onclick = () => {
         wait(5).then(() => {
-          if(isSearchUser) {
+          if(this.isSearch) {
             ProfileInfo(userObjectId);
             return;
           }
@@ -263,7 +266,7 @@ export default class Friends extends Screen {
         btns.appendChild(div1);
       }
 
-      if(!isSearchUser){
+      if(!this.isSearch){
         const btnRemoveFriend = createElement('button', {
           className: 'gray',
           text: 'X',
