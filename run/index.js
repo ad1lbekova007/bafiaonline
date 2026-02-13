@@ -1711,8 +1711,8 @@
 
   // core/version.json
   var version_default = {
-    launcher: "Beta 1.0",
-    vanilla: "Beta 1.0"
+    launcher: "Beta 1.0.1",
+    vanilla: "Beta 1.0.1"
   };
 
   // launcher/src/App.ts
