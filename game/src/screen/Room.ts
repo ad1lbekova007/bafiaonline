@@ -248,30 +248,38 @@ export default class Room extends Screen {
         self.status = rs[PacketDataKeys.GAME_STATUS][PacketDataKeys.STATUS];
         self.gameDayTime = rs[PacketDataKeys.GAME_STATUS][PacketDataKeys.DAYTIME];
         self.timer = rs[PacketDataKeys.GAME_STATUS][PacketDataKeys.TIMER];
-        if(rs[PacketDataKeys.PLAYERS_DATA]) {
-          let i = 0;
-          for(const pl of rs[PacketDataKeys.PLAYERS_DATA]){
-            self.playersData[pl[PacketDataKeys.USER_OBJECT_ID]] = {
-              index: i,
-              alive: pl[PacketDataKeys.ALIVE] ?? true,
-              affectedByRoles: pl[PacketDataKeys.AFFECTED_BY_ROLES] ?? [],
-              isDayActionUsed: pl[PacketDataKeys.IS_DAY_ACTION_USED],
-              isNightActionAlternative: pl[PacketDataKeys.IS_NIGHT_ACTION_ALTERNATIVE],
-              isNightActionUsed: pl[PacketDataKeys.IS_NIGHT_ACTION_USED],
-              userObjectId: pl[PacketDataKeys.USER_OBJECT_ID],
-              role: pl[PacketDataKeys.ROLE],
-              vote: pl[PacketDataKeys.VOTE] ?? 0
-            }
-            i++;
-          }
-        }
+        console.log('запуск игры', rs);
         if(rs[PacketDataKeys.PLAYERS]) {
+          let i = 0;
           for(const pl of rs[PacketDataKeys.PLAYERS]){
             const u = pl[PacketDataKeys.USER];
             const uo = u[PacketDataKeys.OBJECT_ID];
             const username = u[PacketDataKeys.USERNAME];
             if(!self.playersData[uo]) self.playersData[uo] = {};
+            self.playersData[uo].index = i;
             self.playersData[uo].username = username;
+            i++;
+          }
+        }
+        if(rs[PacketDataKeys.PLAYERS_DATA]) {
+          let i = 0;
+          for(const pl of rs[PacketDataKeys.PLAYERS_DATA]){
+            const uo = pl[PacketDataKeys.USER_OBJECT_ID];
+            const index = self.playersData[uo] ? self.playersData[uo].index : i;
+            const username = self.playersData[uo] ? self.playersData[uo].username : 'no nickname';
+            self.playersData[uo] = {
+              index,
+              username,
+              alive: pl[PacketDataKeys.ALIVE] ?? true,
+              affectedByRoles: pl[PacketDataKeys.AFFECTED_BY_ROLES] ?? [],
+              isDayActionUsed: pl[PacketDataKeys.IS_DAY_ACTION_USED],
+              isNightActionAlternative: pl[PacketDataKeys.IS_NIGHT_ACTION_ALTERNATIVE],
+              isNightActionUsed: pl[PacketDataKeys.IS_NIGHT_ACTION_USED],
+              userObjectId: uo,
+              role: pl[PacketDataKeys.ROLE],
+              vote: pl[PacketDataKeys.VOTE] ?? 0
+            }
+            i++;
           }
         }
       } else {
@@ -1142,7 +1150,7 @@ export default class Room extends Screen {
         btnNo.onclick = () => {
           App.server.send(PacketDataKeys.KICK_USER_VOTE, {
             [PacketDataKeys.ROOM_OBJECT_ID]: this.roomObjectId,
-            [PacketDataKeys.VOTE]: true
+            [PacketDataKeys.VOTE]: false
           });
           btnYes.disabled = true;
           btnNo.disabled = true;

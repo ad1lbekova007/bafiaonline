@@ -246,7 +246,11 @@ export default class Rooms extends Screen {
   }
 
   static orderRoles = [2, 7, 10, 11, 9, 5, 6, 8];
-  static getRoomElement(room: any) {
+  static getRoomElement(room: any): {
+    elem: HTMLDivElement
+    onJoin: (callback: Function) => void
+    onViewRoomPlayers: (callback: Function) => void
+  } {
     const isHistory = typeof room.isHistory == 'boolean' && room.isHistory;
     const isProfileInfo = typeof room[PacketDataKeys.SAME_ROOM] == 'boolean';
     const objectId = room[PacketDataKeys.OBJECT_ID];
@@ -258,14 +262,18 @@ export default class Rooms extends Screen {
     const friends = room[PacketDataKeys.FRIEND_IN_ROOM];
 
     let clickType = '';
+    let joinCallback: Function = () => {}
+    let viewRoomPlayersCallback: Function = () => {}
 
     async function join() {
       await new Promise(res => setTimeout(res, 0));
       if(clickType) {
+        viewRoomPlayersCallback();
         RoomPlayers(objectId);
         clickType = '';
         return;
       }
+      joinCallback();
       if(hasPassword){
         let password = await PromptBox(`Эта комната под замком\n\nПожалуйста введите пароль`, { btnText: `Применить`, placeholder: `Пароль`, title: 'ВВЕСТИ ПАРОЛЬ', height: 200 });
         if(password == '') return;
@@ -397,7 +405,12 @@ export default class Rooms extends Screen {
     createElement('span', { css: { marginLeft: '2px' }, text: typeof room[PacketDataKeys.MIN_PLAYERS] == 'number' ? `Игроки: ${room[PacketDataKeys.PLAYERS_NUM]} [${room[PacketDataKeys.MIN_PLAYERS]}/${room[PacketDataKeys.MAX_PLAYERS]}] ⭣` : `Игроки: [${room[PacketDataKeys.PLAYERS_NUM]}]`, appendTo: btnPlayers });
     btnPlayers.onclick = () => clickType = 'btnPlayers';
     div.appendChild(btnPlayers);
-    return div;
+
+    return {
+      elem: div,
+      onJoin: (c) => joinCallback = c,
+      onViewRoomPlayers: (c) => viewRoomPlayersCallback = c,
+    };
   }
 
   addRoom(room: any){
@@ -414,7 +427,7 @@ export default class Rooms extends Screen {
       return;
     }
     const roomElem = Rooms.getRoomElement(room);
-    this.div.appendChild(roomElem);
+    this.div.appendChild(roomElem.elem);
 
     // if(this.rooms[room[PacketDataKeys.OBJECT_ID]]) delete this.rooms[room[PacketDataKeys.OBJECT_ID]];
     // this.rooms[room[PacketDataKeys.OBJECT_ID]] = Object.assign({}, {
@@ -430,7 +443,7 @@ export default class Rooms extends Screen {
       },
       remove(){
         // if(self.rooms[this.room[PacketDataKeys.OBJECT_ID]].id != this.id) return;
-        self.div.removeChild(roomElem);
+        self.div.removeChild(roomElem.elem);
       }
     }));
     this.roomsId++;

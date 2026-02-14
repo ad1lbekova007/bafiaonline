@@ -3019,30 +3019,38 @@
           self2.status = rs[PacketDataKeys_default.GAME_STATUS][PacketDataKeys_default.STATUS];
           self2.gameDayTime = rs[PacketDataKeys_default.GAME_STATUS][PacketDataKeys_default.DAYTIME];
           self2.timer = rs[PacketDataKeys_default.GAME_STATUS][PacketDataKeys_default.TIMER];
-          if (rs[PacketDataKeys_default.PLAYERS_DATA]) {
-            let i = 0;
-            for (const pl of rs[PacketDataKeys_default.PLAYERS_DATA]) {
-              self2.playersData[pl[PacketDataKeys_default.USER_OBJECT_ID]] = {
-                index: i,
-                alive: pl[PacketDataKeys_default.ALIVE] ?? true,
-                affectedByRoles: pl[PacketDataKeys_default.AFFECTED_BY_ROLES] ?? [],
-                isDayActionUsed: pl[PacketDataKeys_default.IS_DAY_ACTION_USED],
-                isNightActionAlternative: pl[PacketDataKeys_default.IS_NIGHT_ACTION_ALTERNATIVE],
-                isNightActionUsed: pl[PacketDataKeys_default.IS_NIGHT_ACTION_USED],
-                userObjectId: pl[PacketDataKeys_default.USER_OBJECT_ID],
-                role: pl[PacketDataKeys_default.ROLE],
-                vote: pl[PacketDataKeys_default.VOTE] ?? 0
-              };
-              i++;
-            }
-          }
+          console.log("\u0437\u0430\u043F\u0443\u0441\u043A \u0438\u0433\u0440\u044B", rs);
           if (rs[PacketDataKeys_default.PLAYERS]) {
+            let i = 0;
             for (const pl of rs[PacketDataKeys_default.PLAYERS]) {
               const u = pl[PacketDataKeys_default.USER];
               const uo = u[PacketDataKeys_default.OBJECT_ID];
               const username = u[PacketDataKeys_default.USERNAME];
               if (!self2.playersData[uo]) self2.playersData[uo] = {};
+              self2.playersData[uo].index = i;
               self2.playersData[uo].username = username;
+              i++;
+            }
+          }
+          if (rs[PacketDataKeys_default.PLAYERS_DATA]) {
+            let i = 0;
+            for (const pl of rs[PacketDataKeys_default.PLAYERS_DATA]) {
+              const uo = pl[PacketDataKeys_default.USER_OBJECT_ID];
+              const index = self2.playersData[uo] ? self2.playersData[uo].index : i;
+              const username = self2.playersData[uo] ? self2.playersData[uo].username : "no nickname";
+              self2.playersData[uo] = {
+                index,
+                username,
+                alive: pl[PacketDataKeys_default.ALIVE] ?? true,
+                affectedByRoles: pl[PacketDataKeys_default.AFFECTED_BY_ROLES] ?? [],
+                isDayActionUsed: pl[PacketDataKeys_default.IS_DAY_ACTION_USED],
+                isNightActionAlternative: pl[PacketDataKeys_default.IS_NIGHT_ACTION_ALTERNATIVE],
+                isNightActionUsed: pl[PacketDataKeys_default.IS_NIGHT_ACTION_USED],
+                userObjectId: uo,
+                role: pl[PacketDataKeys_default.ROLE],
+                vote: pl[PacketDataKeys_default.VOTE] ?? 0
+              };
+              i++;
             }
           }
         } else {
@@ -3889,7 +3897,7 @@
           btnNo.onclick = () => {
             App_default2.server.send(PacketDataKeys_default.KICK_USER_VOTE, {
               [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId,
-              [PacketDataKeys_default.VOTE]: true
+              [PacketDataKeys_default.VOTE]: false
             });
             btnYes.disabled = true;
             btnNo.disabled = true;
@@ -4593,13 +4601,19 @@
       const hasPassword = room[PacketDataKeys_default.PASSWORD];
       const friends = room[PacketDataKeys_default.FRIEND_IN_ROOM];
       let clickType = "";
+      let joinCallback = () => {
+      };
+      let viewRoomPlayersCallback = () => {
+      };
       async function join() {
         await new Promise((res) => setTimeout(res, 0));
         if (clickType) {
+          viewRoomPlayersCallback();
           RoomPlayers_default(objectId);
           clickType = "";
           return;
         }
+        joinCallback();
         if (hasPassword) {
           let password = await PromptBox_default(`\u042D\u0442\u0430 \u043A\u043E\u043C\u043D\u0430\u0442\u0430 \u043F\u043E\u0434 \u0437\u0430\u043C\u043A\u043E\u043C
 
@@ -4723,7 +4737,11 @@
       createElement("span", { css: { marginLeft: "2px" }, text: typeof room[PacketDataKeys_default.MIN_PLAYERS] == "number" ? `\u0418\u0433\u0440\u043E\u043A\u0438: ${room[PacketDataKeys_default.PLAYERS_NUM]} [${room[PacketDataKeys_default.MIN_PLAYERS]}/${room[PacketDataKeys_default.MAX_PLAYERS]}] \u2B63` : `\u0418\u0433\u0440\u043E\u043A\u0438: [${room[PacketDataKeys_default.PLAYERS_NUM]}]`, appendTo: btnPlayers });
       btnPlayers.onclick = () => clickType = "btnPlayers";
       div.appendChild(btnPlayers);
-      return div;
+      return {
+        elem: div,
+        onJoin: (c) => joinCallback = c,
+        onViewRoomPlayers: (c) => viewRoomPlayersCallback = c
+      };
     }
     addRoom(room) {
       const self2 = this;
@@ -4741,7 +4759,7 @@
         return;
       }
       const roomElem = _Rooms.getRoomElement(room);
-      this.div.appendChild(roomElem);
+      this.div.appendChild(roomElem.elem);
       if (this.getRoomByObjectId(objectId)) this.rooms.splice(this.getRoomIdByObjectId(objectId), 1);
       this.rooms.push(Object.assign({}, {
         room,
@@ -4752,7 +4770,7 @@
           const max = room[PacketDataKeys_default.MAX_PLAYERS];
         },
         remove() {
-          self2.div.removeChild(roomElem);
+          self2.div.removeChild(roomElem.elem);
         }
       }));
       this.roomsId++;
@@ -5445,9 +5463,9 @@
         });
       addH(`\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u0435\u0442 \u0432 \u043A\u043E\u043C\u043D\u0430\u0442\u0435`);
       const roomElem = Rooms.getRoomElement(room);
-      roomElem.addEventListener("click", () => box.close());
-      roomElem.style.width = "90%";
-      div.appendChild(roomElem);
+      roomElem.onJoin(() => box.close());
+      roomElem.elem.style.width = "90%";
+      div.appendChild(roomElem.elem);
     }
     if (!isMe) addButton("\u041F\u043E\u0434\u0430\u0442\u044C \u0436\u0430\u043B\u043E\u0431\u0443");
     addH(`\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430`);

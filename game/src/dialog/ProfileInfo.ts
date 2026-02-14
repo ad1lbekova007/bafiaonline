@@ -251,9 +251,9 @@ export default async function ProfileInfo(userObjectId: string){
       });
     addH(`Сейчас играет в комнате`);
     const roomElem = Rooms.getRoomElement(room);
-    roomElem.addEventListener('click', () => box.close());
-    roomElem.style.width = '90%';
-    div.appendChild(roomElem);
+    roomElem.onJoin(() => box.close());
+    roomElem.elem.style.width = '90%';
+    div.appendChild(roomElem.elem);
   }
   if(!isMe) addButton('Подать жалобу');
 
