@@ -52,7 +52,7 @@ export default class Server extends Events<ServerEvents> {
   }
 
   connect() {
-    if(this.webSocket && (this.webSocket.readyState == WebSocket.OPEN || this.webSocket.readyState == WebSocket.CONNECTING)) return;
+    // if(this.webSocket && (this.webSocket.readyState == WebSocket.OPEN || this.webSocket.readyState == WebSocket.CONNECTING)) return;
     this.logger.info(`Connecting to server.. ${App.config.uriServer}`);
     this.webSocket = new WebSocket(App.config.uriServer);
     this.webSocket.addEventListener('open', this.#init.bind(this));

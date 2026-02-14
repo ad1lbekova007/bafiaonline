@@ -1711,8 +1711,8 @@
 
   // core/version.json
   var version_default = {
-    launcher: "Beta 1.0.1",
-    vanilla: "Beta 1.0.1"
+    launcher: "Beta 1.0.2",
+    vanilla: "Beta 1.0.2"
   };
 
   // launcher/src/App.ts
@@ -1790,6 +1790,9 @@
 
   // core/src/utils/utils.ts
   var global2 = window;
+  function isMacOS() {
+    return /Macintosh/i.test(navigator.userAgent);
+  }
   function getZoom() {
     const style = global2.getComputedStyle(document.body);
     const transform = style.transform;
@@ -2823,7 +2826,7 @@
           [PacketDataKeys_default.ROOM_STATUS]: 2,
           [PacketDataKeys_default.SELECTED_ROLES]: room.selectedRoles
         });
-        div.appendChild(elem);
+        div.appendChild(elem.elem);
       }
     }
   };
@@ -3261,7 +3264,7 @@
       this.element.appendChild(this.gameInfoElem);
       this.messagesElem = createElement("div", {
         css: {
-          height: App_default2.height - (isMobile() ? 285 : 265) + "px",
+          height: App_default2.height - (isMobile() ? 295 : 275) + "px",
           textAlign: "center",
           overflowX: "hidden",
           overflowY: "overlay",
@@ -3344,11 +3347,11 @@
     #changeHeightMessagesElem() {
       const ch = this.emojiPanel.style.display == "block" ? 60 : 0;
       if (this.isGame) {
-        this.messagesElem.style.height = App_default2.height - (isMobile() ? 235 : 215) - ch + "px";
-        this.playersListElem.style.height = App_default2.height - (isMobile() ? 100 : 80) - ch + "px";
-        this.resizablePLElem.style.height = App_default2.height - (isMobile() ? 100 : 80) - ch + "px";
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 245 : 225) - ch + "px";
+        this.playersListElem.style.height = App_default2.height - (isMobile() ? 110 : 90) - ch + "px";
+        this.resizablePLElem.style.height = App_default2.height - (isMobile() ? 110 : 90) - ch + "px";
       } else {
-        this.messagesElem.style.height = App_default2.height - (isMobile() ? 285 : 265) - ch + "px";
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 295 : 275) - ch + "px";
       }
     }
     async initGame() {
@@ -3367,8 +3370,7 @@
       this.gamePlayersListElem.innerHTML = "";
       if (!isMobile()) this.rangeZoomElem.style.display = "block";
       this.resizablePLElem.style.display = "block";
-      this.resizablePLElem.style.height = App_default2.height - (isMobile() ? 100 : 80) + "px";
-      this.messagesElem.style.height = App_default2.height - (isMobile() ? 235 : 215) + "px";
+      this.#changeHeightMessagesElem();
       this.changeDayTime();
       this.on("resize", () => {
         this.#changeHeightMessagesElem();
@@ -8142,7 +8144,6 @@
       this.connect();
     }
     connect() {
-      if (this.webSocket && (this.webSocket.readyState == WebSocket.OPEN || this.webSocket.readyState == WebSocket.CONNECTING)) return;
       this.logger.info(`Connecting to server.. ${App_default2.config.uriServer}`);
       this.webSocket = new WebSocket(App_default2.config.uriServer);
       this.webSocket.addEventListener("open", this.#init.bind(this));
@@ -8462,7 +8463,7 @@ ${format_default(tsr, "genitive")}`, { height: 200 });
       window.addEventListener("popstate", this.#windowEvents.popState, true);
       window.addEventListener("focusout", this.#windowEvents.focusOut, true);
       this.on("wheel", (e) => {
-        if (e.ctrlKey) {
+        if (isMacOS() ? e.metaKey : e.ctrlKey) {
           let zoom = parseFloat(this.element.style.zoom), oldZoom = zoom;
           if (e.deltaY < 0) {
             if (zoom > 2.5) return;
@@ -8479,7 +8480,7 @@ ${format_default(tsr, "genitive")}`, { height: 200 });
         }
       });
       this.on("keydown", (e) => {
-        if (e.ctrlKey) {
+        if (isMacOS() ? e.metaKey : e.ctrlKey) {
           let zoom = parseFloat(this.element.style.zoom), oldZoom = zoom;
           if (e.key == "=" || e.key == "+") {
             e.preventDefault();

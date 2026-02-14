@@ -515,7 +515,7 @@ export default class Room extends Screen {
 
     this.messagesElem = createElement('div', {
       css: {
-        height: (App.height - (isMobile() ? 285 : 265)) + 'px',
+        height: (App.height - (isMobile() ? 295 : 275)) + 'px',
         textAlign: 'center',
         overflowX: 'hidden',
         overflowY: 'overlay',
@@ -607,11 +607,11 @@ export default class Room extends Screen {
   #changeHeightMessagesElem(){
     const ch = this.emojiPanel.style.display == 'block' ? 60 : 0;
     if(this.isGame) {
-      this.messagesElem.style.height = (App.height - (isMobile() ? 235 : 215) - ch) + 'px';
-      this.playersListElem.style.height = (App.height - (isMobile() ? 100 : 80) - ch) + 'px';
-      this.resizablePLElem.style.height = (App.height - (isMobile() ? 100 : 80) - ch) + 'px';
+      this.messagesElem.style.height = (App.height - (isMobile() ? 245 : 225) - ch) + 'px';
+      this.playersListElem.style.height = (App.height - (isMobile() ? 110 : 90) - ch) + 'px';
+      this.resizablePLElem.style.height = (App.height - (isMobile() ? 110 : 90) - ch) + 'px';
     } else {
-      this.messagesElem.style.height = (App.height - (isMobile() ? 285 : 265) - ch) + 'px';
+      this.messagesElem.style.height = (App.height - (isMobile() ? 295 : 275) - ch) + 'px';
     }
   }
 
@@ -634,8 +634,7 @@ export default class Room extends Screen {
 
     if(!isMobile()) this.rangeZoomElem.style.display = 'block';
     this.resizablePLElem.style.display = 'block';
-    this.resizablePLElem.style.height = (App.height - (isMobile() ? 100 : 80)) + 'px';
-    this.messagesElem.style.height = (App.height - (isMobile() ? 235 : 215)) + 'px';
+    this.#changeHeightMessagesElem();
 
     this.changeDayTime();
 

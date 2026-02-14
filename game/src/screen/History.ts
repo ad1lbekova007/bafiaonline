@@ -64,7 +64,7 @@ export class History extends Screen {
         [PacketDataKeys.SELECTED_ROLES]: room.selectedRoles,
       });
 
-      div.appendChild(elem);
+      div.appendChild(elem.elem);
     }
   }
 }

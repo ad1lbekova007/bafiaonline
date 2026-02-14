@@ -1,5 +1,8 @@
 const global = window;
 
+export function isMacOS(): boolean {
+  return /Macintosh/i.test(navigator.userAgent);
+}
 export function getZoom(): number {
   const style = global.getComputedStyle(document.body);
   const transform = style.transform;

@@ -15,6 +15,7 @@ import IWindow from "../../core/src/IWindow";
 import versions from "../../core/version.json";
 import MessageBox from "./dialog/MessageBox";
 import { Logger } from "tslog";
+import { isMacOS } from "../../core/src/utils/utils";
 
 interface AppEvents {
   tick: (dt: number) => void;
@@ -144,7 +145,7 @@ class App extends Events<AppEvents> {
     window.addEventListener("focusout", this.#windowEvents.focusOut, true);
 
     this.on("wheel", (e) => {
-      if(e.ctrlKey) {
+      if(isMacOS() ? e.metaKey : e.ctrlKey) {
         let zoom = parseFloat(this.element.style.zoom),
           oldZoom = zoom;
         if(e.deltaY < 0) {
@@ -166,7 +167,7 @@ class App extends Events<AppEvents> {
       }
     });
     this.on("keydown", (e) => {
-      if(e.ctrlKey) {
+      if(isMacOS() ? e.metaKey : e.ctrlKey) {
         let zoom = parseFloat(this.element.style.zoom),
           oldZoom = zoom;
         if(e.key == "=" || e.key == "+") {
