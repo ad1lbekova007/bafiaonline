@@ -108,11 +108,11 @@ export default class Server extends Events<ServerEvents> {
         const reason = data[PacketDataKeys.REASON];
         const tsr = data[PacketDataKeys.TIME_SEC_REMAINING];
         App.screen = new Dashboard();
-        MessageBox(`Вы были заблокированы по причине [${reason}]\n\nОставшееся время блокировки:\n${format(tsr, 'genitive')}`, { height: 200 });
+        MessageBox(`Вы были заблокированы по причине [${reason}]\n\nОставшееся время блокировки:\n${format(tsr, 'genitive')}`, { height: 250 });
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_INACTIVE_BLOCKED){
         App.screen = new Dashboard();
         const tsr = data[PacketDataKeys.TIME_SEC_REMAINING];
-        MessageBox(`Вы были неактивны\n\nОставшееся время блокировки:\n${format(tsr, 'genitive')}`, { height: 200 });
+        MessageBox(`Вы были неактивны\n\nОставшееся время блокировки:\n${format(tsr, 'genitive')}`, { height: 250 });
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.SIGN_IN_ERROR){
         if(data[PacketDataKeys.ERROR] == -4){
           await MessageBox(`Сессия не валидна. Игра будет закрыта`);

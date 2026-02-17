@@ -8193,14 +8193,14 @@
           MessageBox_default(`\u0412\u044B \u0431\u044B\u043B\u0438 \u0437\u0430\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D\u044B \u043F\u043E \u043F\u0440\u0438\u0447\u0438\u043D\u0435 [${reason}]
 
 \u041E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u043A\u0438:
-${format_default(tsr, "genitive")}`, { height: 200 });
+${format_default(tsr, "genitive")}`, { height: 250 });
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_INACTIVE_BLOCKED) {
           App_default2.screen = new Dashboard();
           const tsr = data[PacketDataKeys_default.TIME_SEC_REMAINING];
           MessageBox_default(`\u0412\u044B \u0431\u044B\u043B\u0438 \u043D\u0435\u0430\u043A\u0442\u0438\u0432\u043D\u044B
 
 \u041E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u043A\u0438:
-${format_default(tsr, "genitive")}`, { height: 200 });
+${format_default(tsr, "genitive")}`, { height: 250 });
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.SIGN_IN_ERROR) {
           if (data[PacketDataKeys_default.ERROR] == -4) {
             await MessageBox_default(`\u0421\u0435\u0441\u0441\u0438\u044F \u043D\u0435 \u0432\u0430\u043B\u0438\u0434\u043D\u0430. \u0418\u0433\u0440\u0430 \u0431\u0443\u0434\u0435\u0442 \u0437\u0430\u043A\u0440\u044B\u0442\u0430`);
