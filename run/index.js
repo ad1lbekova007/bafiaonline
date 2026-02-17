@@ -3355,7 +3355,10 @@
       }
     }
     async initGame() {
-      this.element.removeChild(this.infoElem);
+      try {
+        this.element.removeChild(this.infoElem);
+      } catch {
+      }
       this.removeByKey("waiting");
       this.playersListElem.style.float = "right";
       this.playersListElem.style.flexFlow = "column wrap";
@@ -3378,6 +3381,7 @@
       const yourRoleMsg = `\u0412\u044B<br/>${RuRoles[this.playersData[App_default2.user.objectId].role - 1]}`;
       let timer, mafia, mir, giveUpButton;
       {
+        this.gameInfoElem.innerHTML = "";
         this.gameInfoElem.style.display = "flex";
         {
           const nick = createElement("span", {
@@ -3787,12 +3791,12 @@
           divM.style.justifyContent = "center";
           divM.style.wordBreak = "auto-phrase";
           const nick = document.createElement("span");
-          if (user[PacketDataKeys_default.VIP]) {
+          if (user && user[PacketDataKeys_default.VIP]) {
             const img = createElement("img", { width: 20, height: 20 });
             getTexture(`vip/0M.png`).then((e) => img.src = e);
             nick.appendChild(img);
           }
-          createElement("span", { css: { marginLeft: "2px" }, text: user[PacketDataKeys_default.USERNAME], appendTo: nick });
+          createElement("span", { css: { marginLeft: "2px" }, text: username, appendTo: nick });
           if (username == App_default2.user.username && App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
           nick.style.color = type == 17 ? "#4B4483" : type == 11 ? "#545454" : "black";
           nick.onclick = () => this.addNickToInput(username);

@@ -616,7 +616,7 @@ export default class Room extends Screen {
   }
 
   async initGame(){
-    this.element.removeChild(this.infoElem);
+    try{this.element.removeChild(this.infoElem);}catch{}
     this.removeByKey('waiting');
 
     this.playersListElem.style.float = 'right';
@@ -645,6 +645,7 @@ export default class Room extends Screen {
     const yourRoleMsg = `Вы<br/>${RuRoles[this.playersData[App.user.objectId].role! - 1]}`;
     let timer: HTMLDivElement, mafia: HTMLDivElement, mir: HTMLDivElement, giveUpButton: HTMLButtonElement;
     {
+      this.gameInfoElem.innerHTML = '';
       this.gameInfoElem.style.display = 'flex';
       { // me
         const nick = createElement('span', {
@@ -1071,12 +1072,12 @@ export default class Room extends Screen {
         divM.style.justifyContent = 'center';
         divM.style.wordBreak = 'auto-phrase';
         const nick = document.createElement('span');
-        if(user[PacketDataKeys.VIP]) {
+        if(user && user[PacketDataKeys.VIP]) {
           const img = createElement('img', { width: 20, height: 20 });
           getTexture(`vip/0M.png`).then(e => img.src = e);
           nick.appendChild(img);
         }
-        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
+        createElement('span', { css: { marginLeft: '2px' }, text: username, appendTo: nick });
         if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.style.color = type == 17 ? '#4B4483' : type == 11 ? '#545454' : 'black'
         nick.onclick = () => this.addNickToInput(username)
