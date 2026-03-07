@@ -1709,6 +1709,85 @@
     }
   };
 
+  // core/version.json
+  var version_default = {
+    launcher: "Beta 1.0.2",
+    vanilla: "Beta 1.0.2"
+  };
+
+  // launcher/src/App.ts
+  var App = class extends Events {
+    version = version_default.launcher;
+    windowsElem;
+    launcher;
+    constructor() {
+      super();
+      this.windowsElem = document.createElement("div");
+      this.windowsElem.style.width = "100%";
+      this.windowsElem.style.height = window.innerHeight + "px";
+      document.body.appendChild(this.windowsElem);
+      this.#initEvents();
+    }
+    #initEvents() {
+      window;
+      window.addEventListener("focus", (e) => this.emit("focus", e), true);
+      window.addEventListener("blur", (e) => this.emit("unfocus", e), true);
+      window.addEventListener("click", (e) => this.emit("click", e), true);
+      window.addEventListener("keydown", (e) => this.emit("keydown", e), true);
+      window.addEventListener("keyup", (e) => this.emit("keyup", e), true);
+      window.addEventListener("wheel", (e) => this.emit("wheel", e), true);
+      window.addEventListener("resize", (e) => this.emit("resize"), true);
+    }
+  };
+  var App_default = new App();
+
+  // core/src/utils/mobile.ts
+  function isMobile() {
+    return window.navigator.maxTouchPoints || "ontouchstart" in document;
+  }
+  function isIOS() {
+    return [
+      "iPad Simulator",
+      "iPhone Simulator",
+      "iPod Simulator",
+      "iPad",
+      "iPhone",
+      "iPod"
+    ].includes(navigator.platform) || navigator.userAgent.includes("Mac") && "ontouchend" in document;
+  }
+
+  // core/src/utils/TypeScript.ts
+  var WhenBuilder = class {
+    constructor(value) {
+      this.value = value;
+    }
+    matched = false;
+    case(condition, callback) {
+      if (!this.matched && this.value === condition) {
+        callback();
+        this.matched = true;
+      }
+      return this;
+    }
+    else(defaultResult) {
+      return typeof defaultResult === "function" ? defaultResult() : defaultResult;
+    }
+  };
+  function when(value) {
+    return new WhenBuilder(value);
+  }
+  function wrap(obj, prop, onSet, onGet) {
+    let val = obj[prop];
+    Object.defineProperty(obj, prop, {
+      get: () => onGet ? onGet() : val,
+      set: (v) => {
+        onSet?.(v);
+        val = v;
+      },
+      enumerable: true
+    });
+  }
+
   // core/src/utils/utils.ts
   var global2 = window;
   function isMacOS() {
@@ -1800,16 +1879,16 @@
       this.element.style.width = "100%";
       this.element.style.height = "100%";
       wait(50).then(() => {
-        App_default.on("resize", (e) => this.emit("resize", e)).key(`screen_${name}`);
-        App_default.on("keydown", (e) => this.emit("keydown", e)).key(`screen_${name}`);
-        App_default.on("keyup", (e) => this.emit("keyup", e)).key(`screen_${name}`);
-        App_default.on("click", (e) => this.emit("click", e)).key(`screen_${name}`);
-        App_default.server.on("message", (data) => this.emit("message", data)).key(`screen_${name}`);
+        App_default2.on("resize", (e) => this.emit("resize", e)).key(`screen_${name}`);
+        App_default2.on("keydown", (e) => this.emit("keydown", e)).key(`screen_${name}`);
+        App_default2.on("keyup", (e) => this.emit("keyup", e)).key(`screen_${name}`);
+        App_default2.on("click", (e) => this.emit("click", e)).key(`screen_${name}`);
+        App_default2.server.on("message", (data) => this.emit("message", data)).key(`screen_${name}`);
         this.element.focus();
       });
       this.on("preBack", () => {
-        if (App_default.boxs.length > 0)
-          App_default.boxs[0].close();
+        if (App_default2.boxs.length > 0)
+          App_default2.boxs[0].close();
         else
           this.emit("back");
       });
@@ -1827,51 +1906,19 @@
     }
     destroy() {
       this.removeAllEvents();
-      App_default.removeByKey(`screen_${this.name}`);
-      App_default.server.removeByKey(`screen_${this.name}`);
-      App_default.element.removeChild(this.element);
+      App_default2.removeByKey(`screen_${this.name}`);
+      App_default2.server.removeByKey(`screen_${this.name}`);
+      App_default2.element.removeChild(this.element);
       this.element.remove();
     }
   };
-
-  // core/src/utils/TypeScript.ts
-  var WhenBuilder = class {
-    constructor(value) {
-      this.value = value;
-    }
-    matched = false;
-    case(condition, callback) {
-      if (!this.matched && this.value === condition) {
-        callback();
-        this.matched = true;
-      }
-      return this;
-    }
-    else(defaultResult) {
-      return typeof defaultResult === "function" ? defaultResult() : defaultResult;
-    }
-  };
-  function when(value) {
-    return new WhenBuilder(value);
-  }
-  function wrap(obj, prop, onSet, onGet) {
-    let val = obj[prop];
-    Object.defineProperty(obj, prop, {
-      get: () => onGet ? onGet() : val,
-      set: (v) => {
-        onSet?.(v);
-        val = v;
-      },
-      enumerable: true
-    });
-  }
 
   // game/src/screen/Loading.ts
   var Loading = class extends Screen {
     constructor(title) {
       super("Loading");
       this.title = title;
-      App_default.title = "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430";
+      App_default2.title = "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -1906,11 +1953,11 @@
       });
       this.reconnectBtn.onclick = () => {
         this.reconnectBtn.style.opacity = "0";
-        App_default.server.connect();
+        App_default2.server.connect();
       };
       div.appendChild(this.reconnectBtn);
       wrap(this, "title", (v) => text.innerHTML = v);
-      this.on("back", () => App_default.destroy());
+      this.on("back", () => App_default2.destroy());
     }
     loadingElem;
     reconnectBtn;
@@ -2368,30 +2415,15 @@
     }
   };
 
-  // core/src/utils/mobile.ts
-  function isMobile() {
-    return window.navigator.maxTouchPoints || "ontouchstart" in document;
-  }
-  function isIOS() {
-    return [
-      "iPad Simulator",
-      "iPhone Simulator",
-      "iPod Simulator",
-      "iPad",
-      "iPhone",
-      "iPod"
-    ].includes(navigator.platform) || navigator.userAgent.includes("Mac") && "ontouchend" in document;
-  }
-
   // game/src/dialog/Box.ts
   var Box = class extends Events {
     constructor(options = {}, element = document.createElement("div")) {
       super();
       this.element = element;
       const self2 = this;
-      this.id = App_default.boxs.length;
-      App_default.boxs.push(this);
-      App_default.screen.element.style.pointerEvents = "none";
+      this.id = App_default2.boxs.length;
+      App_default2.boxs.push(this);
+      App_default2.screen.element.style.pointerEvents = "none";
       const width = options.width ?? 300;
       const height = options.height ?? 150;
       const zoom = getZoom();
@@ -2408,7 +2440,7 @@
       this.mainElem.style.height = "100%";
       this.mainElem.style.left = "0";
       this.mainElem.style.top = "0";
-      App_default.element.appendChild(this.mainElem);
+      App_default2.element.appendChild(this.mainElem);
       this.background = document.createElement("div");
       this.background.style.background = "black";
       this.background.style.position = "absolute";
@@ -2457,7 +2489,7 @@
       wait(50).then(() => {
         this.background.style.opacity = ".6";
       });
-      this.loop = App_default.on("tick", (dt) => this.emit("tick", dt));
+      this.loop = App_default2.on("tick", (dt) => this.emit("tick", dt));
     }
     mainElem;
     content;
@@ -2474,8 +2506,8 @@
     }
     destroy() {
       this.emit("destroy");
-      App_default.boxs.splice(this.id, 1);
-      if (App_default.boxs.length == 0) App_default.screen.element.style.pointerEvents = "all";
+      App_default2.boxs.splice(this.id, 1);
+      if (App_default2.boxs.length == 0) App_default2.screen.element.style.pointerEvents = "all";
       this.element.remove();
       this.background.remove();
       this.mainElem.remove();
@@ -2547,7 +2579,7 @@
   var Authorization = class extends Screen {
     constructor() {
       super("Auth");
-      App_default.title = "\u0410\u0432\u0442\u043E\u0440\u0438\u0437\u0430\u0446\u0438\u044F";
+      App_default2.title = "\u0410\u0432\u0442\u043E\u0440\u0438\u0437\u0430\u0446\u0438\u044F";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -2589,7 +2621,7 @@
       });
       forgetPass.onclick = async () => {
         const email2 = await PromptBox_default(`\u0414\u043B\u044F \u0441\u0431\u0440\u043E\u0441\u0430 \u043F\u0430\u0440\u043E\u043B\u044F, \u043F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u0432 \u0438\u0433\u0440\u0435 email`, { height: 200 });
-        App_default.server.send(PacketDataKeys_default.USER_RESET_PASSWORD, {
+        App_default2.server.send(PacketDataKeys_default.USER_RESET_PASSWORD, {
           [PacketDataKeys_default.EMAIL]: email2,
           [PacketDataKeys_default.APP_LANGUAGE]: "RUS"
         });
@@ -2612,13 +2644,13 @@
       const btnLogin = document.createElement("button");
       btnLogin.textContent = "\u0412\u043E\u0439\u0442\u0438";
       btnLogin.onclick = async () => {
-        await App_default.server.auth.auth({ email: email.value, password: password.value, token: token.value, userId: userId.value });
+        await App_default2.server.auth.auth({ email: email.value, password: password.value, token: token.value, userId: userId.value });
       };
       div.appendChild(btnLogin);
       const btnReg = document.createElement("button");
       btnReg.textContent = "\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F";
       btnReg.onclick = async () => {
-        await App_default.server.auth.signUp({ email: email.value, password: password.value });
+        await App_default2.server.auth.signUp({ email: email.value, password: password.value });
       };
       div.appendChild(btnReg);
       const text = document.createElement("p");
@@ -2631,7 +2663,7 @@
       if (isMobile()) {
         const btnCloseGame = document.createElement("button");
         btnCloseGame.textContent = "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u0438\u0433\u0440\u0443";
-        btnCloseGame.addEventListener("click", () => App_default.win.close());
+        btnCloseGame.addEventListener("click", () => App_default2.win.close());
         div.appendChild(btnCloseGame);
       }
       this.on("message", (json) => {
@@ -2670,17 +2702,17 @@
     constructor(uuid = generateSafeUUID()) {
       super();
       this.uuid = uuid;
-      this.id = App_default.components.length;
-      App_default.components.push(this);
+      this.id = App_default2.components.length;
+      App_default2.components.push(this);
       this.elem = document.createElement("div");
-      App_default.element.appendChild(this.elem);
+      App_default2.element.appendChild(this.elem);
       wait(50).then(() => {
-        App_default.on("resize", (e) => this.emit("resize", e)).key(`component_${uuid}`);
-        App_default.on("keydown", (e) => this.emit("keydown", e)).key(`component_${uuid}`);
-        App_default.on("keyup", (e) => this.emit("keyup", e)).key(`component_${uuid}`);
-        App_default.on("click", (e) => this.emit("click", e)).key(`component_${uuid}`);
-        App_default.on("contextmenu", (e) => this.emit("contextmenu", e)).key(`component_${uuid}`);
-        App_default.server.on("message", (data) => this.emit("message", data)).key(`component_${uuid}`);
+        App_default2.on("resize", (e) => this.emit("resize", e)).key(`component_${uuid}`);
+        App_default2.on("keydown", (e) => this.emit("keydown", e)).key(`component_${uuid}`);
+        App_default2.on("keyup", (e) => this.emit("keyup", e)).key(`component_${uuid}`);
+        App_default2.on("click", (e) => this.emit("click", e)).key(`component_${uuid}`);
+        App_default2.on("contextmenu", (e) => this.emit("contextmenu", e)).key(`component_${uuid}`);
+        App_default2.server.on("message", (data) => this.emit("message", data)).key(`component_${uuid}`);
       });
     }
     id;
@@ -2688,10 +2720,10 @@
     destroy() {
       this.emit("destroy");
       this.removeAllEvents();
-      App_default.removeByKey(`component_${this.uuid}`);
-      App_default.server.removeByKey(`component_${this.uuid}`);
-      App_default.components.splice(this.id, 1);
-      App_default.element.removeChild(this.elem);
+      App_default2.removeByKey(`component_${this.uuid}`);
+      App_default2.server.removeByKey(`component_${this.uuid}`);
+      App_default2.components.splice(this.id, 1);
+      App_default2.element.removeChild(this.elem);
       this.elem.remove();
     }
   };
@@ -2704,7 +2736,7 @@
       this.event = event;
       event.preventDefault();
       const zoom = getZoom();
-      const winZoom = App_default.zoom;
+      const winZoom = App_default2.zoom;
       const elem = document.createElement("div");
       elem.style.position = "fixed";
       elem.style.display = "flex";
@@ -2748,7 +2780,7 @@
   var History = class extends Screen {
     constructor() {
       super("History");
-      App_default.title = "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u0438\u0433\u0440";
+      App_default2.title = "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u0438\u0433\u0440";
       this.element.style.overflow = "hidden";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
@@ -2766,23 +2798,23 @@
       titleElem.textContent = "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u0438\u0433\u0440";
       header.appendChild(titleElem);
       this.on("back", () => {
-        App_default.screen = new Dashboard();
+        App_default2.screen = new Dashboard();
       });
       this.init();
     }
     async init() {
-      if (!await fs_default.existsFile(`${App_default.config.path}/history.json`))
-        await fs_default.writeFile(`${App_default.config.path}/history.json`, JSON.stringify({ rooms: [] }));
-      const history2 = JSON.parse(await fs_default.readFile(`${App_default.config.path}/history.json`));
+      if (!await fs_default.existsFile(`${App_default2.config.path}/history.json`))
+        await fs_default.writeFile(`${App_default2.config.path}/history.json`, JSON.stringify({ rooms: [] }));
+      const history2 = JSON.parse(await fs_default.readFile(`${App_default2.config.path}/history.json`));
       const div = document.createElement("div");
       div.style.textAlign = "center";
       div.style.overflowY = "overlay";
-      div.style.height = App_default.height - 100 + "px";
+      div.style.height = App_default2.height - 100 + "px";
       this.element.appendChild(div);
       for (let i = 0; i < history2.rooms.length; i++) {
         const room = history2.rooms[i];
         let status = 2, statusText = "";
-        const myRole = room.playersData[App_default.user.objectId].role;
+        const myRole = room.playersData[App_default2.user.objectId].role;
         const mafia = room.playersStat.m;
         const mir = room.playersStat.c;
         if (i == history2.rooms.length - 1) {
@@ -2883,11 +2915,11 @@
         this.selectedRoles = options.data.selectedRoles;
         this.localFirstMessages = options.data.messages;
       }
-      App_default.title = "\u041A\u043E\u043C\u043D\u0430\u0442\u0430";
-      this.oldAppSettingsData = JSON.parse(JSON.stringify(App_default.settings.data));
+      App_default2.title = "\u041A\u043E\u043C\u043D\u0430\u0442\u0430";
+      this.oldAppSettingsData = JSON.parse(JSON.stringify(App_default2.settings.data));
       (async () => {
         this.element.style.background = `url(${await getBackgroundImg("day3")}) 0% 0% / cover`;
-        this.clearMessages = App_default.settings.data.game.clearMessages;
+        this.clearMessages = App_default2.settings.data.game.clearMessages;
       })();
       this.headerElem = document.createElement("div");
       this.headerElem.className = "header";
@@ -2915,7 +2947,7 @@
       getTexture(`loading/2f.png`).then((e) => this.loadingElem.src = e);
       this.loadingDivElem.appendChild(this.loadingElem);
       this.on("back", () => {
-        App_default.screen = this.isHistory ? new History() : new Rooms();
+        App_default2.screen = this.isHistory ? new History() : new Rooms();
       });
       this.init();
     }
@@ -2977,25 +3009,25 @@
       super.reconnect();
       if (this.isHistory) return;
       const self2 = this;
-      if (this.options.sendRoomEnter) App_default.server.send(PacketDataKeys_default.ROOM_ENTER, {
+      if (this.options.sendRoomEnter) App_default2.server.send(PacketDataKeys_default.ROOM_ENTER, {
         [PacketDataKeys_default.ROOM_PASS]: this.options.password ? md5salt(this.options.password) : "",
         [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId
       });
-      const rData = await App_default.server.awaitPacket([PacketDataKeys_default.ROOM_ENTER, PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys_default.GAME_STARTED, PacketDataKeys_default.USER_IN_ANOTHER_ROOM, PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH, PacketDataKeys_default.USER_KICKED, PacketDataKeys_default.ROOM_CREATED, PacketDataKeys_default.MAXIMUM_PLAYERS], 2e3);
+      const rData = await App_default2.server.awaitPacket([PacketDataKeys_default.ROOM_ENTER, PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys_default.GAME_STARTED, PacketDataKeys_default.USER_IN_ANOTHER_ROOM, PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH, PacketDataKeys_default.USER_KICKED, PacketDataKeys_default.ROOM_CREATED, PacketDataKeys_default.MAXIMUM_PLAYERS], 2e3);
       if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default("\u041D\u0435\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439 \u043F\u0430\u0440\u043E\u043B\u044C!");
         return;
       } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.GAME_STARTED) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default("\u0418\u0433\u0440\u0430 \u0443\u0436\u0435 \u043D\u0430\u0447\u0430\u043B\u0430\u0441\u044C");
         return;
       } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_IN_ANOTHER_ROOM) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default("\u041D\u0435\u043B\u044C\u0437\u044F \u0437\u0430\u0439\u0442\u0438");
         return;
       } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default(`\u0412 \u0434\u0430\u043D\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 \u0443\u0436\u0435 \u0435\u0441\u0442\u044C \u0438\u0433\u0440\u043E\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A \u0442\u043E\u043C\u0443 \u0436\u0435 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044E, \u0447\u0442\u043E \u0438 \u0432\u044B
 
 \u0412\u0435\u0440\u043E\u044F\u0442\u043D\u043E \u0432\u044B \u0438 \u044D\u0442\u043E\u0442 \u0438\u0433\u0440\u043E\u043A \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0435 \u043E\u0431\u0449\u0443\u044E \u0442\u043E\u0447\u043A\u0443 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u043A \u0441\u0435\u0442\u0438 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442
@@ -3003,20 +3035,20 @@
 \u0415\u0441\u043B\u0438 \u0432\u044B \u0445\u043E\u0442\u0438\u0442\u0435 \u0438\u0433\u0440\u0430\u0442\u044C \u0441 \u0434\u0430\u043D\u043D\u044B\u043C \u0438\u0433\u0440\u043E\u043A\u043E\u043C \u0432 \u043E\u0434\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 - \u0441\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u0443 \u0441 \u043F\u0430\u0440\u043E\u043B\u0435\u043C \u0438\u043B\u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0432\u044B \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u044B \u043A\u0430\u0436\u0434\u044B\u0439 \u043A \u0441\u0432\u043E\u0435\u0439 \u0442\u043E\u0447\u043A\u0435 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u0438\u043B\u0438 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C`, { height: 360 });
         return;
       } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default("\u0412\u0430\u0448 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u043C\u0430\u043B\u0435\u043D\u044C\u043A\u0438\u0439");
         return;
       } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_KICKED) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default("\u0412\u0430\u0441 \u0432\u044B\u0433\u043D\u0430\u043B\u0438");
         return;
       } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.MAXIMUM_PLAYERS) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default("\u041A\u043E\u043C\u043D\u0430\u0442\u0430 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u043D\u0435\u043D\u0430");
         return;
       } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_CREATED) {
       } else if (rData[PacketDataKeys_default.TYPE] != PacketDataKeys_default.ROOM_ENTER) {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
         MessageBox_default("\u041E\u0448\u0438\u0431\u043A\u0430.. " + JSON.stringify(rData));
         return;
       }
@@ -3031,13 +3063,13 @@
       this.selectedRoles = roomData[PacketDataKeys_default.SELECTED_ROLES];
       this.status = roomData[PacketDataKeys_default.STATUS];
       this.gameDayTime = roomData[PacketDataKeys_default.DAYTIME];
-      App_default.server.send(PacketDataKeys_default.CREATE_PLAYER, {
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-        [PacketDataKeys_default.TOKEN]: App_default.user.token,
+      App_default2.server.send(PacketDataKeys_default.CREATE_PLAYER, {
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token,
         [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId,
         [PacketDataKeys_default.ROOM_MODEL_TYPE]: 0
       });
-      const data = await App_default.server.awaitPacket(PacketDataKeys_default.ROOM_STATISTICS);
+      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.ROOM_STATISTICS);
       function preInit() {
         const rs = data[PacketDataKeys_default.ROOM_STATISTICS];
         if (self2.messagesElem) {
@@ -3159,10 +3191,10 @@
               this.updatePlayersGame();
           }
           if (this.status == 3) {
-            if (App_default.settings.data.game.saveHistory) {
-              if (!await fs_default.existsFile(`${App_default.config.path}/history.json`))
-                await fs_default.writeFile(`${App_default.config.path}/history.json`, JSON.stringify({ rooms: [] }));
-              const history2 = JSON.parse(await fs_default.readFile(`${App_default.config.path}/history.json`));
+            if (App_default2.settings.data.game.saveHistory) {
+              if (!await fs_default.existsFile(`${App_default2.config.path}/history.json`))
+                await fs_default.writeFile(`${App_default2.config.path}/history.json`, JSON.stringify({ rooms: [] }));
+              const history2 = JSON.parse(await fs_default.readFile(`${App_default2.config.path}/history.json`));
               history2.rooms.unshift({
                 messages: this.messages,
                 playersStat: this.playersStat,
@@ -3177,8 +3209,8 @@
                 gameDayTime: this.gameDayTime,
                 createdAt: Date.now()
               });
-              await fs_default.writeFile(`${App_default.config.path}/history.json`, JSON.stringify(history2));
-              App_default.logger.info(`Saved`);
+              await fs_default.writeFile(`${App_default2.config.path}/history.json`, JSON.stringify(history2));
+              App_default2.logger.info(`Saved`);
             }
           }
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROLES) {
@@ -3210,7 +3242,7 @@
         rolesElem.appendChild(img);
       }
       this.headerElem.appendChild(rolesElem);
-      App_default.title = `\u041A\u043E\u043C\u043D\u0430\u0442\u0430: ${this.title}`;
+      App_default2.title = `\u041A\u043E\u043C\u043D\u0430\u0442\u0430: ${this.title}`;
       this.titleElem.innerHTML = noXSS(this.title);
       this.infoElem = document.createElement("div");
       this.infoElem.className = "black";
@@ -3240,7 +3272,7 @@
       this.rangeZoomElem.onmousemove = () => {
         if (!isDown) return;
         const zoom = parseInt(this.rangeZoomElem.value) / 25;
-        App_default.settings.data.game.zoomPL = zoom;
+        App_default2.settings.data.game.zoomPL = zoom;
         this.gamePlayersListElem.style.zoom = zoom + "";
       };
       miniSettingsPLElem.appendChild(this.rangeZoomElem);
@@ -3273,7 +3305,7 @@
           el.style.width = newWidth + "px";
         }
         function upHandler(e) {
-          App_default.settings.data.game.widthPL = parseInt(el.style.width.replace("px", ""));
+          App_default2.settings.data.game.widthPL = parseInt(el.style.width.replace("px", ""));
           document.removeEventListener("mousemove", moveHandler, true);
           document.removeEventListener("mouseup", upHandler, true);
           e.stopPropagation?.();
@@ -3297,7 +3329,7 @@
       this.element.appendChild(this.gameInfoElem);
       this.messagesElem = createElement("div", {
         css: {
-          height: App_default.height - (isMobile() ? 295 : 275) + "px",
+          height: App_default2.height - (isMobile() ? 295 : 275) + "px",
           textAlign: "center",
           overflowX: "hidden",
           overflowY: "overlay",
@@ -3400,11 +3432,11 @@
     #changeHeightMessagesElem() {
       const ch = this.emojiPanel.style.display == "block" ? 60 : 0;
       if (this.isGame) {
-        this.messagesElem.style.height = App_default.height - (isMobile() ? 245 : 225) - ch + "px";
-        this.playersListElem.style.height = App_default.height - (isMobile() ? 110 : 90) - ch + "px";
-        this.resizablePLElem.style.height = App_default.height - (isMobile() ? 110 : 90) - ch + "px";
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 245 : 225) - ch + "px";
+        this.playersListElem.style.height = App_default2.height - (isMobile() ? 110 : 90) - ch + "px";
+        this.resizablePLElem.style.height = App_default2.height - (isMobile() ? 110 : 90) - ch + "px";
       } else {
-        this.messagesElem.style.height = App_default.height - (isMobile() ? 295 : 275) - ch + "px";
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 295 : 275) - ch + "px";
       }
     }
     async initGame() {
@@ -3418,7 +3450,7 @@
       this.playersListElem.style.overflowX = "hidden";
       this.playersListElem.style.overflowY = "overlay";
       this.playersListElem.style.width = (isMobile() ? 115 : this.oldAppSettingsData.game.widthPL) + "px";
-      this.playersListElem.style.height = App_default.height - (isMobile() ? 100 : 80) + "px";
+      this.playersListElem.style.height = App_default2.height - (isMobile() ? 100 : 80) + "px";
       this.gamePlayersListElem.style.flexDirection = "row";
       this.gamePlayersListElem.style.alignContent = "flex-start";
       this.gamePlayersListElem.style.justifyContent = "center";
@@ -3431,19 +3463,19 @@
       this.on("resize", () => {
         this.#changeHeightMessagesElem();
       });
-      const yourRoleMsg = `\u0412\u044B<br/>${RuRoles[this.playersData[App_default.user.objectId].role - 1]}`;
+      const yourRoleMsg = `\u0412\u044B<br/>${RuRoles[this.playersData[App_default2.user.objectId].role - 1]}`;
       let timer, mafia, mir, giveUpButton;
       {
         this.gameInfoElem.innerHTML = "";
         this.gameInfoElem.style.display = "flex";
         {
           const nick = createElement("span", {
-            html: (App_default.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(this.playersData[App_default.user.objectId].index ?? 0) + 1}</span> ` : "") + noXSS(App_default.user.username),
+            html: (App_default2.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(this.playersData[App_default2.user.objectId].index ?? 0) + 1}</span> ` : "") + noXSS(App_default2.user.username),
             className: "black",
             css: {
               fontSize: "smaller",
               textAlign: "center",
-              filter: App_default.settings.data.hideUsername ? "blur(5px)" : "",
+              filter: App_default2.settings.data.hideUsername ? "blur(5px)" : "",
               padding: "1px"
             }
           });
@@ -3451,7 +3483,7 @@
             width: 50,
             height: 70
           });
-          getRoleImg(this.playersData[App_default.user.objectId].role ?? 1).then((e) => myRoleImg.src = e);
+          getRoleImg(this.playersData[App_default2.user.objectId].role ?? 1).then((e) => myRoleImg.src = e);
           myRoleImg.onmousedown = (e) => e.preventDefault();
           this.deadImgElem = createElement("img", {
             width: 50,
@@ -3551,13 +3583,13 @@
             }
           });
           {
-            const role = this.playersData[App_default.user.objectId].role ?? 1;
-            if (this.players.length > 7 && this.playersData[App_default.user.objectId].alive && (playersStat[PacketDataKeys_default.MAFIA_ALIVE] == 1 && isMafia(role) || playersStat[PacketDataKeys_default.CIVILIAN_ALIVE] == 1 && !isMafia(role))) {
+            const role = this.playersData[App_default2.user.objectId].role ?? 1;
+            if (this.players.length > 7 && this.playersData[App_default2.user.objectId].alive && (playersStat[PacketDataKeys_default.MAFIA_ALIVE] == 1 && isMafia(role) || playersStat[PacketDataKeys_default.CIVILIAN_ALIVE] == 1 && !isMafia(role))) {
               timer.style.marginTop = "0";
               giveUpButton.style.display = "block";
             }
           }
-          giveUpButton.onclick = () => App_default.server.send(PacketDataKeys_default.GIVE_UP, { [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId });
+          giveUpButton.onclick = () => App_default2.server.send(PacketDataKeys_default.GIVE_UP, { [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId });
           div.appendChild(mafia);
           div.appendChild(mir);
           div.appendChild(timer);
@@ -3565,7 +3597,7 @@
           this.gameInfoElem.appendChild(div);
         }
       }
-      if (!this.playersData[App_default.user.objectId].alive) {
+      if (!this.playersData[App_default2.user.objectId].alive) {
         this.deadImgElem.style.top = this.yourRoleElem.clientHeight + 1 + "px";
         this.deadImgElem.style.display = "flex";
       }
@@ -3583,8 +3615,8 @@
           mafia.textContent = noXSS(`\u041C\u0430\u0444\u0438\u044F: ${data[PacketDataKeys_default.MAFIA_ALL]} | ${data[PacketDataKeys_default.MAFIA_ALIVE]}`);
           mir.textContent = noXSS(`\u041C\u0438\u0440\u043D\u044B\u0435: ${data[PacketDataKeys_default.CIVILIAN_ALL]} | ${data[PacketDataKeys_default.CIVILIAN_ALIVE]}`);
           wait(500).then(() => {
-            const role = this.playersData[App_default.user.objectId].role ?? 1;
-            if (this.players.length > 7 && this.playersData[App_default.user.objectId].alive && (data[PacketDataKeys_default.MAFIA_ALIVE] == 1 && isMafia(role) || data[PacketDataKeys_default.CIVILIAN_ALIVE] == 1 && !isMafia(role))) {
+            const role = this.playersData[App_default2.user.objectId].role ?? 1;
+            if (this.players.length > 7 && this.playersData[App_default2.user.objectId].alive && (data[PacketDataKeys_default.MAFIA_ALIVE] == 1 && isMafia(role) || data[PacketDataKeys_default.CIVILIAN_ALIVE] == 1 && !isMafia(role))) {
               giveUpButton.style.display = "block";
               timer.style.marginTop = "0";
             }
@@ -3600,7 +3632,7 @@
             if (typeof pl[PacketDataKeys_default.IS_NIGHT_ACTION_USED] == "boolean") this.playersData[uo].isNightActionUsed = pl[PacketDataKeys_default.IS_NIGHT_ACTION_USED];
             if (typeof pl[PacketDataKeys_default.ROLE] == "number") this.playersData[uo].role = pl[PacketDataKeys_default.ROLE];
             if (typeof pl[PacketDataKeys_default.VOTE] == "number") this.playersData[uo].vote = pl[PacketDataKeys_default.VOTE];
-            if (data[PacketDataKeys_default.PLAYERS_DATA].length == 1 && uo != App_default.user.objectId) {
+            if (data[PacketDataKeys_default.PLAYERS_DATA].length == 1 && uo != App_default2.user.objectId) {
               if (typeof pl[PacketDataKeys_default.VOTE] != "number") this.playersData[uo].vote = (this.playersData[uo].vote ?? 0) + 1;
             }
           }
@@ -3636,11 +3668,11 @@
       const entries = Object.entries(this.playersData).sort(([, a], [, b]) => (a.index ?? 0) - (b.index ?? 0));
       this.gamePlayersListElem.innerHTML = "";
       for (const [uo, pl] of entries) {
-        if (App_default.user.objectId == pl.userObjectId) {
+        if (App_default2.user.objectId == pl.userObjectId) {
           if (this.deadImgElem && this.deadImgElem.style.display == "none" && this.yourRoleElem && pl.alive == false) {
             this.deadImgElem.style.top = this.yourRoleElem.clientHeight + 1 + "px";
             this.deadImgElem.style.display = "flex";
-            if (App_default.settings.data.game.showYouDiedMessage) MessageBox_default(`\u0412\u044B \u0443\u043C\u0435\u0440\u043B\u0438`);
+            if (App_default2.settings.data.game.showYouDiedMessage) MessageBox_default(`\u0412\u044B \u0443\u043C\u0435\u0440\u043B\u0438`);
           }
           if (this.myVoteElem) {
             if (typeof this.playersData[uo].vote == "number" && this.playersData[uo].vote > 0) {
@@ -3692,7 +3724,7 @@
         div.style.position = "relative";
         div.style.height = "100px";
         const nick = document.createElement("div");
-        nick.innerHTML = (App_default.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(pl.index ?? 0) + 1}</span> ` : "") + noXSS(username);
+        nick.innerHTML = (App_default2.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(pl.index ?? 0) + 1}</span> ` : "") + noXSS(username);
         nick.className = "black";
         nick.style.wordBreak = "break-all";
         nick.style.textAlign = "center";
@@ -3731,8 +3763,8 @@
           div.appendChild(text);
         }
         let action = "";
-        let isActionUsed = this.gameDayTime < 2 ? this.playersData[App_default.user.objectId].isNightActionUsed : this.playersData[App_default.user.objectId].isDayActionUsed;
-        when(this.playersData[App_default.user.objectId].role).case(2 /* DOCTOR */, () => this.gameDayTime == 1 && (() => {
+        let isActionUsed = this.gameDayTime < 2 ? this.playersData[App_default2.user.objectId].isNightActionUsed : this.playersData[App_default2.user.objectId].isDayActionUsed;
+        when(this.playersData[App_default2.user.objectId].role).case(2 /* DOCTOR */, () => this.gameDayTime == 1 && (() => {
           action = "_2";
         })()).case(3 /* SHERIFF */, () => this.gameDayTime == 1 && (() => {
           action = "check";
@@ -3748,7 +3780,7 @@
           if (!this.playersData[uo].affectedByRoles?.includes(7)) action = "_7";
         })()).case(8 /* BODYGUARD */, () => this.gameDayTime == 2 && (() => {
           action = "_8";
-          if (this.playersData[App_default.user.objectId].isNightActionUsed) action = "";
+          if (this.playersData[App_default2.user.objectId].isNightActionUsed) action = "";
         })()).case(9 /* BARMAN */, () => this.gameDayTime == 1 && (() => {
           action = "_9";
         })()).case(11 /* INFORMER */, () => this.gameDayTime == 1 && (() => {
@@ -3756,8 +3788,8 @@
           if (this.playersData[uo].affectedByRoles?.includes(11)) action = "";
         })());
         if (action == "" && this.gameDayTime == 3) action = "kill";
-        if (this.gameDayTime == 1 && this.playersData[App_default.user.objectId].affectedByRoles?.includes(9) && !this.playersData[App_default.user.objectId].isNightActionUsed) isActionUsed = false;
-        if (action != "" && this.status != 3 && !isActionUsed && this.playersData[App_default.user.objectId].alive && this.playersData[uo].alive) {
+        if (this.gameDayTime == 1 && this.playersData[App_default2.user.objectId].affectedByRoles?.includes(9) && !this.playersData[App_default2.user.objectId].isNightActionUsed) isActionUsed = false;
+        if (action != "" && this.status != 3 && !isActionUsed && this.playersData[App_default2.user.objectId].alive && this.playersData[uo].alive) {
           const actionImg = document.createElement("img");
           getTexture(`roles/${action}.png`).then((e) => actionImg.src = e);
           actionImg.width = 50;
@@ -3770,7 +3802,7 @@
           actionImg.onmousedown = (e) => e.preventDefault();
           actionImg.oncontextmenu = contextMenuCallback;
           actionImg.onclick = roleImg.onclick = () => {
-            App_default.server.send(PacketDataKeys_default.ROLE_ACTION, {
+            App_default2.server.send(PacketDataKeys_default.ROLE_ACTION, {
               [PacketDataKeys_default.USER_OBJECT_ID]: uo,
               [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId,
               [PacketDataKeys_default.ROOM_MODEL_TYPE]: this.modelType
@@ -3820,8 +3852,8 @@
         if (this.lastMessage && this.lastMessage.divM && this.lastMessage.username == username) {
           const msg = document.createElement("span");
           let cleanText = users_default[objectId] == "dev" ? msgText : noXSS(msgText);
-          if (msgText.includes(`[${App_default.user.username}]`))
-            cleanText = cleanText.replaceAll(`${App_default.user.username}`, `<span style="${App_default.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default.user.username}</span>`);
+          if (msgText.includes(`[${App_default2.user.username}]`))
+            cleanText = cleanText.replaceAll(`${App_default2.user.username}`, `<span style="${App_default2.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default2.user.username}</span>`);
           processEmojis(msg, cleanText);
           msg.style.color = color;
           msg.style.userSelect = "text";
@@ -3849,18 +3881,18 @@
             getTexture(`vip/0M.png`).then((e) => img.src = e);
             nick.appendChild(img);
           }
-          if (this.isGame && App_default.settings.data.game.showIndexPlChat) {
+          if (this.isGame && App_default2.settings.data.game.showIndexPlChat) {
             const e = createElement("span", { text: (this.playersData[objectId]?.index ?? 0) + 1 + " ", css: { color: "#ab1457", fontWeight: "bold" } });
             nick.appendChild(e);
           }
           createElement("span", { css: { marginLeft: "2px" }, text: username, appendTo: nick });
-          if (username == App_default.user.username && App_default.settings.data.hideUsername) nick.style.filter = "blur(5px)";
+          if (username == App_default2.user.username && App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
           nick.style.color = type == 17 ? "#4B4483" : type == 11 ? "#545454" : "black";
           nick.onclick = () => this.addNickToInput(username);
           const msg = document.createElement("span");
           let cleanText = users_default[objectId] == "dev" ? msgText : noXSS(msgText);
-          if (msgText.includes(`[${App_default.user.username}]`))
-            cleanText = cleanText.replaceAll(`${App_default.user.username}`, `<span style="${App_default.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default.user.username}</span>`);
+          if (msgText.includes(`[${App_default2.user.username}]`))
+            cleanText = cleanText.replaceAll(`${App_default2.user.username}`, `<span style="${App_default2.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default2.user.username}</span>`);
           processEmojis(msg, cleanText);
           msg.style.color = color;
           msg.style.userSelect = "text";
@@ -3873,7 +3905,7 @@
         }
       } else {
         const div = document.createElement("div");
-        let msg = text, color = "black", xssAllowed = false, nickElement = `<span style="${text == App_default.user.username && App_default.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text}</span>`, nick1Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[0] == App_default.user.username && App_default.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[0]}</span>` : "", nick2Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[2] == App_default.user.username && App_default.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[2]}</span>` : "";
+        let msg = text, color = "black", xssAllowed = false, nickElement = `<span style="${text == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text}</span>`, nick1Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[0] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[0]}</span>` : "", nick2Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[2] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[2]}</span>` : "";
         if (type == 2) {
           msg = `\u0418\u0433\u0440\u043E\u043A ${nickElement} \u0432\u043E\u0448\u0451\u043B`;
           color = "#186400";
@@ -3947,7 +3979,7 @@
           const btnYes = document.createElement("button");
           btnYes.textContent = `\u0412\u044B\u0433\u043D\u0430\u0442\u044C`;
           btnYes.onclick = () => {
-            App_default.server.send(PacketDataKeys_default.KICK_USER_VOTE, {
+            App_default2.server.send(PacketDataKeys_default.KICK_USER_VOTE, {
               [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId,
               [PacketDataKeys_default.VOTE]: true
             });
@@ -3958,7 +3990,7 @@
           const btnNo = document.createElement("button");
           btnNo.textContent = `\u041D\u0435 \u0432\u044B\u0433\u043E\u043D\u044F\u0442\u044C`;
           btnNo.onclick = () => {
-            App_default.server.send(PacketDataKeys_default.KICK_USER_VOTE, {
+            App_default2.server.send(PacketDataKeys_default.KICK_USER_VOTE, {
               [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId,
               [PacketDataKeys_default.VOTE]: false
             });
@@ -3982,7 +4014,7 @@
           this.joinLeaveMessages[text] = div;
         }
       }
-      if (this.messagesElem.scrollHeight - App_default.height - this.messagesElem.scrollTop < 75)
+      if (this.messagesElem.scrollHeight - App_default2.height - this.messagesElem.scrollTop < 75)
         this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: "smooth" });
       if (deleteFirst && this.messagesElem.firstElementChild)
         this.messagesElem.removeChild(this.messagesElem.firstElementChild);
@@ -4009,12 +4041,12 @@
       if (isMobile()) this.input.focus();
     }
     sendMessage(message, options = {}) {
-      if (message.startsWith(App_default.settings.data.game.barmanEffect)) {
+      if (message.startsWith(App_default2.settings.data.game.barmanEffect)) {
         const symbols = "?!&@#%^~<>*";
         message = Array.from({ length: [...message].length - 1 }, () => symbols[Math.random() * symbols.length | 0]).join("");
       }
       if (CommandManager_default.executeCommand(message)) return;
-      App_default.server.send(PacketDataKeys_default.ROOM_MESSAGE_CREATE, {
+      App_default2.server.send(PacketDataKeys_default.ROOM_MESSAGE_CREATE, {
         [PacketDataKeys_default.MESSAGE]: {
           [PacketDataKeys_default.MESSAGE_STYLE]: options.messageStyle ?? 0,
           [PacketDataKeys_default.MESSAGE_STICKER]: options.messageSticker ?? false,
@@ -4047,7 +4079,7 @@
           nick.appendChild(img);
         }
         createElement("span", { css: { marginLeft: "2px" }, text: user[PacketDataKeys_default.USERNAME], appendTo: nick });
-        if (user[PacketDataKeys_default.USERNAME] == App_default.user.username && App_default.settings.data.hideUsername) nick.style.filter = "blur(5px)";
+        if (user[PacketDataKeys_default.USERNAME] == App_default2.user.username && App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
         nick.className = "black";
         nick.onclick = () => this.addNickToInput(user[PacketDataKeys_default.USERNAME]);
         div.style.display = "flex";
@@ -4063,7 +4095,7 @@
       return pl;
     }
     destroy() {
-      App_default.server.send(PacketDataKeys_default.REMOVE_PLAYER, {
+      App_default2.server.send(PacketDataKeys_default.REMOVE_PLAYER, {
         [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId
       });
       super.destroy();
@@ -4084,7 +4116,7 @@
     elem.style.left = "0";
     box.content.appendChild(elem);
     const loadingElem = document.createElement("img");
-    fs_default.loadImageAsDataURL(`${App_default.config.path}/assets/textures/loading/Tx.png`).then((e) => loadingElem.src = e);
+    fs_default.loadImageAsDataURL(`${App_default2.config.path}/assets/textures/loading/Tx.png`).then((e) => loadingElem.src = e);
     elem.appendChild(loadingElem);
     const txt = document.createElement("p");
     txt.style.color = "black";
@@ -4112,7 +4144,7 @@
     data;
     constructor() {
       super("RoomCreation");
-      App_default.title = "\u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u044B";
+      App_default2.title = "\u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u044B";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -4129,15 +4161,15 @@
       title.textContent = "\u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u044B";
       header.appendChild(title);
       this.on("back", () => {
-        App_default.screen = new Rooms();
+        App_default2.screen = new Rooms();
       });
-      this.data = App_default.settings.data.roomCreate;
+      this.data = App_default2.settings.data.roomCreate;
       this.init();
     }
     createRoom(data) {
-      App_default.server.send(PacketDataKeys_default.ROOM_CREATE, {
-        [PacketDataKeys_default.TOKEN]: App_default.user.token,
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
+      App_default2.server.send(PacketDataKeys_default.ROOM_CREATE, {
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token,
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
         [PacketDataKeys_default.ROOM]: {
           [PacketDataKeys_default.TITLE]: data.title,
           [PacketDataKeys_default.DAYTIME]: 0,
@@ -4149,7 +4181,7 @@
           [PacketDataKeys_default.VIP_ENABLED]: data.vip
         }
       });
-      App_default.screen = new Room("", {
+      App_default2.screen = new Room("", {
         sendRoomEnter: false
       });
     }
@@ -4206,7 +4238,7 @@
             const maxVal = Number(input.max);
             const val = Number(input.value);
             const width = wrapper2.clientWidth;
-            const px = (val - minVal) / (maxVal - minVal) * width / App_default.zoom / getZoom();
+            const px = (val - minVal) / (maxVal - minVal) * width / App_default2.zoom / getZoom();
             tip.style.left = px + "px";
             tip.textContent = getText();
           }
@@ -4269,8 +4301,8 @@
           self2.data.minPlayers = a;
           self2.data.maxPlayers = b;
           const width = wrapper.clientWidth;
-          const leftPx = (a - 1) / (21 - 1) * width / App_default.zoom / getZoom();
-          const rightPx = (b - 1) / (21 - 1) * width / App_default.zoom / getZoom();
+          const leftPx = (a - 1) / (21 - 1) * width / App_default2.zoom / getZoom();
+          const rightPx = (b - 1) / (21 - 1) * width / App_default2.zoom / getZoom();
           active.style.left = leftPx + "px";
           active.style.width = rightPx - leftPx + "px";
         }
@@ -4283,7 +4315,7 @@
       const roomName = document.createElement("input");
       roomName.placeholder = `\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u044B`;
       roomName.style.width = "100%";
-      roomName.value = App_default.settings.data.roomCreate.title;
+      roomName.value = App_default2.settings.data.roomCreate.title;
       roomName.oninput = () => this.data.title = roomName.value;
       e.appendChild(roomName);
       addH(`\u041A\u043E\u043B\u0438\u0447\u0435\u0441\u0442\u0432\u043E \u0438\u0433\u0440\u043E\u043A\u043E\u0432`);
@@ -4306,7 +4338,7 @@
       const roomPass = document.createElement("input");
       roomPass.placeholder = `\u041F\u0430\u0440\u043E\u043B\u044C (\u041E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043F\u0443\u0441\u0442\u044B\u043C \u0434\u043B\u044F \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044F)`;
       roomPass.style.width = "100%";
-      roomPass.value = App_default.settings.data.roomCreate.password;
+      roomPass.value = App_default2.settings.data.roomCreate.password;
       roomPass.oninput = () => this.data.password = roomPass.value;
       e.appendChild(roomPass);
       const btnCreate = document.createElement("button");
@@ -4316,7 +4348,7 @@
     }
     destroy() {
       super.destroy();
-      App_default.settings.data.roomCreate = this.data;
+      App_default2.settings.data.roomCreate = this.data;
     }
   };
 
@@ -4441,10 +4473,10 @@
       }
     });
     div.appendChild(list);
-    App_default.server.send(PacketDataKeys_default.GET_PLAYERS, {
+    App_default2.server.send(PacketDataKeys_default.GET_PLAYERS, {
       [PacketDataKeys_default.ROOM_OBJECT_ID]: roomId
     });
-    const data = await App_default.server.awaitPacket(PacketDataKeys_default.PLAYERS_IN_ROOM);
+    const data = await App_default2.server.awaitPacket(PacketDataKeys_default.PLAYERS_IN_ROOM);
     for (const pl of data[PacketDataKeys_default.PLAYERS]) {
       const e = createElement("div", {
         css: {
@@ -4486,7 +4518,7 @@
     btnOk.style.width = "80%";
     btnOk.addEventListener("click", () => {
       box.close();
-      App_default.screen = new Room(roomId);
+      App_default2.screen = new Room(roomId);
     });
     div.appendChild(btnOk);
     await box.wait("destroy");
@@ -4499,7 +4531,7 @@
     search = "";
     constructor() {
       super("Rooms");
-      App_default.title = "\u041A\u043E\u043C\u043D\u0430\u0442\u044B";
+      App_default2.title = "\u041A\u043E\u043C\u043D\u0430\u0442\u044B";
       this.element.style.overflow = "hidden";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
@@ -4517,7 +4549,7 @@
       this.titleElem.textContent = "\u041A\u043E\u043C\u043D\u0430\u0442\u044B";
       header.appendChild(this.titleElem);
       this.on("back", () => {
-        App_default.screen = new Dashboard();
+        App_default2.screen = new Dashboard();
       });
       this.init();
     }
@@ -4525,20 +4557,20 @@
       super.reconnect();
       this.rooms = [];
       this.updateRooms();
-      App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_ROOMS_LIST, {
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-        [PacketDataKeys_default.TOKEN]: App_default.user.token
+      App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_ROOMS_LIST, {
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token
       });
-      const data = await App_default.server.awaitPacket(PacketDataKeys_default.ROOMS);
+      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.ROOMS);
       const rooms = this.getRooms(data[PacketDataKeys_default.ROOMS]);
       for (const room of rooms) this.addRoom(room);
     }
     async init() {
-      App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_ROOMS_LIST, {
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-        [PacketDataKeys_default.TOKEN]: App_default.user.token
+      App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_ROOMS_LIST, {
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token
       });
-      const data = await App_default.server.awaitPacket(PacketDataKeys_default.ROOMS);
+      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.ROOMS);
       const filterElem = document.createElement("div");
       filterElem.className = "rooms-filter";
       this.element.appendChild(filterElem);
@@ -4556,11 +4588,11 @@
         updateBtn.onclick = async () => {
           this.rooms = [];
           this.updateRooms();
-          App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_ROOMS_LIST, {
-            [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-            [PacketDataKeys_default.TOKEN]: App_default.user.token
+          App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_ROOMS_LIST, {
+            [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+            [PacketDataKeys_default.TOKEN]: App_default2.user.token
           });
-          const data2 = await App_default.server.awaitPacket(PacketDataKeys_default.ROOMS);
+          const data2 = await App_default2.server.awaitPacket(PacketDataKeys_default.ROOMS);
           const rooms2 = this.getRooms(data2[PacketDataKeys_default.ROOMS]);
           for (const room of rooms2) this.addRoom(room);
         };
@@ -4587,7 +4619,7 @@
       this.div = document.createElement("div");
       this.div.style.textAlign = "center";
       this.div.style.overflowY = "overlay";
-      this.div.style.height = App_default.height - (95 + filterElem.clientHeight) + "px";
+      this.div.style.height = App_default2.height - (95 + filterElem.clientHeight) + "px";
       this.element.appendChild(this.div);
       const rooms = this.getRooms(data[PacketDataKeys_default.ROOMS]);
       for (const room of rooms) this.addRoom(room);
@@ -4598,7 +4630,7 @@
       const btnCreateRoom = document.createElement("button");
       btnCreateRoom.textContent = "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043A\u043E\u043C\u043D\u0430\u0442\u0443";
       btnCreateRoom.style.width = "99%";
-      btnCreateRoom.onclick = () => App_default.screen = new RoomCreation();
+      btnCreateRoom.onclick = () => App_default2.screen = new RoomCreation();
       divBtns.appendChild(btnCreateRoom);
       this.on("message", (data2) => {
         if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_IN_LOBBY_STATE) {
@@ -4617,7 +4649,7 @@
         }
       });
       this.on("resize", (e) => {
-        this.div.style.height = App_default.height - (85 + filterElem.clientHeight + 5) + "px";
+        this.div.style.height = App_default2.height - (85 + filterElem.clientHeight + 5) + "px";
       });
     }
     // <ROOM_OBJECT_ID, data>
@@ -4639,7 +4671,7 @@
       });
       const title = `\u041A\u043E\u043C\u043D\u0430\u0442\u044B: (${data.length}/${rooms.length})`;
       this.titleElem.textContent = noXSS(title);
-      App_default.title = title;
+      App_default2.title = title;
       return rooms;
     }
     updateRooms() {
@@ -4688,23 +4720,23 @@
 
 \u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430 \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u043F\u0430\u0440\u043E\u043B\u044C`, { btnText: `\u041F\u0440\u0438\u043C\u0435\u043D\u0438\u0442\u044C`, placeholder: `\u041F\u0430\u0440\u043E\u043B\u044C`, title: "\u0412\u0412\u0415\u0421\u0422\u0418 \u041F\u0410\u0420\u041E\u041B\u042C", height: 200 });
           if (password == "") return;
-          App_default.server.send(PacketDataKeys_default.ROOM_ENTER, {
+          App_default2.server.send(PacketDataKeys_default.ROOM_ENTER, {
             [PacketDataKeys_default.ROOM_PASS]: md5salt(password),
             [PacketDataKeys_default.ROOM_OBJECT_ID]: objectId
           });
-          const rData = await App_default.server.awaitPacket([PacketDataKeys_default.ROOM_ENTER, PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys_default.GAME_STARTED, PacketDataKeys_default.USER_IN_ANOTHER_ROOM, PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH, PacketDataKeys_default.USER_KICKED]);
+          const rData = await App_default2.server.awaitPacket([PacketDataKeys_default.ROOM_ENTER, PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys_default.GAME_STARTED, PacketDataKeys_default.USER_IN_ANOTHER_ROOM, PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH, PacketDataKeys_default.USER_KICKED]);
           if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR) {
             await MessageBox_default("\u041D\u0435\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439 \u043F\u0430\u0440\u043E\u043B\u044C!");
             join();
             return;
           }
-          App_default.screen = new Room(objectId, { password, sendRoomEnter: true });
+          App_default2.screen = new Room(objectId, { password, sendRoomEnter: true });
           return;
         }
         if (isHistory) {
-          App_default.screen = new Room(objectId, { isHistory, data: room.data });
+          App_default2.screen = new Room(objectId, { isHistory, data: room.data });
         } else {
-          App_default.screen = new Room(objectId);
+          App_default2.screen = new Room(objectId);
         }
       }
       const div = document.createElement("div");
@@ -4745,7 +4777,7 @@
         when(result).case(joinPl, async () => {
           const loading = LoadingBox_default({ title: "\u0416\u0414\u0401\u041C", text: `\u041A\u043E\u043B-\u0432\u043E \u0438\u0433\u0440\u043E\u043A\u043E\u0432 \u0432 \u043A\u043E\u043C\u043D\u0430\u0442\u0435: ${room[PacketDataKeys_default.PLAYERS_NUM]}`, canCloseAnywhere: true });
           const maxPl = room[PacketDataKeys_default.MAX_PLAYERS];
-          App_default.server.on("message", async (data) => {
+          App_default2.server.on("message", async (data) => {
             if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_IN_LOBBY_STATE) {
               const oid = data[PacketDataKeys_default.ROOM_IN_LOBBY_STATE][PacketDataKeys_default.ROOM_OBJECT_ID];
               const numPl = data[PacketDataKeys_default.ROOM_IN_LOBBY_STATE][PacketDataKeys_default.PLAYERS_IN_ROOM];
@@ -4768,16 +4800,16 @@
               }
             }
           }).key("waitingRils");
-          loading.box.on("destroy", () => App_default.server.removeByKey("waitingRils"));
+          loading.box.on("destroy", () => App_default2.server.removeByKey("waitingRils"));
         }).case("\u041F\u043E\u0441\u043C\u043E\u0442\u0440\u0435\u0442\u044C", () => join()).case("\u0417\u0430\u0439\u0442\u0438", () => join()).case("\u0423\u0434\u0430\u043B\u0438\u0442\u044C", async () => {
           if (!isHistory) return;
           if (!await ConfirmBox_default(`\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C?`)) return;
-          if (!await fs_default.existsFile(`${App_default.config.path}/history.json`))
-            await fs_default.writeFile(`${App_default.config.path}/history.json`, JSON.stringify({ rooms: [] }));
-          const history2 = JSON.parse(await fs_default.readFile(`${App_default.config.path}/history.json`));
+          if (!await fs_default.existsFile(`${App_default2.config.path}/history.json`))
+            await fs_default.writeFile(`${App_default2.config.path}/history.json`, JSON.stringify({ rooms: [] }));
+          const history2 = JSON.parse(await fs_default.readFile(`${App_default2.config.path}/history.json`));
           history2.rooms.splice(Number(objectId), 1);
-          await fs_default.writeFile(`${App_default.config.path}/history.json`, JSON.stringify(history2));
-          App_default.screen = new History();
+          await fs_default.writeFile(`${App_default2.config.path}/history.json`, JSON.stringify(history2));
+          App_default2.screen = new History();
         }).case(`\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C object id`, () => {
         });
       };
@@ -4855,7 +4887,7 @@
     constructor() {
       super("Friends");
       this.element.style.overflow = "hidden";
-      App_default.title = "\u0414\u0440\u0443\u0437\u044C\u044F";
+      App_default2.title = "\u0414\u0440\u0443\u0437\u044C\u044F";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -4872,14 +4904,14 @@
       title.textContent = "\u0414\u0440\u0443\u0437\u044C\u044F";
       header.appendChild(title);
       this.on("back", () => {
-        App_default.screen = new Dashboard();
+        App_default2.screen = new Dashboard();
       });
       this.init();
     }
     async init() {
-      App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_FRIENDSHIP_LIST, {
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-        [PacketDataKeys_default.TOKEN]: App_default.user.token
+      App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_FRIENDSHIP_LIST, {
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token
       });
       this.div = document.createElement("div");
       this.div.style.display = "flex";
@@ -4903,11 +4935,11 @@
         appendTo: btns
       });
       friends.onclick = async () => {
-        App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_FRIENDSHIP_LIST, {
-          [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-          [PacketDataKeys_default.TOKEN]: App_default.user.token
+        App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_FRIENDSHIP_LIST, {
+          [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+          [PacketDataKeys_default.TOKEN]: App_default2.user.token
         });
-        const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.FRIENDSHIP_LIST]);
+        const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.FRIENDSHIP_LIST]);
         friends.className = "gray";
         requests.className = "dark-gray";
         search.className = "dark-gray";
@@ -4924,11 +4956,11 @@
         appendTo: btns
       });
       requests.onclick = async () => {
-        App_default.server.send(PacketDataKeys_default.GET_SENT_FRIEND_REQUESTS_LIST, {
-          [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-          [PacketDataKeys_default.TOKEN]: App_default.user.token
+        App_default2.server.send(PacketDataKeys_default.GET_SENT_FRIEND_REQUESTS_LIST, {
+          [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+          [PacketDataKeys_default.TOKEN]: App_default2.user.token
         });
-        const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.FRIENDSHIP_LIST]);
+        const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.FRIENDSHIP_LIST]);
         friends.className = "dark-gray";
         requests.className = "gray";
         search.className = "dark-gray";
@@ -4953,12 +4985,12 @@
       };
       this.list = document.createElement("div");
       this.list.style.overflowY = "overlay";
-      this.list.style.height = App_default.height - 125 + "px";
+      this.list.style.height = App_default2.height - 125 + "px";
       this.div.appendChild(this.list);
       this.on("resize", () => {
-        this.list.style.height = App_default.height - 125 + "px";
+        this.list.style.height = App_default2.height - 125 + "px";
       });
-      const data = await App_default.server.awaitPacket([PacketDataKeys_default.FRIENDSHIP_LIST]);
+      const data = await App_default2.server.awaitPacket([PacketDataKeys_default.FRIENDSHIP_LIST]);
       this.updateFriends(data[PacketDataKeys_default.FRIENDSHIP_LIST][PacketDataKeys_default.FRIENDSHIP_LIST]);
     }
     updateFriends(data) {
@@ -4974,10 +5006,10 @@
         });
         inputSearch.onchange = async () => {
           this.searchValue = inputSearch.value;
-          App_default.server.send(PacketDataKeys_default.SEARCH_USER, {
+          App_default2.server.send(PacketDataKeys_default.SEARCH_USER, {
             [PacketDataKeys_default.SEARCH_TEXT]: inputSearch.value
           });
-          const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.SEARCH_USER]);
+          const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.SEARCH_USER]);
           this.updateFriends(data2[PacketDataKeys_default.USERS]);
         };
         this.list.appendChild(inputSearch);
@@ -5005,7 +5037,7 @@
               ProfileInfo(userObjectId);
               return;
             }
-            if (!isClicked) App_default.screen = new PrivateChat(objectId, userObjectId, user);
+            if (!isClicked) App_default2.screen = new PrivateChat(objectId, userObjectId, user);
           });
         };
         const avatar = document.createElement("img");
@@ -5055,7 +5087,7 @@
           btnRoom.textContent = "\u0412 \u043A\u043E\u043C\u043D\u0430\u0442\u0435";
           btnRoom.onclick = () => {
             isClicked = true;
-            App_default.screen = new Room(f[PacketDataKeys_default.ROOM][PacketDataKeys_default.OBJECT_ID]);
+            App_default2.screen = new Room(f[PacketDataKeys_default.ROOM][PacketDataKeys_default.OBJECT_ID]);
           };
           btns.appendChild(btnRoom);
         }
@@ -5085,10 +5117,10 @@
             isClicked = true;
             const c = await ConfirmBox_default(`\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0434\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F \u0438\u0437 \u0434\u0440\u0443\u0437\u0435\u0439? \u0412\u0441\u0435 \u043B\u0438\u0447\u043D\u044B\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0442\u0430\u043A-\u0436\u0435 \u0431\u0443\u0434\u0443\u0442 \u0443\u0434\u0430\u043B\u0435\u043D\u044B.`, { title: `\u0423\u0414\u0410\u041B\u0418\u0422\u042C \u0418\u0417 \u0414\u0420\u0423\u0417\u0415\u0419`, height: 175 });
             if (c) {
-              App_default.server.send(PacketDataKeys_default.REMOVE_FRIEND, {
+              App_default2.server.send(PacketDataKeys_default.REMOVE_FRIEND, {
                 [PacketDataKeys_default.FRIEND_USER_OBJECT_ID]: userObjectId
               });
-              const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.REMOVE_FRIEND]);
+              const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.REMOVE_FRIEND]);
               if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.REMOVE_FRIEND)
                 e.remove();
             }
@@ -5107,7 +5139,7 @@
       this.friendObjectId = friendObjectId;
       this.friendUserObjectId = friendUserObjectId;
       this.user = user;
-      App_default.title = user[PacketDataKeys_default.USERNAME];
+      App_default2.title = user[PacketDataKeys_default.USERNAME];
       (async () => this.element.style.background = `url(${await getBackgroundImg("day3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -5124,21 +5156,21 @@
       title.textContent = user[PacketDataKeys_default.USERNAME];
       header.appendChild(title);
       this.on("back", () => {
-        App_default.screen = new Friends();
+        App_default2.screen = new Friends();
       });
       this.init();
     }
     messagesElem;
     input;
     async init() {
-      App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_PRIVATE_CHAT, {
-        [PacketDataKeys_default.TOKEN]: App_default.user.token,
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
+      App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_PRIVATE_CHAT, {
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token,
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
         [PacketDataKeys_default.FRIENDSHIP]: this.friendObjectId
       });
-      const data = await App_default.server.awaitPacket(PacketDataKeys_default.PRIVATE_CHAT_LIST_MESSAGES);
+      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.PRIVATE_CHAT_LIST_MESSAGES);
       this.messagesElem = document.createElement("div");
-      this.messagesElem.style.height = App_default.height - (isMobile() ? 110 : 90) + "px";
+      this.messagesElem.style.height = App_default2.height - (isMobile() ? 110 : 90) + "px";
       this.messagesElem.style.textAlign = "center";
       this.messagesElem.style.overflowX = "hidden";
       this.messagesElem.style.overflowY = "overlay";
@@ -5166,12 +5198,12 @@
       });
       if (isMobile()) {
         this.input.addEventListener("focus", () => {
-          App_default.width = innerWidth;
-          App_default.height = innerHeight - 1;
+          App_default2.width = innerWidth;
+          App_default2.height = innerHeight - 1;
         });
         this.input.addEventListener("blur", () => {
-          App_default.width = innerWidth;
-          App_default.height = innerHeight - 2;
+          App_default2.width = innerWidth;
+          App_default2.height = innerHeight - 2;
         });
       }
       this.on("keydown", (e) => e.key == "Enter" && this.input.focus());
@@ -5182,11 +5214,11 @@
         }
       });
       this.on("resize", () => {
-        this.messagesElem.style.height = App_default.height - (isMobile() ? 110 : 90) + "px";
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 110 : 90) + "px";
       });
       for (const m of data[PacketDataKeys_default.MESSAGES]) this.addMessage(m, false);
       this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
-      App_default.server.send(PacketDataKeys_default.ACCEPT_MESSAGES, {
+      App_default2.server.send(PacketDataKeys_default.ACCEPT_MESSAGES, {
         [PacketDataKeys_default.FRIENDSHIP]: this.friendObjectId
       });
     }
@@ -5198,8 +5230,8 @@
       const type = m[PacketDataKeys_default.MESSAGE_TYPE];
       const sticker = m[PacketDataKeys_default.MESSAGE_STICKER];
       const userObjectId = m[PacketDataKeys_default.USER_OBJECT_ID];
-      const user = App_default.user.objectId == userObjectId ? App_default.user : this.user;
-      const username = App_default.user.objectId == userObjectId ? App_default.user.username : this.user[PacketDataKeys_default.USERNAME];
+      const user = App_default2.user.objectId == userObjectId ? App_default2.user : this.user;
+      const username = App_default2.user.objectId == userObjectId ? App_default2.user.username : this.user[PacketDataKeys_default.USERNAME];
       const created = m[PacketDataKeys_default.CREATED];
       const accepted = m[PacketDataKeys_default.ACCEPTED];
       if (userObjectId && !m.isDate) {
@@ -5234,7 +5266,7 @@
             nick.appendChild(img);
           }
           createElement("span", { css: { marginLeft: "2px" }, text: user[PacketDataKeys_default.USERNAME], appendTo: nick });
-          if (App_default.settings.data.hideUsername && username == App_default.user.username) nick.style.filter = "blur(5px)";
+          if (App_default2.settings.data.hideUsername && username == App_default2.user.username) nick.style.filter = "blur(5px)";
           nick.className = "black";
           nick.onclick = () => this.addNickToInput(username);
           const msg = document.createElement("span");
@@ -5260,7 +5292,7 @@
         this.messagesElem.appendChild(div);
         this.lastMessageDate = { userObjectId, elem: div };
       }
-      if (this.messagesElem.scrollHeight - App_default.height - this.messagesElem.scrollTop < 75)
+      if (this.messagesElem.scrollHeight - App_default2.height - this.messagesElem.scrollTop < 75)
         this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: "smooth" });
       if (deleteFirst && this.messagesElem.firstElementChild)
         this.messagesElem.removeChild(this.messagesElem.firstElementChild);
@@ -5288,11 +5320,11 @@
       if (isMobile()) this.input.focus();
     }
     sendMessage(message, options = {}) {
-      if (message.startsWith(App_default.settings.data.game.barmanEffect)) {
+      if (message.startsWith(App_default2.settings.data.game.barmanEffect)) {
         const symbols = "?!&@#%^~<>*";
         message = Array.from({ length: [...message].length - 1 }, () => symbols[Math.random() * symbols.length | 0]).join("");
       }
-      App_default.server.send(PacketDataKeys_default.PRIVATE_CHAT_MESSAGE_CREATE, {
+      App_default2.server.send(PacketDataKeys_default.PRIVATE_CHAT_MESSAGE_CREATE, {
         [PacketDataKeys_default.MESSAGE]: {
           [PacketDataKeys_default.FRIENDSHIP]: this.friendObjectId,
           [PacketDataKeys_default.MESSAGE_STYLE]: options.messageStyle ?? 0,
@@ -5336,14 +5368,14 @@
   }
   async function ProfileInfo(userObjectId) {
     const zoom = getZoom();
-    const box = new Box({ title: "\u041F\u0420\u041E\u0424\u0418\u041B\u042C", width: App_default.width / zoom / 0.85, height: App_default.height / zoom / 0.75, canCloseAnywhere: true });
+    const box = new Box({ title: "\u041F\u0420\u041E\u0424\u0418\u041B\u042C", width: App_default2.width / zoom / 0.85, height: App_default2.height / zoom / 0.75, canCloseAnywhere: true });
     box.content.style.overflowY = "overlay";
-    App_default.server.send(PacketDataKeys_default.GET_USER_PROFILE, {
+    App_default2.server.send(PacketDataKeys_default.GET_USER_PROFILE, {
       [PacketDataKeys_default.USER_RECEIVER]: userObjectId,
-      [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-      [PacketDataKeys_default.TOKEN]: App_default.user.token
+      [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+      [PacketDataKeys_default.TOKEN]: App_default2.user.token
     });
-    const data = await App_default.server.awaitPacket(PacketDataKeys_default.USER_PROFILE);
+    const data = await App_default2.server.awaitPacket(PacketDataKeys_default.USER_PROFILE);
     const ud = data[PacketDataKeys_default.USER_PROFILE];
     const room = ud[PacketDataKeys_default.ROOM];
     const pud = ud[PacketDataKeys_default.PROFILE_USER_DATA];
@@ -5408,8 +5440,8 @@
         wait(500).then(() => badge.style.display = "block");
       } else {
         avatar.style.position = "relative";
-        avatar.style.width = App_default.width / zoom2 / 1.75 + "px";
-        avatar.style.height = App_default.width / zoom2 / 1.75 + "px";
+        avatar.style.width = App_default2.width / zoom2 / 1.75 + "px";
+        avatar.style.height = App_default2.width / zoom2 / 1.75 + "px";
         avatar.style.borderRadius = "0";
         badge.style.display = "none";
       }
@@ -5438,15 +5470,15 @@
       else e.disabled = true;
       btns.appendChild(e);
     }
-    if (userObjectId != App_default.user.objectId) {
+    if (userObjectId != App_default2.user.objectId) {
       if (!profile.friend) {
         addButton("\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0432 \u0434\u0440\u0443\u0437\u044C\u044F", async () => {
           const e = await ConfirmBox_default(`\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0443 \u043D\u0430 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u0434\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F \u0432 \u0434\u0440\u0443\u0437\u044C\u044F?`, { title: `\u0414\u041E\u0411\u0410\u0412\u0418\u0422\u042C \u0412 \u0414\u0420\u0423\u0417\u042C\u042F` });
           if (e) {
-            App_default.server.send(PacketDataKeys_default.ADD_FRIEND, {
+            App_default2.server.send(PacketDataKeys_default.ADD_FRIEND, {
               [PacketDataKeys_default.FRIEND_USER_OBJECT_ID]: userObjectId
             });
-            const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.ADD_FRIEND, PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL]);
+            const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.ADD_FRIEND, PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL]);
             if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL) {
               MessageBox_default(`\u0421\u043F\u0438\u0441\u043E\u043A \u0432\u0430\u0448\u0438\u0445 \u0434\u0440\u0443\u0437\u0435\u0439 \u043F\u043E\u043B\u043E\u043D. \u0412\u044B \u0443\u0436\u0435 \u0434\u043E\u0431\u0430\u0432\u0438\u043B\u0438 ${data2[PacketDataKeys_default.FRIENDSHIP_LIST_LIMIT]} \u0434\u0440\u0443\u0437\u0435\u0439 \u0432 \u0441\u043F\u0438\u0441\u043E\u043A \u0434\u0440\u0443\u0437\u0435\u0439
 
@@ -5465,10 +5497,10 @@
         addButton("\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0434\u0440\u0443\u0436\u0431\u0443", async () => {
           const e = await ConfirmBox_default(`\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0443 \u0432 \u0434\u0440\u0443\u0437\u044C\u044F \u043E\u0442 \u0434\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F`, { title: `\u041F\u0420\u0418\u041D\u042F\u0422\u042C \u0414\u0420\u0423\u0416\u0411\u0423` });
           if (e) {
-            App_default.server.send(PacketDataKeys_default.ADD_FRIEND, {
+            App_default2.server.send(PacketDataKeys_default.ADD_FRIEND, {
               [PacketDataKeys_default.FRIEND_USER_OBJECT_ID]: userObjectId
             });
-            const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.ADD_FRIEND, PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL]);
+            const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.ADD_FRIEND, PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL]);
             if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL) {
               MessageBox_default(`\u0421\u043F\u0438\u0441\u043E\u043A \u0432\u0430\u0448\u0438\u0445 \u0434\u0440\u0443\u0437\u0435\u0439 \u043F\u043E\u043B\u043E\u043D. \u0412\u044B \u0443\u0436\u0435 \u0434\u043E\u0431\u0430\u0432\u0438\u043B\u0438 ${data2[PacketDataKeys_default.FRIENDSHIP_LIST_LIMIT]} \u0434\u0440\u0443\u0437\u0435\u0439 \u0432 \u0441\u043F\u0438\u0441\u043E\u043A \u0434\u0440\u0443\u0437\u0435\u0439
 
@@ -5487,10 +5519,10 @@
         addButton("\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u0437\u0430\u043F\u0440\u043E\u0441", async () => {
           const e = await ConfirmBox_default(`\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u0437\u0430\u043F\u0440\u043E\u0441 \u0434\u0440\u0443\u0436\u0431\u044B?`, { title: `\u041E\u0422\u041C\u0415\u041D\u0418\u0422\u042C \u0417\u0410\u041F\u0420\u041E\u0421` });
           if (e) {
-            App_default.server.send(PacketDataKeys_default.REMOVE_FRIEND, {
+            App_default2.server.send(PacketDataKeys_default.REMOVE_FRIEND, {
               [PacketDataKeys_default.FRIEND_USER_OBJECT_ID]: userObjectId
             });
-            const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.REMOVE_FRIEND]);
+            const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.REMOVE_FRIEND]);
             if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.REMOVE_FRIEND) {
               box.destroy();
               ProfileInfo(userObjectId);
@@ -5502,10 +5534,10 @@
         addButton("\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u0434\u0440\u0443\u0436\u0431\u0443", async () => {
           const e = await ConfirmBox_default(`\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0434\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F \u0438\u0437 \u0434\u0440\u0443\u0437\u0435\u0439? \u0412\u0441\u0435 \u043B\u0438\u0447\u043D\u044B\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0442\u0430\u043A-\u0436\u0435 \u0431\u0443\u0434\u0443\u0442 \u0443\u0434\u0430\u043B\u0435\u043D\u044B.`, { title: `\u0423\u0414\u0410\u041B\u0418\u0422\u042C \u0418\u0417 \u0414\u0420\u0423\u0417\u0415\u0419`, height: 175 });
           if (e) {
-            App_default.server.send(PacketDataKeys_default.REMOVE_FRIEND, {
+            App_default2.server.send(PacketDataKeys_default.REMOVE_FRIEND, {
               [PacketDataKeys_default.FRIEND_USER_OBJECT_ID]: userObjectId
             });
-            const data2 = await App_default.server.awaitPacket([PacketDataKeys_default.REMOVE_FRIEND]);
+            const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.REMOVE_FRIEND]);
             if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.REMOVE_FRIEND) {
               box.destroy();
               ProfileInfo(userObjectId);
@@ -5514,7 +5546,7 @@
         });
         addButton("\u041B\u0438\u0447\u043D\u044B\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F", async () => {
           box.destroy();
-          App_default.screen = new PrivateChat(profile.friend, userObjectId, pud);
+          App_default2.screen = new PrivateChat(profile.friend, userObjectId, pud);
         });
       }
     }
@@ -5523,7 +5555,7 @@
         addButton("\u0412\u044B\u0433\u043D\u0430\u0442\u044C", async () => {
           const c = await ConfirmBox_default(`\u0415\u0441\u043B\u0438 \u0432\u0441\u0435 \u043F\u0440\u043E\u0433\u043E\u043B\u043E\u0441\u0443\u044E\u0442 \u0437\u0430 \u0438\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u0438\u0433\u0440\u043E\u043A\u0430 \u0438\u0437 \u043A\u043E\u043C\u043D\u0430\u0442\u044B, \u044D\u0442\u043E \u0431\u0443\u0434\u0435\u0442 \u0441\u0442\u043E\u0438\u0442\u044C \u0432\u0430\u043C 200 \u0441\u0435\u0440\u0435\u0431\u0440\u044F\u043D\u044B\u0445 \u043C\u043E\u043D\u0435\u0442`, { title: `\u0412\u042B\u0413\u041D\u0410\u0422\u042C \u0418\u0413\u0420\u041E\u041A\u0410`, height: 180 });
           if (c) {
-            App_default.server.send(PacketDataKeys_default.KICK_USER, {
+            App_default2.server.send(PacketDataKeys_default.KICK_USER, {
               [PacketDataKeys_default.ROOM_OBJECT_ID]: room[PacketDataKeys_default.OBJECT_ID],
               [PacketDataKeys_default.USER_OBJECT_ID]: userObjectId
             });
@@ -5585,7 +5617,7 @@
       d.style.margin = "1px";
       d.style.borderRadius = "5px";
       const img = document.createElement("img");
-      fs_default.loadImageAsDataURL(`${App_default.config.path}/assets/textures/roles/${id}.png`).then((e) => img.src = e);
+      fs_default.loadImageAsDataURL(`${App_default2.config.path}/assets/textures/roles/${id}.png`).then((e) => img.src = e);
       img.width = 50;
       img.height = 70;
       img.onmousedown = (e) => e.preventDefault();
@@ -5626,7 +5658,7 @@
     input;
     constructor() {
       super("GlobalChat");
-      App_default.title = "\u041E\u0431\u0449\u0438\u0439 \u0447\u0430\u0442";
+      App_default2.title = "\u041E\u0431\u0449\u0438\u0439 \u0447\u0430\u0442";
       (async () => this.element.style.background = `url(${await getBackgroundImg("day3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -5645,9 +5677,9 @@
       this.init();
     }
     async init() {
-      App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_CHAT, {
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-        [PacketDataKeys_default.TOKEN]: App_default.user.token
+      App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_CHAT, {
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token
       });
       this.listPlayersFromInput = createElement("div", {
         css: {
@@ -5672,7 +5704,7 @@
       });
       this.messagesElem = createElement("div", {
         css: {
-          height: App_default.height - (isMobile() ? 270 : 250) + "px",
+          height: App_default2.height - (isMobile() ? 270 : 250) + "px",
           textAlign: "center",
           overflowX: "hidden",
           overflowY: "overlay",
@@ -5686,7 +5718,7 @@
         },
         appendTo: this.element
       });
-      const data = await App_default.server.awaitPacket(PacketDataKeys_default.MESSAGES);
+      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.MESSAGES);
       for (const m of data[PacketDataKeys_default.MESSAGES]) this.addMessage(m, false);
       this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
       const footer = createElement("div", {
@@ -5716,7 +5748,7 @@
         }
       };
       this.input.oninput = () => {
-        const winZoom = App_default.zoom;
+        const winZoom = App_default2.zoom;
         const zoom = getZoom();
         const e = this.input.value.substring((this.input.selectionStart ?? 1) - 1);
         if (e == "@") {
@@ -5757,9 +5789,9 @@
       emojiBtn.onclick = () => {
         emojiPanel.style.display = emojiPanel.style.display == "none" ? "block" : "none";
         if (emojiPanel.style.display == "block") {
-          this.messagesElem.style.height = App_default.height - (isMobile() ? 270 : 250) - 60 + "px";
+          this.messagesElem.style.height = App_default2.height - (isMobile() ? 270 : 250) - 60 + "px";
         } else {
-          this.messagesElem.style.height = App_default.height - (isMobile() ? 270 : 250) + "px";
+          this.messagesElem.style.height = App_default2.height - (isMobile() ? 270 : 250) + "px";
         }
       };
       this.on("keydown", (e) => e.key == "Enter" && this.input.focus());
@@ -5772,10 +5804,10 @@
         }
       });
       this.on("resize", () => {
-        this.messagesElem.style.height = App_default.height - (isMobile() ? 270 : 250) + "px";
+        this.messagesElem.style.height = App_default2.height - (isMobile() ? 270 : 250) + "px";
       });
       this.on("back", () => {
-        App_default.screen = new Dashboard();
+        App_default2.screen = new Dashboard();
       });
     }
     joinLeaveMessages = {};
@@ -5790,8 +5822,8 @@
         if (this.lastMessage && this.lastMessage.divM && this.lastMessage.user[PacketDataKeys_default.USERNAME] == user[PacketDataKeys_default.USERNAME]) {
           const msg = document.createElement("span");
           let cleanText = users_default[objectId] == "dev" ? text : noXSS(text);
-          if (text.includes(`[${App_default.user.username}]`))
-            cleanText = cleanText.replaceAll(`${App_default.user.username}`, `<span style="${App_default.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default.user.username}</span>`);
+          if (text.includes(`[${App_default2.user.username}]`))
+            cleanText = cleanText.replaceAll(`${App_default2.user.username}`, `<span style="${App_default2.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default2.user.username}</span>`);
           processEmojis(msg, cleanText);
           msg.className = "black";
           msg.style.userSelect = "text";
@@ -5820,13 +5852,13 @@
             nick.appendChild(img);
           }
           createElement("span", { css: { marginLeft: "2px" }, text: user[PacketDataKeys_default.USERNAME], appendTo: nick });
-          if (user[PacketDataKeys_default.USERNAME] == App_default.user.username && App_default.settings.data.hideUsername) nick.style.filter = "blur(5px)";
+          if (user[PacketDataKeys_default.USERNAME] == App_default2.user.username && App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
           nick.className = "black";
           nick.onclick = () => this.addNickToInput(user[PacketDataKeys_default.USERNAME]);
           const msg = document.createElement("span");
           let cleanText = users_default[objectId] == "dev" ? text : noXSS(text);
-          if (text.includes(`[${App_default.user.username}]`))
-            cleanText = cleanText.replaceAll(`${App_default.user.username}`, `<span style="${App_default.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default.user.username}</span>`);
+          if (text.includes(`[${App_default2.user.username}]`))
+            cleanText = cleanText.replaceAll(`${App_default2.user.username}`, `<span style="${App_default2.settings.data.hideUsername ? "filter: blur(5px)" : "color: #ab1457; font-weight: bold"}">${App_default2.user.username}</span>`);
           processEmojis(msg, cleanText);
           msg.style.color = type == 9 ? "#186400" : type == 11 ? "gray" : type == 17 ? "#113B81" : type == 27 ? "#940000" : "black";
           msg.style.userSelect = "text";
@@ -5839,7 +5871,7 @@
         }
       } else {
         const div = document.createElement("div");
-        const nickElement = `<span style="${text == App_default.user.username && App_default.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text}</span>`;
+        const nickElement = `<span style="${text == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text}</span>`;
         if (type == 2 || type == 3) div.innerHTML = type == 2 ? `\u0418\u0433\u0440\u043E\u043A ${nickElement} \u0432\u043E\u0448\u0451\u043B` : `\u0418\u0433\u0440\u043E\u043A ${nickElement} \u0432\u044B\u0448\u0435\u043B`;
         else div.textContent = noXSS(text);
         div.style.color = type == 2 ? "#22640A" : type == 3 ? "#940000" : "black";
@@ -5853,7 +5885,7 @@
           this.joinLeaveMessages[text] = div;
         }
       }
-      if (this.messagesElem.scrollHeight - App_default.height - this.messagesElem.scrollTop < 75)
+      if (this.messagesElem.scrollHeight - App_default2.height - this.messagesElem.scrollTop < 75)
         this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: "smooth" });
       if (deleteFirst && this.messagesElem.firstElementChild)
         this.messagesElem.removeChild(this.messagesElem.firstElementChild);
@@ -5880,12 +5912,12 @@
       if (isMobile()) this.input.focus();
     }
     sendMessage(message, options = {}) {
-      if (message.startsWith(App_default.settings.data.game.barmanEffect)) {
+      if (message.startsWith(App_default2.settings.data.game.barmanEffect)) {
         const symbols = "?!&@#%^~<>*";
         message = Array.from({ length: [...message].length - 1 }, () => symbols[Math.random() * symbols.length | 0]).join("");
       }
       if (CommandManager_default.executeCommand(message)) return;
-      App_default.server.send(PacketDataKeys_default.CHAT_MESSAGE_CREATE, {
+      App_default2.server.send(PacketDataKeys_default.CHAT_MESSAGE_CREATE, {
         [PacketDataKeys_default.MESSAGE]: {
           [PacketDataKeys_default.MESSAGE_STYLE]: options.messageStyle ?? 0,
           [PacketDataKeys_default.MESSAGE_STICKER]: options.messageSticker ?? false,
@@ -5915,7 +5947,7 @@
           nick.appendChild(img);
         }
         createElement("span", { css: { marginLeft: "2px" }, text: user[PacketDataKeys_default.USERNAME], appendTo: nick });
-        if (user[PacketDataKeys_default.USERNAME] == App_default.user.username && App_default.settings.data.hideUsername) nick.style.filter = "blur(5px)";
+        if (user[PacketDataKeys_default.USERNAME] == App_default2.user.username && App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
         nick.className = "black";
         nick.onclick = () => this.addNickToInput(user[PacketDataKeys_default.USERNAME]);
         div.appendChild(avatar);
@@ -5930,7 +5962,7 @@
     constructor() {
       super("Settings");
       this.element.style.overflow = "hidden";
-      App_default.title = "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438";
+      App_default2.title = "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -5947,7 +5979,7 @@
       title.textContent = "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438";
       header.appendChild(title);
       this.on("back", () => {
-        App_default.screen = new Dashboard();
+        App_default2.screen = new Dashboard();
       });
       this.init();
     }
@@ -6051,33 +6083,33 @@
       }
       addButton("\u0422\u0435\u043C\u0430", "\u041D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C", () => MessageBox_default("\u0421\u043A\u043E\u0440\u043E.."));
       addSlider("\u041C\u0430\u0441\u0448\u0442\u0430\u0431", (v) => {
-        App_default.settings.data.window.zoom = v;
-        App_default.element.style.zoom = v + "";
-      }, isMobile() ? 0.4 : 0.3, isMobile() ? 0.9 : 1.5, App_default.settings.data.window.zoom, 0.1);
+        App_default2.settings.data.window.zoom = v;
+        App_default2.element.style.zoom = v + "";
+      }, isMobile() ? 0.4 : 0.3, isMobile() ? 0.9 : 1.5, App_default2.settings.data.window.zoom, 0.1);
       addInput("\u041E\u043F\u044C\u044F\u043D\u0435\u043D\u0438\u0435 \u0441", (v) => {
-        App_default.settings.data.game.barmanEffect = v;
-      }, App_default.settings.data.game.barmanEffect);
+        App_default2.settings.data.game.barmanEffect = v;
+      }, App_default2.settings.data.game.barmanEffect);
       addCheckbox('\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 "\u0412\u044B \u0443\u043C\u0435\u0440\u043B\u0438"?', (v) => {
-        App_default.settings.data.game.showYouDiedMessage = v;
-      }, App_default.settings.data.game.showYouDiedMessage);
+        App_default2.settings.data.game.showYouDiedMessage = v;
+      }, App_default2.settings.data.game.showYouDiedMessage);
       addCheckbox("\u0423\u0434\u0430\u043B\u044F\u0442\u044C \u0432\u0441\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F \u043F\u043E\u0441\u043B\u0435 \u043D\u0430\u0447\u0430\u043B\u0430 \u0438\u0433\u0440\u044B?", (v) => {
-        App_default.settings.data.game.clearMessages = v;
-      }, App_default.settings.data.game.clearMessages);
+        App_default2.settings.data.game.clearMessages = v;
+      }, App_default2.settings.data.game.clearMessages);
       addCheckbox("\u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E \u043A\u043E\u043C\u043D\u0430\u0442\u044B \u043F\u043E\u0441\u043B\u0435 \u043A\u043E\u043D\u0446\u0430 \u0438\u0433\u0440\u044B?", (v) => {
-        App_default.settings.data.game.saveHistory = v;
-      }, App_default.settings.data.game.saveHistory);
+        App_default2.settings.data.game.saveHistory = v;
+      }, App_default2.settings.data.game.saveHistory);
       addCheckbox("\u0421\u043A\u0440\u044B\u0432\u0430\u0442\u044C \u043D\u0438\u043A\u043D\u0435\u0439\u043C \u0432\u0435\u0437\u0434\u0435", (v) => {
-        App_default.settings.data.hideUsername = v;
-      }, App_default.settings.data.hideUsername);
+        App_default2.settings.data.hideUsername = v;
+      }, App_default2.settings.data.hideUsername);
       addCheckbox("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C \u043D\u043E\u043C\u0435\u0440\u0430 \u0438\u0433\u0440\u043E\u043A\u043E\u0432", (v) => {
-        App_default.settings.data.game.showIndexPl = v;
-      }, App_default.settings.data.game.showIndexPl);
+        App_default2.settings.data.game.showIndexPl = v;
+      }, App_default2.settings.data.game.showIndexPl);
       addCheckbox("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C \u043D\u043E\u043C\u0435\u0440 \u0438\u0433\u0440\u043E\u043A\u0430 \u0432 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0438", (v) => {
-        App_default.settings.data.game.showIndexPlChat = v;
-      }, App_default.settings.data.game.showIndexPlChat);
+        App_default2.settings.data.game.showIndexPlChat = v;
+      }, App_default2.settings.data.game.showIndexPlChat);
       addCheckbox("\u0414\u043B\u044F \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432\n\u042D\u0442\u043E \u0443\u0434\u043E\u0431\u043D\u043E \u0434\u043B\u044F \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u044F \u043C\u043E\u0434\u0430 \u0438 \u0442.\u0434.", (v) => {
-        App_default.settings.data.developer = v;
-      }, App_default.settings.data.developer);
+        App_default2.settings.data.developer = v;
+      }, App_default2.settings.data.developer);
       this.element.appendChild(e);
     }
   };
@@ -6117,7 +6149,7 @@
   var Dashboard = class _Dashboard extends Screen {
     constructor() {
       super("Dashboard");
-      App_default.title = "\u041C\u0435\u043D\u044E";
+      App_default2.title = "\u041C\u0435\u043D\u044E";
       (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
       const header = document.createElement("div");
       header.className = "header";
@@ -6125,7 +6157,7 @@
       const logo = document.createElement("label");
       logo.textContent = "\u0411\u0430\u0444\u0438\u044F \u043E\u043D\u043B\u0430\u0439\u043D";
       header.appendChild(logo);
-      this.on("back", () => App_default.destroy());
+      this.on("back", () => App_default2.destroy());
       this.init();
     }
     async init() {
@@ -6138,8 +6170,8 @@
       avatar.width = avatar.height = 100;
       avatar.style.margin = "5px";
       avatar.onclick = async () => {
-        App_default.server.send(PacketDataKeys_default.USER_GET_DEFAULT_PHOTOS, {});
-        const data2 = await App_default.server.awaitPacket(PacketDataKeys_default.USER_DEFAULT_PHOTOS);
+        App_default2.server.send(PacketDataKeys_default.USER_GET_DEFAULT_PHOTOS, {});
+        const data2 = await App_default2.server.awaitPacket(PacketDataKeys_default.USER_DEFAULT_PHOTOS);
         const photos = data2[PacketDataKeys_default.USER_DEFAULT_PHOTOS][PacketDataKeys_default.USER_DEFAULT_PHOTOS_IDS];
         photos.sort((a, b) => {
           const [ta, na] = [a[0], Number(a.slice(1))];
@@ -6185,12 +6217,12 @@
               MessageBox_default("\u041E\u0448\u0438\u0431\u043A\u0430 \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0438 \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u044F");
               return;
             }
-            App_default.server.send(PacketDataKeys_default.UPLOAD_PHOTO, {
-              [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-              [PacketDataKeys_default.TOKEN]: App_default.user.token,
+            App_default2.server.send(PacketDataKeys_default.UPLOAD_PHOTO, {
+              [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+              [PacketDataKeys_default.TOKEN]: App_default2.user.token,
               [PacketDataKeys_default.FILE]: base64
             });
-            const data3 = await App_default.server.awaitPacket([
+            const data3 = await App_default2.server.awaitPacket([
               PacketDataKeys_default.DASHBOARD,
               PacketDataKeys_default.WRONG_FILE_TYPE
             ]);
@@ -6198,10 +6230,10 @@
               MessageBox_default("\u0414\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B \u0442\u043E\u043B\u044C\u043A\u043E PNG \u0438 JPG");
               return;
             }
-            delete App_default.resources[`avatars_${App_default.user.objectId}`];
-            App_default.user.photo = "1";
+            delete App_default2.resources[`avatars_${App_default2.user.objectId}`];
+            App_default2.user.photo = "1";
             await box.close();
-            App_default.screen = new _Dashboard();
+            App_default2.screen = new _Dashboard();
           };
           document.body.appendChild(input);
           input.click();
@@ -6230,14 +6262,14 @@
           img.style.padding = "2px";
           img.onmousedown = (e2) => e2.preventDefault();
           img.onclick = async () => {
-            App_default.server.send("ussdph", {
+            App_default2.server.send("ussdph", {
               [PacketDataKeys_default.PHOTO]: p,
-              [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-              [PacketDataKeys_default.TOKEN]: App_default.user.token
+              [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+              [PacketDataKeys_default.TOKEN]: App_default2.user.token
             });
-            await App_default.server.awaitPacket("ussdph");
-            delete App_default.resources[`avatars_${App_default.user.objectId}`];
-            App_default.user.photo = p;
+            await App_default2.server.awaitPacket("ussdph");
+            delete App_default2.resources[`avatars_${App_default2.user.objectId}`];
+            App_default2.user.photo = p;
             avatar.src = img.src;
           };
           images.appendChild(img);
@@ -6247,11 +6279,11 @@
       };
       avatar.onmousedown = (e) => e.preventDefault();
       getAvatarImg({
-        [PacketDataKeys_default.OBJECT_ID]: App_default.user.objectId,
-        [PacketDataKeys_default.PHOTO]: App_default.user.photo
+        [PacketDataKeys_default.OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.PHOTO]: App_default2.user.photo
       }).then((e) => avatar.src = e);
-      nick.textContent = App_default.user.username;
-      if (App_default.settings.data.hideUsername) nick.style.filter = "blur(5px)";
+      nick.textContent = App_default2.user.username;
+      if (App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
       div.appendChild(avatar);
       div.appendChild(document.createElement("br"));
       div.appendChild(nick);
@@ -6264,7 +6296,7 @@
       btnRooms.textContent = "\u041A\u043E\u043C\u043D\u0430\u0442\u044B";
       btnRooms.style.width = "60%";
       btnRooms.style.margin = "3px";
-      btnRooms.onclick = () => App_default.screen = new Rooms();
+      btnRooms.onclick = () => App_default2.screen = new Rooms();
       div.appendChild(btnRooms);
       div.appendChild(document.createElement("br"));
       const btnMM = document.createElement("button");
@@ -6278,35 +6310,35 @@
       btnGlobalChat.textContent = "\u0427\u0430\u0442";
       btnGlobalChat.style.width = "60%";
       btnGlobalChat.style.margin = "3px";
-      btnGlobalChat.onclick = () => App_default.screen = new GlobalChat();
+      btnGlobalChat.onclick = () => App_default2.screen = new GlobalChat();
       div.appendChild(btnGlobalChat);
       div.appendChild(document.createElement("br"));
       const btnFriends = document.createElement("button");
       btnFriends.textContent = "\u0414\u0440\u0443\u0437\u044C\u044F";
       btnFriends.style.width = "60%";
       btnFriends.style.margin = "3px";
-      btnFriends.onclick = () => App_default.screen = new Friends();
+      btnFriends.onclick = () => App_default2.screen = new Friends();
       div.appendChild(btnFriends);
       div.appendChild(document.createElement("br"));
       const btnHistory = document.createElement("button");
       btnHistory.textContent = "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u0438\u0433\u0440";
       btnHistory.style.width = "60%";
       btnHistory.style.margin = "3px";
-      btnHistory.onclick = () => App_default.screen = new History();
+      btnHistory.onclick = () => App_default2.screen = new History();
       div.appendChild(btnHistory);
       div.appendChild(document.createElement("br"));
       const btnSettings = document.createElement("button");
       btnSettings.textContent = "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438";
       btnSettings.style.width = "60%";
       btnSettings.style.margin = "3px";
-      btnSettings.onclick = () => App_default.screen = new Settings();
+      btnSettings.onclick = () => App_default2.screen = new Settings();
       div.appendChild(btnSettings);
       div.appendChild(document.createElement("br"));
       const btnProfile = document.createElement("button");
       btnProfile.textContent = "\u041F\u0440\u043E\u0444\u0438\u043B\u044C";
       btnProfile.style.width = "60%";
       btnProfile.style.margin = "3px";
-      btnProfile.onclick = () => ProfileInfo(App_default.user.objectId);
+      btnProfile.onclick = () => ProfileInfo(App_default2.user.objectId);
       div.appendChild(btnProfile);
       div.appendChild(document.createElement("br"));
       if (isMobile()) {
@@ -6339,26 +6371,26 @@
         btnClose.textContent = "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u0438\u0433\u0440\u0443";
         btnClose.style.width = "60%";
         btnClose.style.margin = "3px";
-        btnClose.onclick = () => App_default.win.close();
+        btnClose.onclick = () => App_default2.win.close();
         div.appendChild(btnClose);
       }
-      App_default.server.send(PacketDataKeys_default.ADD_CLIENT_TO_DASHBOARD, {
-        [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-        [PacketDataKeys_default.TOKEN]: App_default.user.token
+      App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_DASHBOARD, {
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token
       });
-      const data = await App_default.server.awaitPacket(PacketDataKeys_default.DASHBOARD);
+      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.DASHBOARD);
       const db = data[PacketDataKeys_default.DASHBOARD];
       const du = db[PacketDataKeys_default.DASHBOARD_USER];
-      App_default.user.update(du);
-      App_default.user.goldCoins = db[PacketDataKeys_default.USER_ACCOUNT_COINS][PacketDataKeys_default.GOLD_COINS];
-      App_default.user.sliverCoins = db[PacketDataKeys_default.USER_ACCOUNT_COINS][PacketDataKeys_default.SILVER_COINS];
+      App_default2.user.update(du);
+      App_default2.user.goldCoins = db[PacketDataKeys_default.USER_ACCOUNT_COINS][PacketDataKeys_default.GOLD_COINS];
+      App_default2.user.sliverCoins = db[PacketDataKeys_default.USER_ACCOUNT_COINS][PacketDataKeys_default.SILVER_COINS];
       nick.textContent = du[PacketDataKeys_default.USERNAME];
       if (du[PacketDataKeys_default.USERNAME] == "") (async () => {
         async function send() {
           const uu = await PromptBox_default(`\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
-          App_default.server.send(PacketDataKeys_default.USERNAME_SET, {
-            [PacketDataKeys_default.USER_OBJECT_ID]: App_default.user.objectId,
-            [PacketDataKeys_default.TOKEN]: App_default.user.token,
+          App_default2.server.send(PacketDataKeys_default.USERNAME_SET, {
+            [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+            [PacketDataKeys_default.TOKEN]: App_default2.user.token,
             [PacketDataKeys_default.USERNAME]: uu
           });
         }
@@ -6377,7 +6409,7 @@
             await MessageBox_default(`\u041D\u0438\u043A\u043D\u0435\u0439\u043C \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043F\u0443\u0441\u0442\u044B\u043C`);
             await send();
           } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USERNAME_SET) {
-            const profiles = JSON.parse(await fs_default.readFile(App_default.getPathProfiles()));
+            const profiles = JSON.parse(await fs_default.readFile(App_default2.getPathProfiles()));
             const acc = profiles.find((e) => e.name == "");
             if (!acc) {
               alert(`\u041E\u0448\u0438\u0431\u043A\u0430... \u041E\u0442\u043F\u0440\u0430\u0432\u044C \u044D\u0442\u0443 \u043E\u0448\u0438\u0431\u043A\u0443 \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u0443
@@ -6386,8 +6418,8 @@
               return;
             }
             acc.name = json[PacketDataKeys_default.USERNAME];
-            await fs_default.writeFile(App_default.getPathProfiles(), JSON.stringify(profiles));
-            App_default.screen = new _Dashboard();
+            await fs_default.writeFile(App_default2.getPathProfiles(), JSON.stringify(profiles));
+            App_default2.screen = new _Dashboard();
           } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.SIGN_IN_ERROR) {
             await MessageBox_default(`\u0427\u0442\u043E-\u0442\u043E \u043D\u0435 \u043F\u043E\u0448\u043B\u043E \u0442\u0430\u043A
 \u041A\u043E\u0434 \u043E\u0448\u0438\u0431\u043A\u0438: ${json[PacketDataKeys_default.ERROR]}`);
@@ -6458,7 +6490,7 @@
     }
     lastAuth;
     async addProfile({ name, email, password, token, userId }) {
-      const profiles = JSON.parse(await fs_default.readFile(App_default.getPathProfiles()));
+      const profiles = JSON.parse(await fs_default.readFile(App_default2.getPathProfiles()));
       const existing = profiles.findIndex((e) => e.email == email || e.token == token || e.userId == userId);
       if (existing != -1) {
         profiles[existing] = {
@@ -6468,7 +6500,7 @@
           token,
           userId
         };
-        await fs_default.writeFile(App_default.getPathProfiles(), JSON.stringify(profiles));
+        await fs_default.writeFile(App_default2.getPathProfiles(), JSON.stringify(profiles));
         return true;
       }
       profiles.push({
@@ -6478,12 +6510,12 @@
         token,
         userId
       });
-      await fs_default.writeFile(App_default.getPathProfiles(), JSON.stringify(profiles));
+      await fs_default.writeFile(App_default2.getPathProfiles(), JSON.stringify(profiles));
       return true;
     }
     async auth(auth) {
-      if (!auth) auth = App_default.config.auth;
-      if (App_default.screen.name == "Loading") App_default.screen.title = "\u0410\u0432\u0442\u043E\u0440\u0438\u0437\u0430\u0446\u0438\u044F..";
+      if (!auth) auth = App_default2.config.auth;
+      if (App_default2.screen.name == "Loading") App_default2.screen.title = "\u0410\u0432\u0442\u043E\u0440\u0438\u0437\u0430\u0446\u0438\u044F..";
       if (auth) {
         const data = await this.signIn(auth.email, auth.password, auth.token, auth.userId);
         if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.SIGN_IN_ERROR) {
@@ -6516,7 +6548,7 @@
             await MessageBox_default(`\u041B\u043E\u0433\u0438\u043D \u0438 \u043F\u0430\u0440\u043E\u043B\u044C \u043D\u0443\u0436\u043D\u044B
 \u041A\u043E\u0434 \u043E\u0448\u0438\u0431\u043A\u0438: 0`, { title: `\u041E\u0428\u0418\u0411\u041A\u0410` });
           }
-          App_default.screen = new Authorization();
+          App_default2.screen = new Authorization();
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_SIGN_IN) {
           const name = data[PacketDataKeys_default.USER][PacketDataKeys_default.USERNAME];
           const token = auth.token || data[PacketDataKeys_default.USER][PacketDataKeys_default.TOKEN];
@@ -6533,12 +6565,12 @@
             token,
             userId
           });
-          App_default.user.update(data[PacketDataKeys_default.USER]);
-          App_default.user.bToken = generateRandomToken();
+          App_default2.user.update(data[PacketDataKeys_default.USER]);
+          App_default2.user.bToken = generateRandomToken();
           if (isReconnect) {
-            App_default.screen.reconnect();
+            App_default2.screen.reconnect();
           } else {
-            App_default.screen = new Dashboard();
+            App_default2.screen = new Dashboard();
           }
           return true;
         }
@@ -6598,8 +6630,8 @@
           token,
           userId
         });
-        App_default.user.bToken = generateRandomToken();
-        App_default.screen = new Dashboard();
+        App_default2.user.bToken = generateRandomToken();
+        App_default2.screen = new Dashboard();
       }
     }
   };
@@ -8233,8 +8265,8 @@
       this.connect();
     }
     connect() {
-      this.logger.info(`Connecting to server.. ${App_default.config.uriServer}`);
-      this.webSocket = new WebSocket(App_default.config.uriServer);
+      this.logger.info(`Connecting to server.. ${App_default2.config.uriServer}`);
+      this.webSocket = new WebSocket(App_default2.config.uriServer);
       this.webSocket.addEventListener("open", this.#init.bind(this));
       this.webSocket.addEventListener("error", (e) => console.error(e));
       this.webSocket.addEventListener("close", () => this.emit("close"));
@@ -8256,7 +8288,7 @@
       this.webSocket.addEventListener("message", (e) => {
         const json = JSON.parse(e.data);
         this.call("message", json);
-        if (App_default.settings.data.debug) {
+        if (App_default2.settings.data.debug) {
           if (json[PacketDataKeys_default.TIMER] && Object.keys(json).length == 1) return;
           console.log(json);
         }
@@ -8265,22 +8297,22 @@
     async #init() {
       this.call("connect");
       this.logger.info(`Connected to server`);
-      if (App_default.config.auth) {
+      if (App_default2.config.auth) {
         await this.auth.auth();
       } else {
-        App_default.screen = new Authorization();
+        App_default2.screen = new Authorization();
       }
       this.on("message", async (data) => {
         if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_BLOCKED) {
           const reason = data[PacketDataKeys_default.REASON];
           const tsr = data[PacketDataKeys_default.TIME_SEC_REMAINING];
-          App_default.screen = new Dashboard();
+          App_default2.screen = new Dashboard();
           MessageBox_default(`\u0412\u044B \u0431\u044B\u043B\u0438 \u0437\u0430\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D\u044B \u043F\u043E \u043F\u0440\u0438\u0447\u0438\u043D\u0435 [${reason}]
 
 \u041E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u043A\u0438:
 ${format_default(tsr, "genitive")}`, { height: 250 });
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_INACTIVE_BLOCKED) {
-          App_default.screen = new Dashboard();
+          App_default2.screen = new Dashboard();
           const tsr = data[PacketDataKeys_default.TIME_SEC_REMAINING];
           MessageBox_default(`\u0412\u044B \u0431\u044B\u043B\u0438 \u043D\u0435\u0430\u043A\u0442\u0438\u0432\u043D\u044B
 
@@ -8289,10 +8321,10 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.SIGN_IN_ERROR) {
           if (data[PacketDataKeys_default.ERROR] == -4) {
             await MessageBox_default(`\u0421\u0435\u0441\u0441\u0438\u044F \u043D\u0435 \u0432\u0430\u043B\u0438\u0434\u043D\u0430. \u0418\u0433\u0440\u0430 \u0431\u0443\u0434\u0435\u0442 \u0437\u0430\u043A\u0440\u044B\u0442\u0430`);
-            App_default.destroy();
+            App_default2.destroy();
           }
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.EMAIL_NOT_VERIFIED) {
-          App_default.screen = new Dashboard();
+          App_default2.screen = new Dashboard();
           const e = await ConfirmBox_default(`\u0412\u044B \u043D\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u043B\u0438 \u0432\u0430\u0448 email.
 \u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0432\u0430\u0448\u0443 \u044D\u043B\u043E\u043A\u0442\u0440\u043E\u043D\u043D\u0443\u044E \u043F\u043E\u0447\u0442\u0443 \u0438 \u0441\u043B\u0435\u0434\u0443\u0439\u0442\u0435 \u0438\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0438 \u0432 \u043F\u0438\u0441\u044C\u043C\u0435.
 
@@ -8306,7 +8338,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
               const json = await (await fetch(`https://api.mafia.dottap.com/user/email/verify`, {
                 method: "POST",
                 headers: {
-                  Authorization: btoa(`${App_default.user.objectId}=:=${App_default.user.bToken}`)
+                  Authorization: btoa(`${App_default2.user.objectId}=:=${App_default2.user.bToken}`)
                 },
                 body: new URLSearchParams({ lang: "RUS" })
               })).json();
@@ -8366,7 +8398,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   }
   async function readCSS(path) {
     const obj = JSON.parse(await fs_default.readFile(path));
-    obj[`#${App_default.element.id}`] = obj[`&`];
+    obj[`#${App_default2.element.id}`] = obj[`&`];
     delete obj[`&`];
     apply(obj);
     return obj;
@@ -8431,14 +8463,14 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       await this.read();
     }
     async write() {
-      await fs_default.writeFile(`${App_default.config.path}/settings.json`, JSON.stringify(this.data));
+      await fs_default.writeFile(`${App_default2.config.path}/settings.json`, JSON.stringify(this.data));
     }
     async read() {
-      if (!await fs_default.existsFile(`${App_default.config.path}/settings.json`)) {
+      if (!await fs_default.existsFile(`${App_default2.config.path}/settings.json`)) {
         await this.write();
         return;
       }
-      const savedData = JSON.parse(await fs_default.readFile(`${App_default.config.path}/settings.json`));
+      const savedData = JSON.parse(await fs_default.readFile(`${App_default2.config.path}/settings.json`));
       const migratedData = this.#migrate(savedData);
       Object.assign(this.data, migratedData);
       this.logger.info(this.data);
@@ -8460,12 +8492,6 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     }
   };
 
-  // core/version.json
-  var version_default = {
-    launcher: "Beta 1.0.2",
-    vanilla: "Beta 1.0.2"
-  };
-
   // game/src/api/Bafia.ts
   var Bafia = class extends Events {
     #isInitialized = false;
@@ -8478,13 +8504,13 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.#initEvents();
     }
     isRoom() {
-      return App_default.screen instanceof Room;
+      return App_default2.screen instanceof Room;
     }
     isGlobalChat() {
-      return App_default.screen instanceof GlobalChat;
+      return App_default2.screen instanceof GlobalChat;
     }
     isGame() {
-      return this.isRoom() ? App_default.screen.isGame : false;
+      return this.isRoom() ? App_default2.screen.isGame : false;
     }
     sendMessage(message, options = {
       type: 1
@@ -8493,13 +8519,13 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         [PacketDataKeys_default.TEXT]: message,
         [PacketDataKeys_default.MESSAGE_TYPE]: options.type
       };
-      if (this.isRoom()) App_default.screen.addMessage(m);
-      else if (this.isGlobalChat()) App_default.screen.addMessage(m);
+      if (this.isRoom()) App_default2.screen.addMessage(m);
+      else if (this.isGlobalChat()) App_default2.screen.addMessage(m);
     }
     #initEvents() {
-      App_default.on("screenChange", (e) => this.call("screenChange", e));
-      App_default.on("contextmenu", (e) => this.call("contextmenu", e));
-      App_default.on("resize", (e) => this.call("resize", e));
+      App_default2.on("screenChange", (e) => this.call("screenChange", e));
+      App_default2.on("contextmenu", (e) => this.call("contextmenu", e));
+      App_default2.on("resize", (e) => this.call("resize", e));
     }
   };
   var Bafia_default = new Bafia();
@@ -8531,9 +8557,9 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     execute(args) {
       if (!Bafia_default.isRoom()) return Bafia_default.sendMessage("\u041D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E \u043D\u0430\u0445\u043E\u0434\u0438\u0442\u044C\u0441\u044F \u0432 \u043A\u043E\u043C\u043D\u0430\u0442\u0435");
       if (Bafia_default.isGame()) return Bafia_default.sendMessage("\u0418\u0433\u0440\u0430 \u043D\u0430\u0447\u0430\u043B\u0430\u0441\u044C");
-      const rs = App_default.screen;
+      const rs = App_default2.screen;
       const player = rs.getPlayer(args[0]);
-      App_default.server.send(PacketDataKeys_default.KICK_USER, {
+      App_default2.server.send(PacketDataKeys_default.KICK_USER, {
         [PacketDataKeys_default.ROOM_OBJECT_ID]: rs.roomObjectId,
         [PacketDataKeys_default.USER_OBJECT_ID]: player[PacketDataKeys_default.USER][PacketDataKeys_default.OBJECT_ID]
       });
@@ -8542,7 +8568,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   };
 
   // game/src/App.ts
-  var App = class extends Events {
+  var App2 = class extends Events {
     version = version_default.vanilla;
     logger = new Logger({ name: "App" });
     isAlive = true;
@@ -8720,7 +8746,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       }
     }
   };
-  var App_default = new App();
+  var App_default2 = new App2();
 
   // game/src/utils/Resources.ts
   var activeRequests = 0;
@@ -8761,8 +8787,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     }, 5e3);
   }
   function loadImageWithQueue(url, cacheKey) {
-    if (App_default.resources[cacheKey]) {
-      return Promise.resolve(App_default.resources[cacheKey]);
+    if (App_default2.resources[cacheKey]) {
+      return Promise.resolve(App_default2.resources[cacheKey]);
     }
     const promiseKey = `url_${url}`;
     if (pendingPromises.has(promiseKey)) {
@@ -8774,7 +8800,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         resolve(result) {
           pendingPromises.delete(promiseKey);
           if (result) {
-            App_default.resources[cacheKey] = result;
+            App_default2.resources[cacheKey] = result;
           }
           resolve(result);
         }
@@ -8785,12 +8811,12 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     return promise;
   }
   async function getAvatarImg(user) {
-    if (!user) return App_default.resources["unknownChat"];
+    if (!user) return App_default2.resources["unknownChat"];
     const ph = user[PacketDataKeys_default.PHOTO] ?? user.photo;
     const uo = user[PacketDataKeys_default.OBJECT_ID] ?? user.objectId;
     const cacheKey = `avatars_${uo}`;
-    if (App_default.resources[cacheKey]) {
-      return App_default.resources[cacheKey];
+    if (App_default2.resources[cacheKey]) {
+      return App_default2.resources[cacheKey];
     }
     const pendingKey = `avatar_${uo}`;
     if (pendingPromises.has(pendingKey)) {
@@ -8798,7 +8824,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     }
     const defaultImage = async () => {
       const avatar = await getDefaultAvatar2(ph);
-      App_default.resources[cacheKey] = avatar;
+      App_default2.resources[cacheKey] = avatar;
       return avatar;
     };
     const avatarPromise = (async () => {
@@ -8822,24 +8848,24 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     return avatarPromise;
   }
   async function getDefaultAvatar2(ph = "") {
-    if (App_default.resources[`defaultAvatars_${ph}`]) return App_default.resources[`defaultAvatars_${ph}`];
-    App_default.resources[`defaultAvatars_${ph}`] = await fs_default.loadImageAsDataURL(`${App_default.config.path}/assets/textures/logo/avatar.jpg`);
-    return App_default.resources[`defaultAvatars_${ph}`];
+    if (App_default2.resources[`defaultAvatars_${ph}`]) return App_default2.resources[`defaultAvatars_${ph}`];
+    App_default2.resources[`defaultAvatars_${ph}`] = await fs_default.loadImageAsDataURL(`${App_default2.config.path}/assets/textures/logo/avatar.jpg`);
+    return App_default2.resources[`defaultAvatars_${ph}`];
   }
   async function getRoleImg(role) {
-    if (App_default.resources[`role_${role}`]) return App_default.resources[`role_${role}`];
-    App_default.resources[`role_${role}`] = await fs_default.loadImageAsDataURL(`${App_default.config.path}/assets/textures/roles/${role}.png`);
-    return App_default.resources[`role_${role}`];
+    if (App_default2.resources[`role_${role}`]) return App_default2.resources[`role_${role}`];
+    App_default2.resources[`role_${role}`] = await fs_default.loadImageAsDataURL(`${App_default2.config.path}/assets/textures/roles/${role}.png`);
+    return App_default2.resources[`role_${role}`];
   }
   async function getBackgroundImg(bg) {
-    if (App_default.resources[`background_${bg}`]) return App_default.resources[`background_${bg}`];
-    App_default.resources[`background_${bg}`] = await fs_default.loadImageAsDataURL(`${App_default.config.path}/assets/textures/backgrounds/${bg}.png`);
-    return App_default.resources[`background_${bg}`];
+    if (App_default2.resources[`background_${bg}`]) return App_default2.resources[`background_${bg}`];
+    App_default2.resources[`background_${bg}`] = await fs_default.loadImageAsDataURL(`${App_default2.config.path}/assets/textures/backgrounds/${bg}.png`);
+    return App_default2.resources[`background_${bg}`];
   }
   async function getTexture(path) {
-    if (App_default.resources[`assets/textures/` + path]) return App_default.resources[`assets/textures/` + path];
-    App_default.resources[`assets/textures/` + path] = await fs_default.loadImageAsDataURL(`${App_default.config.path}/assets/textures/${path}`);
-    return App_default.resources[`assets/textures/` + path];
+    if (App_default2.resources[`assets/textures/` + path]) return App_default2.resources[`assets/textures/` + path];
+    App_default2.resources[`assets/textures/` + path] = await fs_default.loadImageAsDataURL(`${App_default2.config.path}/assets/textures/${path}`);
+    return App_default2.resources[`assets/textures/` + path];
   }
 
   // core/src/utils/DOM.ts
@@ -8929,32 +8955,6 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     if (options.appendTo) options.appendTo.appendChild(elem);
     return elem;
   }
-
-  // launcher/src/App.ts
-  var App2 = class extends Events {
-    version = version_default.launcher;
-    windowsElem;
-    launcher;
-    constructor() {
-      super();
-      this.windowsElem = document.createElement("div");
-      this.windowsElem.style.width = "100%";
-      this.windowsElem.style.height = window.innerHeight + "px";
-      document.body.appendChild(this.windowsElem);
-      this.#initEvents();
-    }
-    #initEvents() {
-      window;
-      window.addEventListener("focus", (e) => this.emit("focus", e), true);
-      window.addEventListener("blur", (e) => this.emit("unfocus", e), true);
-      window.addEventListener("click", (e) => this.emit("click", e), true);
-      window.addEventListener("keydown", (e) => this.emit("keydown", e), true);
-      window.addEventListener("keyup", (e) => this.emit("keyup", e), true);
-      window.addEventListener("wheel", (e) => this.emit("wheel", e), true);
-      window.addEventListener("resize", (e) => this.emit("resize"), true);
-    }
-  };
-  var App_default2 = new App2();
 
   // launcher/src/Window.ts
   function drag(win, event) {
@@ -9256,7 +9256,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.titleBar.appendChild(title);
       this.el.appendChild(this.titleBar);
       this.el.appendChild(content);
-      App_default2.windowsElem.appendChild(this.el);
+      App_default.windowsElem.appendChild(this.el);
     }
     drag(e) {
       this.activate();
@@ -9306,7 +9306,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     max() {
       this.isMaximum = !this.isMaximum;
       if (!this.isMaximum) {
-        App_default2.removeByKey(`max_win_${this.id}`);
+        App_default.removeByKey(`max_win_${this.id}`);
         this.el.style.outline = "";
         this.el.style.transition = ".5s";
         this.x = this.oldPos.x;
@@ -9323,7 +9323,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.y = 1;
       this.width = innerWidth / zoom;
       this.height = innerHeight / zoom;
-      if (!isMobile()) App_default2.on("resize", () => {
+      if (!isMobile()) App_default.on("resize", () => {
         const zoom2 = getZoom();
         this.width = innerWidth / zoom2;
         this.height = innerHeight / zoom2;
@@ -9854,7 +9854,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     settingsBtn;
     constructor() {
       this.win = new Window({
-        title: `\u041B\u0430\u0443\u043D\u0447\u0435\u0440 (${App_default2.version})`,
+        title: `\u041B\u0430\u0443\u043D\u0447\u0435\u0440 (${App_default.version})`,
         // width: 700,
         width: 400,
         height: 300,
@@ -10787,18 +10787,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   // launcher/src/index.ts
   async function main() {
     await fs_default.init("Indexeddb");
-    App_default2.launcher = new Launcher();
-    const captcha = new Window({
-      title: "\u043A\u0430\u043F\u0447\u0430",
-      width: 325,
-      height: 125,
-      center: true
-    });
-    `<div class="g-recaptcha" data-sitekey="6LeppQksAAAAAI9be-f3gQPNKDIOKeQdyEAE-zle"></div>`;
-    const div = document.getElementById("captcha");
-    const span = createElement("span", { text: "\u043C\u043E\u0436\u043D\u043E \u0437\u0430\u043A\u0440\u044B\u0442\u044C, \u044D\u0442\u043E \u0434\u043B\u044F \u0442\u0435\u0441\u0442\u0430" });
-    captcha.content.appendChild(div);
-    captcha.content.appendChild(span);
+    App_default.launcher = new Launcher();
   }
   (async function() {
     await new Promise(async (res) => {
