@@ -255,7 +255,8 @@ export default class Rooms extends Screen {
     const isProfileInfo = typeof room[PacketDataKeys.SAME_ROOM] == 'boolean';
     const objectId = room[PacketDataKeys.OBJECT_ID];
     const level = room[PacketDataKeys.MIN_LEVEL];
-    const myStatus = isProfileInfo ? 2 : room[PacketDataKeys.ROOM_STATUS];
+    const myStatus = typeof room.status == 'number' ? room.status : isProfileInfo ? 2 : room[PacketDataKeys.ROOM_STATUS];
+    const statusText = room.statusText;
     const rank = level == 3 ? 2 : level == 5 ? 3 : level == 7 ? 4 : level == 9 ? 5 : level == 11 ? 6 : 1;
     const selectedRoles = room[PacketDataKeys.SELECTED_ROLES] ?? [];
     const hasPassword = room[PacketDataKeys.PASSWORD];
@@ -274,7 +275,7 @@ export default class Rooms extends Screen {
         return;
       }
       joinCallback();
-      if(hasPassword){
+      if(hasPassword) {
         let password = await PromptBox(`Эта комната под замком\n\nПожалуйста введите пароль`, { btnText: `Применить`, placeholder: `Пароль`, title: 'ВВЕСТИ ПАРОЛЬ', height: 200 });
         if(password == '') return;
 
@@ -313,14 +314,14 @@ export default class Rooms extends Screen {
       text.className = 'black';
       text.style.textAlign = 'center';
       text.style.padding = '5px';
-      text.textContent = `Вы играете в этой комнате`;
+      text.textContent = statusText ?? `Вы играете в этой комнате`;
       div.appendChild(text);
     } else if(myStatus == 1){
       const text = document.createElement('div');
       text.className = 'black';
       text.style.textAlign = 'center';
       text.style.padding = '5px';
-      text.textContent = `Вас убили в этой комнате`;
+      text.textContent = statusText ?? `Вас убили в этой комнате`;
       div.appendChild(text);
     }
     div.style.background = myStatus == 0 ? 'rgb(137 242 165 / 40%)' : myStatus == 1 ? 'rgb(255 138 146 / 40%)' : 'rgba(200,200,200,.4)';

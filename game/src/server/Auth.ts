@@ -71,14 +71,24 @@ export default class Auth {
       if(data[PacketDataKeys.TYPE] == PacketDataKeys.SIGN_IN_ERROR) {
         const err = data[PacketDataKeys.ERROR];
 
-        if(err == -7){
+        if(err == -9){
+          await MessageBox(`Капча не пройдена\nКод ошибки: -9`, { title: `ОШИБКА` });
+        } else if(err == -8){
+          await MessageBox(`Нет данных аккаунта\nКод ошибки: -8`, { title: `ОШИБКА` });
+        } else if(err == -7){
           await MessageBox(`Повторите позже\nКод ошибки: -7`, { title: `ОШИБКА` });
+        } else if(err == -6){
+          await MessageBox(`ошибка_общественного_признака_в_памяти_почты_или_не_проверено\nКод ошибки: -6`, { title: `ОШИБКА` });
+        } else if(err == -5){
+          await MessageBox(`Ошибка входа в гугл\nКод ошибки: -5`, { title: `ОШИБКА` });
         } else if(err == -4) {
           await MessageBox(`Сессия неактивна\nКод ошибки: -4`, { title: `ОШИБКА` });
         } else if(err == -3) {
           await MessageBox(`Неверный пароль\nКод ошибки: -3`, { title: `ОШИБКА` });
         } else if(err == -1) {
-          await MessageBox(`Неверная почта\nКод ошибки: -1`, { title: `ОШИБКА` });
+          await MessageBox(`Аккаунт не зарегистрирован\nКод ошибки: -1`, { title: `ОШИБКА` });
+        } else if(err == 0) {
+          await MessageBox(`Логин и пароль нужны\nКод ошибки: 0`, { title: `ОШИБКА` });
         }
         App.screen = new Authorization();
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_SIGN_IN) {

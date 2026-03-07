@@ -16,6 +16,10 @@ import versions from "../../core/version.json";
 import MessageBox from "./dialog/MessageBox";
 import { Logger } from "tslog";
 import { isMacOS } from "../../core/src/utils/utils";
+import CommandManager from "./command/CommandManager";
+import Command from "./command/Command";
+import KickCommand from "./command/KickCommand";
+import Bafia from "./api/Bafia";
 
 interface AppEvents {
   tick: (dt: number) => void;
@@ -121,10 +125,15 @@ class App extends Events<AppEvents> {
       this.appId = window['apps'].length;
       // @ts-ignore
       window['apps'].push(this);
+      // @ts-ignore
+      window.Bafia = Bafia;
     }
 
     this.#loadImgs();
+    this.#initCommands();
     this.#initEvents();
+
+    Bafia.init();
   }
 
   async #loadImgs() {
@@ -132,6 +141,9 @@ class App extends Events<AppEvents> {
       this.resources[`role_${i}`] = await fs.loadImageAsDataURL(`${this.config.path}/assets/textures/roles/${i}.png`,);
     }
     this.resources["unknownChat"] = await fs.loadImageAsDataURL(`${this.config.path}/assets/textures/roles/unknown_chat.png`,);
+  }
+  #initCommands(){
+    CommandManager.register(new KickCommand());
   }
   #initEvents() {
     this.element.addEventListener("focus", (e) => this.emit("focus", e), true);

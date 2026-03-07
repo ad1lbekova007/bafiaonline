@@ -158,6 +158,12 @@ export default class Settings extends Screen{
     addCheckbox('Скрывать никнейм везде', v => {
       App.settings.data.hideUsername = v;
     }, App.settings.data.hideUsername);
+    addCheckbox('Показывать номера игроков', v => {
+      App.settings.data.game.showIndexPl = v;
+    }, App.settings.data.game.showIndexPl);
+    addCheckbox('Показывать номер игрока в сообщении', v => {
+      App.settings.data.game.showIndexPlChat = v;
+    }, App.settings.data.game.showIndexPlChat);
     addCheckbox('Для разработчиков\nЭто удобно для создания мода и т.д.', v => {
       App.settings.data.developer = v;
     }, App.settings.data.developer);

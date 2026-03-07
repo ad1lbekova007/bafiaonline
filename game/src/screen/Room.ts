@@ -16,6 +16,7 @@ import md5salt from "../../../core/src/utils/md5";
 import ContextMenu from "../component/ContextMenu";
 import users from '../../../core/users.json';
 import { History } from "./History";
+import CommandManager from "../command/CommandManager";
 
 export function isMafia(role: Role): boolean {
   return [Role.MAFIA, Role.BARMAN, Role.TERRORIST, Role.INFORMER].includes(role);
@@ -548,6 +549,7 @@ export default class Room extends Screen {
       appendTo: footer
     });
 
+    let lastValue = '';
     this.input = document.createElement('input');
     this.input.className = 'input-chat'
     this.input.type = `text`;
@@ -557,6 +559,29 @@ export default class Room extends Screen {
         const msg = this.input.value;
         this.input.value = '';
         this.sendMessage(msg);
+      }
+    });
+    this.input.addEventListener('input', e => {
+      const value = this.input.value;
+      const oldValue = lastValue || '';
+      lastValue = value;
+      
+      if(value.length > oldValue.length && value.endsWith(' ') && !oldValue.endsWith(' ')) {
+        const match = value.match(/(?:^|\s)@(\d+)\s$/);
+        
+        if(match) {
+          const number = match[1];
+          const playerName = this.getPlayer((parseInt(number) - 1).toString());
+          
+          if(playerName) {
+            const hasSpaceBefore = value.match(/\s@\d+\s$/) ? ' ' : '';
+            const newValue = value.replace(/(?:^|\s)@\d+\s$/, `${hasSpaceBefore}[${playerName[PacketDataKeys.USER][PacketDataKeys.USERNAME]}] `);
+            this.input.value = newValue;
+            lastValue = newValue;
+            
+            this.input.setSelectionRange(newValue.length, newValue.length);
+          }
+        }
       }
     });
     
@@ -649,7 +674,7 @@ export default class Room extends Screen {
       this.gameInfoElem.style.display = 'flex';
       { // me
         const nick = createElement('span', {
-          text: noXSS(App.user.username),
+          html: (App.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(this.playersData[App.user.objectId].index ?? 0) + 1}</span> ` : '') + noXSS(App.user.username),
           className: 'black',
           css: {
             fontSize: 'smaller',
@@ -923,7 +948,7 @@ export default class Room extends Screen {
       div.style.position = 'relative';
       div.style.height = '100px';
       const nick = document.createElement('div');
-      nick.textContent = noXSS(username);
+      nick.innerHTML = (App.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(pl.index ?? 0) + 1}</span> ` : '') + noXSS(username);
       nick.className = 'black';
       nick.style.wordBreak = 'break-all';
       nick.style.textAlign = 'center';
@@ -1077,6 +1102,10 @@ export default class Room extends Screen {
           getTexture(`vip/0M.png`).then(e => img.src = e);
           nick.appendChild(img);
         }
+        if(this.isGame && App.settings.data.game.showIndexPlChat){
+          const e = createElement('span', { text: ((this.playersData[objectId]?.index ?? 0) + 1) + ' ', css: { color: '#ab1457', fontWeight: 'bold' } })
+          nick.appendChild(e);
+        }
         createElement('span', { css: { marginLeft: '2px' }, text: username, appendTo: nick });
         if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.style.color = type == 17 ? '#4B4483' : type == 11 ? '#545454' : 'black'
@@ -1176,10 +1205,10 @@ export default class Room extends Screen {
     }
 
     if(this.messagesElem.scrollHeight - App.height - this.messagesElem.scrollTop < 75)
-        this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: 'smooth' });
+      this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: 'smooth' });
 
     if(deleteFirst && this.messagesElem.firstElementChild)
-        this.messagesElem.removeChild(this.messagesElem.firstElementChild);
+      this.messagesElem.removeChild(this.messagesElem.firstElementChild);
   }
 
   addNickToInput(username: string){
@@ -1211,6 +1240,8 @@ export default class Room extends Screen {
       const symbols = "?!&@#%^~<>*";
       message = Array.from({ length: [...message].length-1 }, () => symbols[Math.random() * symbols.length | 0]).join("");
     }
+
+    if(CommandManager.executeCommand(message)) return;
 
     App.server.send(PacketDataKeys.ROOM_MESSAGE_CREATE, {
       [PacketDataKeys.MESSAGE]: {
@@ -1257,6 +1288,11 @@ export default class Room extends Screen {
       div.appendChild(nick);
       this.gamePlayersListElem.appendChild(div);
     }
+  }
+  
+  getPlayer(arg: string){
+    const pl = this.players.find(e => arg == e[PacketDataKeys.USER][PacketDataKeys.USERNAME]) || this.players[parseInt(arg)];
+    return pl;
   }
 
   destroy() {

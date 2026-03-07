@@ -9,7 +9,7 @@ export default class Settings {
   logger = new Logger({ name: 'Settings' })
 
   data = {
-    version: 5,
+    version: 6,
     debug: false,
     developer: false,
     hideUsername: false,
@@ -22,6 +22,8 @@ export default class Settings {
       showYouDiedMessage: true,
       saveHistory: true,
       clearMessages: true,
+      showIndexPl: false,
+      showIndexPlChat: false,
       barmanEffect: '!'
     },
     roomCreate: {
@@ -94,10 +96,10 @@ export default class Settings {
     let data = { ...savedData };
 
     when(savedVersion)
-      .case(4, () => currentVersion >= 5 && (() => {
-        data.game.saveHistory = true
-        data.game.clearMessages = true
-        data.version = 5;
+      .case(5, () => currentVersion >= 6 && (() => {
+        data.game.showIndexPl = false
+        data.game.showIndexPlChat = false
+        data.version = 6;
       })());
 
     return data;

@@ -10,6 +10,7 @@ import { getAvatarImg, getBackgroundImg, getTexture } from "../utils/Resources";
 import { getZoom, noXSS, wait } from "../../../core/src/utils/utils";
 import { isMobile } from "../../../core/src/utils/mobile";
 import users from '../../../core/users.json'
+import CommandManager from "../command/CommandManager";
 
 export default class GlobalChat extends Screen {
   // хз как назвать
@@ -311,6 +312,8 @@ export default class GlobalChat extends Screen {
       const symbols = "?!&@#%^~<>*";
       message = Array.from({ length: [...message].length-1 }, () => symbols[Math.random() * symbols.length | 0]).join("");
     }
+    
+    if(CommandManager.executeCommand(message)) return;
 
     App.server.send(PacketDataKeys.CHAT_MESSAGE_CREATE, {
       [PacketDataKeys.MESSAGE]: {

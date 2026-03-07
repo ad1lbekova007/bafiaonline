@@ -3,6 +3,76 @@ import App from "../App";
 import { Role } from "../enums";
 import PacketDataKeys from "../../../core/src/PacketDataKeys";
 
+let activeRequests = 0;
+const imageQueue: { url: string; resolve: (value: string) => void }[] = [];
+const MAX_CONCURRENT_REQUESTS = 5;
+const pendingPromises: Map<string, Promise<string>> = new Map();
+function processQueue() {
+  if(imageQueue.length === 0 || activeRequests >= MAX_CONCURRENT_REQUESTS) return;
+  
+  const { url, resolve } = imageQueue.shift()!;
+  activeRequests++;
+  
+  const img = new Image();
+  let finished = false;
+  let timeoutId: number;
+  
+  img.onload = () => {
+    if(finished) return;
+    finished = true;
+    clearTimeout(timeoutId);
+    activeRequests--;
+    resolve(url);
+    processQueue();
+  };
+  
+  img.onerror = () => {
+    if(finished) return;
+    finished = true;
+    clearTimeout(timeoutId);
+    activeRequests--;
+    resolve(null as any);
+    processQueue();
+  };
+  
+  img.src = url;
+  
+  timeoutId = window.setTimeout(() => {
+    if(!finished) {
+      finished = true;
+      activeRequests--;
+      resolve(null as any);
+      processQueue();
+    }
+  }, 5000);
+}
+function loadImageWithQueue(url: string, cacheKey: string): Promise<string> {
+  if(App.resources[cacheKey]) {
+    return Promise.resolve(App.resources[cacheKey]);
+  }
+  
+  const promiseKey = `url_${url}`;
+  if(pendingPromises.has(promiseKey)) {
+    return pendingPromises.get(promiseKey)!;
+  }
+  
+  const promise = new Promise<string>((resolve) => {
+    imageQueue.push({ 
+      url, 
+      resolve(result) {
+        pendingPromises.delete(promiseKey);
+        if(result) {
+          App.resources[cacheKey] = result;
+        }
+        resolve(result);
+      }
+    });
+    processQueue();
+  });
+  
+  pendingPromises.set(promiseKey, promise);
+  return promise;
+}
 export async function getAvatarImg(user?: any): Promise<string> {
   if(!user) return App.resources['unknownChat'];
 
@@ -14,47 +84,40 @@ export async function getAvatarImg(user?: any): Promise<string> {
     return App.resources[cacheKey];
   }
 
+  const pendingKey = `avatar_${uo}`;
+  if(pendingPromises.has(pendingKey)) {
+    return pendingPromises.get(pendingKey)!;
+  }
+
   const defaultImage = async () => {
     const avatar = await getDefaultAvatar(ph);
     App.resources[cacheKey] = avatar;
     return avatar;
   };
 
-  const loadImage = (url: string) =>
-    new Promise<string>((resolve) => {
-      const img = new Image();
-      let finished = false;
+  const avatarPromise = (async () => {
+    const photoUrl = `https://dottap.com/mafia/profile_photo/default/${ph}.jpg`;
+    const byPhoto = await loadImageWithQueue(photoUrl, cacheKey);
+    if(byPhoto) {
+      pendingPromises.delete(pendingKey);
+      return byPhoto;
+    }
 
-      img.onload = () => {
-        if(finished) return;
-        finished = true;
-        App.resources[cacheKey] = url;
-        resolve(url);
-      };
+    const objectIdUrl = `https://dottap.com/mafia/profile_photo/${uo}.jpg?v=${Math.random()}`;
+    const byObjectId = await loadImageWithQueue(objectIdUrl, cacheKey);
+    if(byObjectId) {
+      pendingPromises.delete(pendingKey);
+      return byObjectId;
+    }
+    
+    const defaultImg = await defaultImage();
+    pendingPromises.delete(pendingKey);
+    return defaultImg;
+  })();
 
-      img.onerror = async () => {
-        if(finished) return;
-        finished = true;
-        resolve(null as any);
-      };
-
-      img.src = url;
-
-      setTimeout(() => {
-        if(!finished) {
-          finished = true;
-          resolve(null as any);
-        }
-      }, 10000);
-    });
-
-  const byPhoto = await loadImage(`https://dottap.com/mafia/profile_photo/default/${ph}.jpg`);
-  if(byPhoto) return byPhoto;
-
-  const byObjectId = await loadImage(`https://dottap.com/mafia/profile_photo/${uo}.jpg?v=${Math.random()}`);
-
-  if(byObjectId) return byObjectId;
-  return defaultImage();
+  pendingPromises.set(pendingKey, avatarPromise);
+  
+  return avatarPromise;
 }
 export async function getDefaultAvatar(ph = ""){
   if(App.resources[`defaultAvatars_${ph}`]) return App.resources[`defaultAvatars_${ph}`];

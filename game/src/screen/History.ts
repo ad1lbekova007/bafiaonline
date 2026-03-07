@@ -3,6 +3,7 @@ import PacketDataKeys from "../../../core/src/PacketDataKeys";
 import App from "../App";
 import { getBackgroundImg, getTexture } from "../utils/Resources";
 import Dashboard from "./Dashboard";
+import { isMafia } from "./Room";
 import Rooms from "./Rooms";
 import Screen from "./Screen";
 
@@ -50,10 +51,33 @@ export class History extends Screen {
 
     for(let i = 0; i < history.rooms.length; i++) {
       const room = history.rooms[i];
+
+      let status = 2, statusText = '';
+      const myRole = room.playersData[App.user.objectId].role;
+      // const mafia = Object.values(room.playersData as any[]).filter(e => e.alive && isMafia(e.role) && e.username != App.user.username).length;
+      // const mir = Object.values(room.playersData as any[]).filter(e => e.alive && !isMafia(e.role) && e.username != App.user.username).length;
+      const mafia = room.playersStat.m;
+      const mir = room.playersStat.c;//Object.values(room.playersData as any[]).filter(e => e.alive && !isMafia(e.role) && e.username != App.user.username).length;
+      if(i == history.rooms.length-1) {
+        console.log(room)
+        console.log(mafia, mir, myRole);
+      }
+      if(mafia > mir){
+        status = isMafia(myRole) ? 0 : 1;
+        // statusText = isMafia(myRole) ? 'Победа' : 'Проигрыш';
+      } else if(mir > mafia) {
+        status = isMafia(myRole) ? 1 : 0;
+        // statusText = isMafia(myRole) ? 'Проигрыш' : 'Победа';
+      } else {
+        statusText = 'Ничья';
+      }
+
       const elem = Rooms.getRoomElement({
         isHistory: true,
         created: room.createdAt,
         data: room,
+        status,
+        statusText,
         [PacketDataKeys.OBJECT_ID]: `${i}`,
         [PacketDataKeys.TITLE]: room.title,
         [PacketDataKeys.MAX_PLAYERS]: room.maxPlayers,

@@ -103,6 +103,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   height?: number
   appendTo?: HTMLElement
   css?: CSSStyleDeclaration|object
+  attr?: ([string, string])[]
 }, callback: (elem: HTMLElementTagNameMap[K]) => void = () => {}): HTMLElementTagNameMap[K] {
   const elem = document.createElement(tagName);
   if(options.className) elem.className = options.className;
@@ -119,6 +120,11 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
     for(const key in options.css){
       // @ts-ignore
       elem.style[key] = options.css[key];
+    }
+  }
+  if(options.attr){
+    for(const e of options.attr){
+      elem.setAttribute(e[0], e[1]);
     }
   }
 
