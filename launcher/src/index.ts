@@ -8,13 +8,15 @@ async function main(){
   await fs.init('Indexeddb');
   App.launcher = new Launcher();
 
-  // const captcha = new Window({
-  //   title: 'капча',
-  //   width: 250,
-  //   height: 125,
-  //   center: true,
-  //   noMobile: true
-  // });
+  const msg = new Window({
+    title: 'Сообщение',
+    width: 250,
+    height: 125,
+    minButton: false,
+    maxButton: false,
+    center: true,
+    noMobile: true
+  });
   // `<div class="g-recaptcha" data-sitekey="6LeppQksAAAAAI9be-f3gQPNKDIOKeQdyEAE-zle"></div>`;
   // // const div = createElement('div', {
   // //   className: 'g-recaptcha',
@@ -23,9 +25,9 @@ async function main(){
   // //   ]
   // // });
   // const div = document.getElementById('captcha');
-  // const span = createElement('span', { text: 'можно закрыть, это для теста' });
   // captcha.content.appendChild(div!);
-  // captcha.content.appendChild(span);
+  const div = createElement('div', { text: 'Бафия временно недоступна из-за обновления Мафии', css: { fontSize: 'smaller', padding: '10px' } });
+  msg.content.appendChild(div);
 }
 
 (async function(){
