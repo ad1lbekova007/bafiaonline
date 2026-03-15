@@ -131,7 +131,7 @@ export default class Auth {
 
   async signIn(email?: string, password?: string, token?: string, userId?: string){
     if(email && password){
-      this.server.send(PacketDataKeys.SIGN_IN, { [PacketDataKeys.EMAIL]: email, [PacketDataKeys.PASSWORD]: MD5(password), cpt: '', ds: 'playMarket', [PacketDataKeys.DEVICE_ID]: tokenHex(8) });
+      this.server.send(PacketDataKeys.SIGN_IN, { [PacketDataKeys.EMAIL]: email, [PacketDataKeys.PASSWORD]: MD5(password), cpt: '', ds: 'browser', [PacketDataKeys.DEVICE_ID]: tokenHex(8) });
     } else if(userId && token) {
       this.server.send(PacketDataKeys.SIGN_IN, { [PacketDataKeys.OBJECT_ID]: userId, [PacketDataKeys.TOKEN]: token, [PacketDataKeys.DEVICE_ID]: tokenHex(8) });
     }

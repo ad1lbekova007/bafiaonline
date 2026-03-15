@@ -6624,7 +6624,7 @@
     }
     async signIn(email, password, token, userId) {
       if (email && password) {
-        this.server.send(PacketDataKeys_default.SIGN_IN, { [PacketDataKeys_default.EMAIL]: email, [PacketDataKeys_default.PASSWORD]: md5salt(password), cpt: "", ds: "playMarket", [PacketDataKeys_default.DEVICE_ID]: tokenHex(8) });
+        this.server.send(PacketDataKeys_default.SIGN_IN, { [PacketDataKeys_default.EMAIL]: email, [PacketDataKeys_default.PASSWORD]: md5salt(password), cpt: "", ds: "browser", [PacketDataKeys_default.DEVICE_ID]: tokenHex(8) });
       } else if (userId && token) {
         this.server.send(PacketDataKeys_default.SIGN_IN, { [PacketDataKeys_default.OBJECT_ID]: userId, [PacketDataKeys_default.TOKEN]: token, [PacketDataKeys_default.DEVICE_ID]: tokenHex(8) });
       }
