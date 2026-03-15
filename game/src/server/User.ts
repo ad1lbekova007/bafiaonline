@@ -4,6 +4,7 @@ import PacketDataKeys from "../../../core/src/PacketDataKeys";
 export default class User {
   username = "User"
   objectId = ""
+  playerObjectId = ""
   token = ""
   bToken = '';
   serverLanguage = ""
@@ -40,11 +41,12 @@ export default class User {
   sliverCoins = 0
 
   update(user: any){
-    this.objectId = user[PacketDataKeys.OBJECT_ID];
+    // this.objectId = user[PacketDataKeys.OBJECT_ID];
+    this.playerObjectId = user[PacketDataKeys.PLAYER_OBJECT_ID];
     this.username = user[PacketDataKeys.USERNAME];
     this.photo = user[PacketDataKeys.PHOTO];
     this.status = user[PacketDataKeys.STATUS];
-    this.token = user[PacketDataKeys.TOKEN];
+    // this.token = user[PacketDataKeys.TOKEN];
     this.experience = user[PacketDataKeys.EXPERIENCE];
     this.nextLevelExperience = user[PacketDataKeys.NEXT_LEVEL_EXPERIENCE];
     this.previousLevelExperience = user[PacketDataKeys.PREVIOUS_LEVEL_EXPERIENCE];

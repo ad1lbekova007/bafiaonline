@@ -74,10 +74,13 @@ function loadImageWithQueue(url: string, cacheKey: string): Promise<string> {
   return promise;
 }
 export async function getAvatarImg(user?: any): Promise<string> {
-  if(!user) return App.resources['unknownChat'];
+  if(user == 'Бармен') return App.resources['barmanChat'];
+  if(user == 'Информатор') return App.resources['unknownChat'];
+  if(user == 'Мафия') return App.resources['mafiaChat'];
+  if(!user || typeof user == 'string') return App.resources['unknownChat'];
 
   const ph = user[PacketDataKeys.PHOTO] ?? user.photo;
-  const uo = user[PacketDataKeys.OBJECT_ID] ?? user.objectId;
+  const uo = user[PacketDataKeys.OBJECT_ID] ?? user[PacketDataKeys.PLAYER_OBJECT_ID] ?? user.objectId;
 
   const cacheKey = `avatars_${uo}`;
   if(App.resources[cacheKey]) {
@@ -96,14 +99,14 @@ export async function getAvatarImg(user?: any): Promise<string> {
   };
 
   const avatarPromise = (async () => {
-    const photoUrl = `https://dottap.com/mafia/profile_photo/default/${ph}.jpg`;
+    const photoUrl = `https://dottap.com/mafia/profile_photo/${ph}`;
     const byPhoto = await loadImageWithQueue(photoUrl, cacheKey);
     if(byPhoto) {
       pendingPromises.delete(pendingKey);
       return byPhoto;
     }
 
-    const objectIdUrl = `https://dottap.com/mafia/profile_photo/${uo}.jpg?v=${Math.random()}`;
+    const objectIdUrl = `https://dottap.com/mafia/profile_photo/${uo}?v=${Math.random()}`;
     const byObjectId = await loadImageWithQueue(objectIdUrl, cacheKey);
     if(byObjectId) {
       pendingPromises.delete(pendingKey);

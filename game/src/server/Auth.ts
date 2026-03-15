@@ -92,9 +92,9 @@ export default class Auth {
         }
         App.screen = new Authorization();
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_SIGN_IN) {
-        const name = data[PacketDataKeys.USER][PacketDataKeys.USERNAME];
-        const token = auth.token || data[PacketDataKeys.USER][PacketDataKeys.TOKEN];
-        const userId = auth.userId || data[PacketDataKeys.USER][PacketDataKeys.OBJECT_ID];
+        const name = data[PacketDataKeys.USER_ID][PacketDataKeys.USERNAME];
+        const token = auth.token || data[PacketDataKeys.USER_ID][PacketDataKeys.TOKEN];
+        const userId = auth.userId || data[PacketDataKeys.USER_ID][PacketDataKeys.OBJECT_ID];
 
         const isReconnect = this.lastAuth && this.lastAuth.userId == userId;
 
@@ -111,11 +111,13 @@ export default class Auth {
           userId
         });
 
-        App.user.update(data[PacketDataKeys.USER]);
+        App.user.token = data[PacketDataKeys.USER_ID][PacketDataKeys.TOKEN];
+        App.user.objectId = data[PacketDataKeys.USER_ID][PacketDataKeys.USER_OBJECT_ID];
+        // App.user.update(data[PacketDataKeys.USER]);
 
         App.user.bToken = generateRandomToken();
         if(isReconnect) {
-          App.screen.reconnect()
+          App.screen.reconnect();
         } else {
           App.screen = new Dashboard();
         }
@@ -129,7 +131,7 @@ export default class Auth {
 
   async signIn(email?: string, password?: string, token?: string, userId?: string){
     if(email && password){
-      this.server.send(PacketDataKeys.SIGN_IN, { [PacketDataKeys.EMAIL]: email, [PacketDataKeys.PASSWORD]: MD5(password), [PacketDataKeys.DEVICE_ID]: tokenHex(8) });
+      this.server.send(PacketDataKeys.SIGN_IN, { [PacketDataKeys.EMAIL]: email, [PacketDataKeys.PASSWORD]: MD5(password), cpt: '', ds: 'playMarket', [PacketDataKeys.DEVICE_ID]: tokenHex(8) });
     } else if(userId && token) {
       this.server.send(PacketDataKeys.SIGN_IN, { [PacketDataKeys.OBJECT_ID]: userId, [PacketDataKeys.TOKEN]: token, [PacketDataKeys.DEVICE_ID]: tokenHex(8) });
     }

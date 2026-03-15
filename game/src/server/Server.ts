@@ -147,11 +147,14 @@ export default class Server extends Events<ServerEvents> {
   send(data: object): void
   send(type: string, data: object): void
   send(type: string|object, data?: object){
+    let d;
     if(typeof type == 'object'){
-      this.webSocket.send(JSON.stringify(type));
+      d = JSON.stringify(type);
     } else {
-      this.webSocket.send(JSON.stringify({ [PacketDataKeys.TYPE]: type, ...data}));
+      d = JSON.stringify({ [PacketDataKeys.TYPE]: type, ...data});
     }
+    this.webSocket.send(d);
+    console.log('send', d);
   }
 
   async awaitPacket(type: string|string[], timeout = 10_000_000): Promise<any> {

@@ -39,6 +39,7 @@ export default class Room extends Screen {
   infoElem!: HTMLDivElement;
   emojiPanel!: HTMLDivElement;
   input!: HTMLInputElement
+  rolesElem!: HTMLDivElement;
 
   meElem?: HTMLElement
   yourRoleElem?: HTMLSpanElement
@@ -61,8 +62,9 @@ export default class Room extends Screen {
   minLevel = 1;
   isVipEnabled = false
   selectedRoles: Role[] = [];
-  status = 0; // 0 - регистрация, 2 - игра
-  get isGame() { return this.status == 2; }
+  playerRoles: Record<string, number> = {};
+  status = 0; // 0 - регистрация, 2 - подготовка, 3 - игра, 4 - конец игры
+  get isGame() { return this.status == 3; }
   gameDayTime = 0;
   timer = 0;
   playersStat: any
@@ -76,6 +78,7 @@ export default class Room extends Screen {
     username?: string
     alive?: boolean
     userObjectId?: string
+    playerObjectId?: string
     role?: number
     affectedByRoles?: Role[]
     isDayActionUsed?: boolean
@@ -245,16 +248,16 @@ export default class Room extends Screen {
       self.players = rs[PacketDataKeys.PLAYERS];
       self.titleElem.textContent = `${self.title} (${self.players.length}/${self.maxPlayers})`;
       if(rs[PacketDataKeys.GAME_STATUS]) {
-        self.infoElem.innerHTML = `Запуск игры..`
         self.status = rs[PacketDataKeys.GAME_STATUS][PacketDataKeys.STATUS];
         self.gameDayTime = rs[PacketDataKeys.GAME_STATUS][PacketDataKeys.DAYTIME];
         self.timer = rs[PacketDataKeys.GAME_STATUS][PacketDataKeys.TIMER];
-        console.log('запуск игры', rs);
+      }
+      if(self.status == 3) {
         if(rs[PacketDataKeys.PLAYERS]) {
           let i = 0;
           for(const pl of rs[PacketDataKeys.PLAYERS]){
-            const u = pl[PacketDataKeys.USER];
-            const uo = u[PacketDataKeys.OBJECT_ID];
+            const u = pl[PacketDataKeys.PLAYER_USER];
+            const uo = u[PacketDataKeys.PLAYER_OBJECT_ID];
             const username = u[PacketDataKeys.USERNAME];
             if(!self.playersData[uo]) self.playersData[uo] = {};
             self.playersData[uo].index = i;
@@ -265,7 +268,7 @@ export default class Room extends Screen {
         if(rs[PacketDataKeys.PLAYERS_DATA]) {
           let i = 0;
           for(const pl of rs[PacketDataKeys.PLAYERS_DATA]){
-            const uo = pl[PacketDataKeys.USER_OBJECT_ID];
+            const uo = pl[PacketDataKeys.PLAYER_OBJECT_ID];
             const index = self.playersData[uo] ? self.playersData[uo].index : i;
             const username = self.playersData[uo] ? self.playersData[uo].username : 'no nickname';
             self.playersData[uo] = {
@@ -284,13 +287,26 @@ export default class Room extends Screen {
           }
         }
       } else {
-        self.infoElem.innerHTML = `Регистрация`
+        self.infoElem.innerHTML = `Регистрация`;
         self.updatePlayersWaiting(rs[PacketDataKeys.PLAYERS]);
       }
     }
 
     if(this.isInitialized) preInit();
     else this.preInitCallback = preInit;
+  }
+
+  getPlayerDataFromPUO(puo: string){
+    for(const uo in this.playersData){
+      const pl = this.playersData[uo];
+      if(pl.playerObjectId == puo)
+        return pl;
+    }
+    return null;
+  }
+
+  me(){
+    return this.playersData[App.user.playerObjectId];
   }
 
   async init() {
@@ -307,44 +323,64 @@ export default class Room extends Screen {
         this.players.push(data[PacketDataKeys.PLAYER]);
         this.updatePlayersWaiting(this.players);
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.REMOVE_PLAYER && !this.isGame){
-        this.players = this.players.filter(e => e[PacketDataKeys.USER][PacketDataKeys.OBJECT_ID] !== data[PacketDataKeys.USER_OBJECT_ID]);
+        this.players = this.players.filter(e => e[PacketDataKeys.PLAYER_USER][PacketDataKeys.PLAYER_OBJECT_ID] !== data[PacketDataKeys.PLAYER_OBJECT_ID]);
         this.updatePlayersWaiting(this.players);
       } else if(typeof data[PacketDataKeys.TIMER] == 'number' && typeof data[PacketDataKeys.TYPE] == 'undefined' && !this.isGame){
-        this.infoElem.textContent = noXSS(`Игра начнётся через ${data[PacketDataKeys.TIMER]}`);
+        if(this.status == 2){
+          this.infoElem.textContent = noXSS(`Подготовка через ${data[PacketDataKeys.TIMER]}`);
+        } else {
+          this.infoElem.textContent = noXSS(`Игра начнётся через ${data[PacketDataKeys.TIMER]}`);
+        }
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.PLAYERS_STAT){
         this.playersStat = data;
+      } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.GAME_STATUS){
+        this.status = data[PacketDataKeys.GAME_STATUS][PacketDataKeys.STATUS];
+        this.timer = data[PacketDataKeys.GAME_STATUS][PacketDataKeys.TIMER];
+        if(this.status == 0){
+          this.infoElem.textContent = noXSS(`Регистрация`);
+        }
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_STATISTICS){
-        if(data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS]) {
-          let i = 0;
-          for(const pl of data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS]){
-            const u = pl[PacketDataKeys.USER];
-            const uo = u[PacketDataKeys.OBJECT_ID];
-            const username = u[PacketDataKeys.USERNAME];
-            if(!this.playersData[uo]) this.playersData[uo] = {};
-            this.playersData[uo].index = i;
-            this.playersData[uo].username = username;
-            i++;
-          }
-        }
-        if(data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS_DATA]) {
-          for(const pl of data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS_DATA]){
-            const uo = pl[PacketDataKeys.USER_OBJECT_ID];
-            if(!this.playersData[uo]) this.playersData[uo] = {};
-            this.playersData[uo].affectedByRoles = pl[PacketDataKeys.AFFECTED_BY_ROLES];
-            if(typeof pl[PacketDataKeys.ALIVE] == 'boolean') this.playersData[uo].alive = pl[PacketDataKeys.ALIVE];
-            this.playersData[uo].isDayActionUsed = pl[PacketDataKeys.IS_DAY_ACTION_USED];
-            this.playersData[uo].isNightActionAlternative = pl[PacketDataKeys.IS_NIGHT_ACTION_ALTERNATIVE];
-            this.playersData[uo].isNightActionUsed = pl[PacketDataKeys.IS_NIGHT_ACTION_USED];
-            if(typeof pl[PacketDataKeys.ROLE] == 'number') this.playersData[uo].role = pl[PacketDataKeys.ROLE];
-            if(typeof pl[PacketDataKeys.VOTE] == 'number') this.playersData[uo].vote = pl[PacketDataKeys.VOTE];
-            this.playersData[uo].userObjectId = uo;
-          }
-          this.updatePlayersGame();
-        }
         if(data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.GAME_STATUS]){
           this.status = data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.GAME_STATUS][PacketDataKeys.STATUS];
           this.timer = data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.GAME_STATUS][PacketDataKeys.TIMER];
         }
+        if(data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYER_ROLES]){
+          this.playerRoles = data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYER_ROLES];
+        }
+        if(this.status == 3) {
+          if(data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS]) {
+            let i = 0;
+            for(const pl of data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS]){
+              const u = pl[PacketDataKeys.PLAYER_USER];
+              const uo = pl[PacketDataKeys.OBJECT_ID];
+              const puo = u[PacketDataKeys.PLAYER_OBJECT_ID];
+              const username = u[PacketDataKeys.USERNAME];
+              if(!this.playersData[puo]) this.playersData[puo] = {};
+              this.playersData[puo].index = i;
+              this.playersData[puo].username = username;
+              this.playersData[puo].playerObjectId = puo;
+              i++;
+            }
+          }
+          if(data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS_DATA]) {
+            for(const pl of data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS_DATA]){
+              const puo = pl[PacketDataKeys.PLAYER_OBJECT_ID];
+              const pu = this.getPlayerDataFromPUO(puo);
+              if(pu){
+                pu.affectedByRoles = pl[PacketDataKeys.AFFECTED_BY_ROLES];
+                if(typeof pl[PacketDataKeys.ALIVE] == 'boolean') pu.alive = pl[PacketDataKeys.ALIVE];
+                pu.isDayActionUsed = pl[PacketDataKeys.IS_DAY_ACTION_USED];
+                pu.isNightActionAlternative = pl[PacketDataKeys.IS_NIGHT_ACTION_ALTERNATIVE];
+                pu.isNightActionUsed = pl[PacketDataKeys.IS_NIGHT_ACTION_USED];
+                if(typeof pl[PacketDataKeys.ROLE] == 'number') pu.role = pl[PacketDataKeys.ROLE];
+                if(typeof pl[PacketDataKeys.VOTE] == 'number') pu.vote = pl[PacketDataKeys.VOTE];
+                // pu.userObjectId = uo;
+              }
+            }
+            this.updatePlayersGame();
+          }
+        }
+
         if(this.isGame) {
           if(this.clearMessages) {
             this.messages = [];
@@ -355,9 +391,11 @@ export default class Room extends Screen {
           this.initGame();
           if(this.status == 3)
             this.updatePlayersGame();
+        } else {
+          this.updatePlayersWaiting(data[PacketDataKeys.ROOM_STATISTICS][PacketDataKeys.PLAYERS])
         }
 
-        if(this.status == 3) {
+        if(this.status == 4) {
           if(App.settings.data.game.saveHistory) {
             if(!(await fs.existsFile(`${App.config.path}/history.json`)))
               await fs.writeFile(`${App.config.path}/history.json`, JSON.stringify({ rooms: [] }));
@@ -395,24 +433,35 @@ export default class Room extends Screen {
         this.updatePlayersGame();
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.GAME_FINISHED) {
         this.status = 3;
+      } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.PLAYER_ROLES){
+        for(const pl of data[PacketDataKeys.PLAYER_ROLES]){
+          const puo = pl[PacketDataKeys.PLAYER_OBJECT_ID];
+          const role = pl[PacketDataKeys.ROLE];
+          if(this.playersData[puo])
+            this.playersData[puo].role = role;
+        }
+        // // TODO: FIX IT
+        // App.screen = new Rooms();
+        // await wait(500);
+        // App.screen = new Room(this.roomObjectId, this.options);
       }
     });
 
-    const rolesElem = document.createElement('div');
-    rolesElem.style.display = 'flex';
-    rolesElem.style.width = '100%';
-    rolesElem.style.marginRight = '10px';
-    rolesElem.style.flexDirection = 'row-reverse';
-    rolesElem.style.alignItems = 'center';
+    this.rolesElem = document.createElement('div');
+    this.rolesElem.style.display = 'flex';
+    this.rolesElem.style.width = '100%';
+    this.rolesElem.style.marginRight = '10px';
+    this.rolesElem.style.flexDirection = 'row-reverse';
+    this.rolesElem.style.alignItems = 'center';
     for(const r of this.selectedRoles){
       const img = document.createElement('img');
       getRoleImg(r).then(e => img.src = e);
       img.width = 25;
       img.height = 35;
       img.onmousedown = e => e.preventDefault();
-      rolesElem.appendChild(img);
+      this.rolesElem.appendChild(img);
     }
-    this.headerElem.appendChild(rolesElem);
+    this.headerElem.appendChild(this.rolesElem);
 
     App.title = `Комната: ${this.title}`;
     this.titleElem.innerHTML = noXSS(this.title);
@@ -421,7 +470,7 @@ export default class Room extends Screen {
     this.infoElem.className = 'black';
     this.infoElem.style.textAlign = 'center';
     this.infoElem.style.margin = '5px 0';
-    this.infoElem.innerHTML = `Загрузка комнаты..`
+    this.infoElem.innerHTML = `Регистрация`
     this.element.appendChild(this.infoElem);
 
     this.playersListElem = document.createElement('div');
@@ -641,6 +690,7 @@ export default class Room extends Screen {
   }
 
   async initGame(){
+    console.log('запуск игры..');
     try{this.element.removeChild(this.infoElem);}catch{}
     this.removeByKey('waiting');
 
@@ -667,14 +717,26 @@ export default class Room extends Screen {
       this.#changeHeightMessagesElem();
     });
 
-    const yourRoleMsg = `Вы<br/>${RuRoles[this.playersData[App.user.objectId].role! - 1]}`;
+    this.rolesElem.innerHTML = '';
+    for(const r in this.playerRoles){
+      const amount = this.playerRoles[r];
+      const img = document.createElement('img');
+      getRoleImg((r as unknown as Role) + 1).then(e => img.src = e);
+      img.width = 25;
+      img.height = 35;
+      img.onmousedown = e => e.preventDefault();
+      if(amount == 0) img.style.opacity = '.5';
+      this.rolesElem.appendChild(img);
+    }
+
+    const yourRoleMsg = `Вы<br/>${RuRoles[this.me()?.role! - 1]}`;
     let timer: HTMLDivElement, mafia: HTMLDivElement, mir: HTMLDivElement, giveUpButton: HTMLButtonElement;
     {
       this.gameInfoElem.innerHTML = '';
       this.gameInfoElem.style.display = 'flex';
       { // me
         const nick = createElement('span', {
-          html: (App.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(this.playersData[App.user.objectId].index ?? 0) + 1}</span> ` : '') + noXSS(App.user.username),
+          html: (App.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(this.me()?.index ?? 0) + 1}</span> ` : '') + noXSS(App.user.username),
           className: 'black',
           css: {
             fontSize: 'smaller',
@@ -687,7 +749,7 @@ export default class Room extends Screen {
           width: 50,
           height: 70
         });
-        getRoleImg(this.playersData[App.user.objectId].role ?? 1).then(e => myRoleImg.src = e);
+        getRoleImg(this.me()?.role ?? 1).then(e => myRoleImg.src = e);
         myRoleImg.onmousedown = e => e.preventDefault();
         this.deadImgElem = createElement('img', {
           width: 50,
@@ -787,8 +849,8 @@ export default class Room extends Screen {
           }
         });
         {
-          const role = this.playersData[App.user.objectId].role ?? 1;
-          if(this.players.length > 7 && this.playersData[App.user.objectId].alive && ((playersStat[PacketDataKeys.MAFIA_ALIVE] == 1 && isMafia(role)) || (playersStat[PacketDataKeys.CIVILIAN_ALIVE] == 1 && !isMafia(role)))) {
+          const role = this.me()?.role ?? 1;
+          if(this.players.length > 7 && this.me()?.alive && ((playersStat[PacketDataKeys.MAFIA_ALIVE] == 1 && isMafia(role)) || (playersStat[PacketDataKeys.CIVILIAN_ALIVE] == 1 && !isMafia(role)))) {
             timer.style.marginTop = '0';
             giveUpButton.style.display = 'block';
           }
@@ -802,7 +864,7 @@ export default class Room extends Screen {
       }
     }
 
-    if(!this.playersData[App.user.objectId].alive){
+    if(!this.me()?.alive){
       this.deadImgElem.style.top = (this.yourRoleElem.clientHeight + 1)+'px';
       this.deadImgElem.style.display = 'flex';
     }
@@ -822,16 +884,16 @@ export default class Room extends Screen {
         mir.textContent = noXSS(`Мирные: ${data[PacketDataKeys.CIVILIAN_ALL]} | ${data[PacketDataKeys.CIVILIAN_ALIVE]}`);
 
         wait(500).then(() => {
-          const role = this.playersData[App.user.objectId].role ?? 1;
-          if(this.players.length > 7 && this.playersData[App.user.objectId].alive && ((data[PacketDataKeys.MAFIA_ALIVE] == 1 && isMafia(role)) || (data[PacketDataKeys.CIVILIAN_ALIVE] == 1 && !isMafia(role)))) {
+          const role = this.me()?.role ?? 1;
+          if(this.players.length > 7 && this.me()?.alive && ((data[PacketDataKeys.MAFIA_ALIVE] == 1 && isMafia(role)) || (data[PacketDataKeys.CIVILIAN_ALIVE] == 1 && !isMafia(role)))) {
             giveUpButton.style.display = 'block';
             timer.style.marginTop = '0';
           }
         });
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_DATA){
-        for(const p in data[PacketDataKeys.PLAYERS_DATA]) {
-          const pl = data[PacketDataKeys.PLAYERS_DATA][p];
-          const uo = pl[PacketDataKeys.USER_OBJECT_ID];
+        for(const pl of data[PacketDataKeys.PLAYERS_DATA]) {
+          // const pl = data[PacketDataKeys.PLAYERS_DATA][p];
+          const uo = pl[PacketDataKeys.PLAYER_OBJECT_ID];
 
           if(pl[PacketDataKeys.AFFECTED_BY_ROLES]) this.playersData[uo].affectedByRoles = pl[PacketDataKeys.AFFECTED_BY_ROLES];
           if(typeof pl[PacketDataKeys.ALIVE] == 'boolean') this.playersData[uo].alive = pl[PacketDataKeys.ALIVE];
@@ -841,9 +903,9 @@ export default class Room extends Screen {
           if(typeof pl[PacketDataKeys.ROLE] == 'number') this.playersData[uo].role = pl[PacketDataKeys.ROLE];
           if(typeof pl[PacketDataKeys.VOTE] == 'number') this.playersData[uo].vote = pl[PacketDataKeys.VOTE];
 
-          if(data[PacketDataKeys.PLAYERS_DATA].length == 1 && uo != App.user.objectId) {
-            if(typeof pl[PacketDataKeys.VOTE] != 'number') this.playersData[uo].vote = (this.playersData[uo].vote ?? 0) + 1;
-          }
+          // if(data[PacketDataKeys.PLAYERS_DATA].length == 1 && uo != App.user.objectId) {
+          //   if(typeof pl[PacketDataKeys.VOTE] != 'number') this.playersData[uo].vote = (this.playersData[uo].vote ?? 0) + 1;
+          // }
         }
 
         this.updatePlayersGame();
@@ -890,7 +952,7 @@ export default class Room extends Screen {
     this.gamePlayersListElem.innerHTML = '';
 
     for(const [uo, pl] of entries) {
-      if(App.user.objectId == pl.userObjectId) {
+      if(pl.username == App.user.username) {
         if(this.deadImgElem && this.deadImgElem.style.display == 'none' && this.yourRoleElem && pl.alive == false) {
           this.deadImgElem.style.top = (this.yourRoleElem.clientHeight + 1)+'px';
           this.deadImgElem.style.display = 'flex';
@@ -940,7 +1002,7 @@ export default class Room extends Screen {
         }
       }
 
-      const username = this.playersData[uo].username ?? '?';
+      const username = pl.username ?? '?';
       const div = document.createElement('div');
       div.style.margin = '2px';
       div.style.width = '50px';
@@ -989,8 +1051,8 @@ export default class Room extends Screen {
       }
 
       let action = '';
-      let isActionUsed = this.gameDayTime < 2 ? this.playersData[App.user.objectId].isNightActionUsed : this.playersData[App.user.objectId].isDayActionUsed
-      when(this.playersData[App.user.objectId].role)
+      let isActionUsed = this.gameDayTime < 2 ? this.me()?.isNightActionUsed : this.me()?.isDayActionUsed
+      when(this.me()?.role)
         .case(Role.DOCTOR, () => this.gameDayTime == 1 && (() => { action = '_2'; })())
         .case(Role.SHERIFF, () => this.gameDayTime == 1 && (() => {
           action = 'check';
@@ -1007,7 +1069,7 @@ export default class Room extends Screen {
         })())
         .case(Role.BODYGUARD, () => this.gameDayTime == 2 && (() => {
           action = '_8';
-          if(this.playersData[App.user.objectId].isNightActionUsed) action = '';
+          if(this.me()?.isNightActionUsed) action = '';
         })())
         .case(Role.BARMAN, () => this.gameDayTime == 1 && (() => { action = '_9' })())
         .case(Role.INFORMER, () => this.gameDayTime == 1 && (() => {
@@ -1015,8 +1077,8 @@ export default class Room extends Screen {
           if(this.playersData[uo].affectedByRoles?.includes(11)) action = '';
         })());
       if(action == '' && this.gameDayTime == 3) action = 'kill';
-      if(this.gameDayTime == 1 && this.playersData[App.user.objectId].affectedByRoles?.includes(9) && !this.playersData[App.user.objectId].isNightActionUsed) isActionUsed = false;
-      if(action != '' && this.status != 3 && !isActionUsed && this.playersData[App.user.objectId].alive && this.playersData[uo].alive){
+      if(this.gameDayTime == 1 && this.me()?.affectedByRoles?.includes(9) && !this.me()?.isNightActionUsed) isActionUsed = false;
+      if(action != '' && this.status == 3 && !isActionUsed && this.me()?.alive && this.playersData[uo].alive){
         const actionImg = document.createElement('img');
         getTexture(`roles/${action}.png`).then(e => actionImg.src = e);
         actionImg.width = 50;
@@ -1030,7 +1092,7 @@ export default class Room extends Screen {
         actionImg.oncontextmenu = contextMenuCallback
         actionImg.onclick = roleImg.onclick = () => {
           App.server.send(PacketDataKeys.ROLE_ACTION, {
-            [PacketDataKeys.USER_OBJECT_ID]: uo,
+            [PacketDataKeys.PLAYER_OBJECT_ID]: uo,
             [PacketDataKeys.ROOM_OBJECT_ID]: this.roomObjectId,
             [PacketDataKeys.ROOM_MODEL_TYPE]: this.modelType
           });
@@ -1052,23 +1114,24 @@ export default class Room extends Screen {
   }
 
   addMessage(m: any, deleteFirst = false){
-    const text = m[PacketDataKeys.TEXT] as string;
+    const text = m[PacketDataKeys.TEXT];
     const type = m[PacketDataKeys.MESSAGE_TYPE] as number;
     const sticker = m[PacketDataKeys.MESSAGE_STICKER];
     const user = m[PacketDataKeys.USER];
-    const objectId = user ? user[PacketDataKeys.OBJECT_ID] : '';
+    const objectId = m[PacketDataKeys.OBJECT_ID] ?? '';
+    const playerObjectId = user ? user[PacketDataKeys.PLAYER_OBJECT_ID] : '';
 
     this.messages.push(m);
 
-    if(user || type == 10 || type == 25 || type == 26){
-      const username = user ? user[PacketDataKeys.USERNAME] : type == 25 || type == 26 ? 'Информатор' : type == 10 ? 'Мафия' : '???';
-      let msgText = text, color = 'black';
-      if(type == 9 || type == 13 || type == 26) { msgText = `Голосует за [${text}]`; color = '#186400' }
-      else if(type == 11) { color = `#545454` }
-      else if(type == 17) { color = '#113B81' }
-      else if(type == 18) { msgText = `ВЗОРВАЛ игрока [${text}]`; color = '#940000' }
+    if((user ? type != 2 && type != 3 && type != 13 : user) || type == 10 || type == 25 || type == 26 || type == 29){
+      const username = user ? user[PacketDataKeys.USERNAME] : type == 25 || type == 26 ? 'Информатор' : type == 29 ? 'Бармен' : type == 10 ? 'Мафия' : '???';
+      let msgText = text || '', color = 'black';
+      if(type == 10 || type == 14) { msgText = `Голосует за [${text}]`; color = '#186400' }
+      else if(type == 12) { color = `#545454` }
+      else if(type == 16) { msgText = `Сдался`; color = '#940000' }
+      else if(type == 18) { color = '#113B81' }
+      else if(type == 19) { msgText = `ВЗОРВАЛ игрока [${text}]`; color = '#940000' }
       else if(type == 21) { msgText = `ВЗОРВАЛ игрока [${text}], но игрок был под защитой телохранителя и остался жив!`; color = '#940000' }
-      else if(type == 27) { msgText = `Сдался`; color = '#940000' };
       if(this.lastMessage && this.lastMessage.divM && this.lastMessage.username == username){
         const msg = document.createElement('span');
         // @ts-ignore
@@ -1084,29 +1147,24 @@ export default class Room extends Screen {
         div.style.display = 'flex';
         div.style.textAlign = 'left';
         const avatar = document.createElement('img');
-        getAvatarImg(user).then(e => avatar.src = e);
+        getAvatarImg(user ?? username).then(e => avatar.src = e);
         avatar.style.borderRadius = '100%';
         avatar.width = 35;
         avatar.height = 35;
         avatar.style.margin = '5px';
         avatar.onmousedown = e => e.preventDefault();
-        avatar.onclick = () => ProfileInfo(objectId);
+        avatar.onclick = () => ProfileInfo(playerObjectId);
         const divM = document.createElement('div');
         divM.style.display = 'flex';
         divM.style.flexDirection = 'column';
         divM.style.justifyContent = 'center';
         divM.style.wordBreak = 'auto-phrase';
         const nick = document.createElement('span');
-        if(user && user[PacketDataKeys.VIP]) {
-          const img = createElement('img', { width: 20, height: 20 });
-          getTexture(`vip/0M.png`).then(e => img.src = e);
-          nick.appendChild(img);
-        }
         if(this.isGame && App.settings.data.game.showIndexPlChat){
           const e = createElement('span', { text: ((this.playersData[objectId]?.index ?? 0) + 1) + ' ', css: { color: '#ab1457', fontWeight: 'bold' } })
           nick.appendChild(e);
         }
-        createElement('span', { css: { marginLeft: '2px' }, text: username, appendTo: nick });
+        createElement('span', { css: { marginLeft: '2px' }, text: user && user[PacketDataKeys.VIP] ? username + ` ${user[PacketDataKeys.VIP]}` : username, appendTo: nick });
         if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.style.color = type == 17 ? '#4B4483' : type == 11 ? '#545454' : 'black'
         nick.onclick = () => this.addNickToInput(username)
@@ -1127,30 +1185,32 @@ export default class Room extends Screen {
       }
     } else {
       const div = document.createElement('div');
+      const username = user?.[PacketDataKeys.USERNAME];
       let msg = text, color = 'black', xssAllowed = false,
-        nickElement = `<span style="${text == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text}</span>`,
+        nickElement = `<span style="${username == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${username}</span>`,
         nick1Element = text && text.split('#').length > 1 ? `<span style="${text.split('#')[0] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text.split('#')[0]}</span>` : '',
-        nick2Element = text && text.split('#').length > 1 ? `<span style="${text.split('#')[2] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text.split('#')[2]}</span>` : '';
+        nick2Element = text && text.split('#').length > 1 ? `<span style="${text.split('#')[2] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text.split('#')[2]}</span>` : '',
+        nick3Element = m[PacketDataKeys.USERNAME] ? `<span style="${m[PacketDataKeys.USERNAME][PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${m[PacketDataKeys.USERNAME][PacketDataKeys.USERNAME]}</span>` : '';
       if(type == 2) { msg = `Игрок ${nickElement} вошёл`; color = '#186400'; xssAllowed = true }
       else if(type == 3) { msg = `Игрок ${nickElement} вышел`; color = '#940000'; xssAllowed = true }
       else if(type == 4) { msg = `Игра началась` }
-      else if(type == 5) { msg = `Наступила ночь [МАФИЯ в чате]`; color = '#113B81' }
+      else if(type == 7) { msg = `Наступила ночь [МАФИЯ в чате]`; color = '#113B81' }
       else if(type == 6) { msg = `[МАФИЯ выбирает жертву]`; color = '#113B81' }
-      else if(type == 7) { msg = `Наступил день [Все общаются в чате]`; color = '#C46509' }
-      else if(type == 8) { msg = `[Все голосуют] Выберите игрока, которого хотите казнить`; color = '#C46509' }
-      else if(type == 12) { msg = `Игрок [${nickElement}] УБИТ!`; color = '#940000'; xssAllowed = true }
-      else if(type == 14) { msg = `ВСЕ остались живы. Никого не удалось убить!`; color = '#186400' }
-      else if(type == 15) { msg = `Игра окончена! МИРНЫЕ ЖИТЕЛИ победили!`; color = '#186400' }
-      else if(type == 16) { msg = `Игра окончена! МАФИЯ победила!`; color = '#186400' }
-      else if(type == 19) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${nick1Element}] и [${nick2Element}] играют в одной команде`; color = '#940000'; xssAllowed = true }
-      else if(type == 20) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${nick1Element}] и [${nick2Element}] играют в разных командах`; color = '#940000'; xssAllowed = true }
+      else if(type == 8) { msg = `Наступил день [Все общаются в чате]`; color = '#C46509' }
+      else if(type == 9) { msg = `[Все голосуют] Выберите игрока, которого хотите казнить`; color = '#C46509' }
+      else if(type == 13) { msg = `Игрок [${nickElement}] УБИТ!`; color = '#940000'; xssAllowed = true }
+      else if(type == 15) { msg = `ВСЕ остались живы. Никого не удалось убить!`; color = '#186400' }
+      else if(type == 16) { msg = `Игра окончена! МИРНЫЕ ЖИТЕЛИ победили!`; color = '#186400' }
+      else if(type == 17) { msg = `Игра окончена! МАФИЯ победила!`; color = '#186400' }
+      else if(type == 20) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${nick1Element}] и [${nick2Element}] играют в одной команде`; color = '#940000'; xssAllowed = true }
+      else if(type == 21) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${nick1Element}] и [${nick2Element}] играют в разных командах`; color = '#940000'; xssAllowed = true }
       else if(type == 22) { msg = `ничья` }
-      else if(type == 23) {
-        msg = `[${text.split('#')[0]}] начал голосование, чтобы выгнать игрока [${nick2Element}] из комнаты\n`;
+      else if(type == 24) {
+        msg = `[${text.split('#')[0]}] начал голосование, чтобы выгнать игрока [${nick3Element}] из комнаты\n`;
         xssAllowed = true;
         color = '#113B81';
       }
-      else if(type == 24) { msg = `Завершилось голосование. Выгнать игрока?\nРезультат голосования:\nДа: ${text.split('|')[0]} | Нет: ${text.split('|')[1]}`; color = '#113B81' }
+      else if(type == 25) { msg = `Завершилось голосование. Выгнать игрока?\nРезультат голосования:\nДа: ${text.split('|')[0]} | Нет: ${text.split('|')[1]}`; color = '#113B81' }
       div.innerHTML = (xssAllowed ? msg : noXSS(msg)).replaceAll(`\n`,'<br/>');
       div.style.color = color;
       div.style.userSelect = 'text';
@@ -1158,7 +1218,7 @@ export default class Room extends Screen {
       this.messagesElem.appendChild(div);
       this.lastMessage = {};
 
-      if(type == 23){
+      if(type == 24){
         const timer = document.createElement('p');
         timer.style.margin = '5px';
         timer.textContent = `10`;
@@ -1198,9 +1258,9 @@ export default class Room extends Screen {
       }
 
       if(type == 2 || type == 3){
-        if(this.joinLeaveMessages[text])
-          this.joinLeaveMessages[text].remove();
-        this.joinLeaveMessages[text] = div;
+        if(this.joinLeaveMessages[username])
+          this.joinLeaveMessages[username].remove();
+        this.joinLeaveMessages[username] = div;
       }
     }
 
@@ -1257,30 +1317,34 @@ export default class Room extends Screen {
   }
 
   updatePlayersWaiting(players: any[]){
-    this.usersWaiting = players.map(e => e[PacketDataKeys.USER][PacketDataKeys.OBJECT_ID]);
+    this.usersWaiting = players.map(e => e[PacketDataKeys.OBJECT_ID]);
     this.titleElem.textContent = `${this.title} (${players.length}/${this.maxPlayers})`;
     this.gamePlayersListElem.innerHTML = '';
     for(let i = 0; i < players.length; i++){
       const player = players[i];
-      const user = player[PacketDataKeys.USER];
+      // console.log('players', player);
+      const uo = player[PacketDataKeys.OBJECT_ID]
+      const playerUser = player[PacketDataKeys.PLAYER_USER];
+      const playerObjectId = playerUser[PacketDataKeys.PLAYER_OBJECT_ID];
+      const username = playerUser[PacketDataKeys.USERNAME];
       const div = document.createElement('div');
       const avatar = document.createElement('img');
-      getAvatarImg(user).then(e => avatar.src = e);
+      getAvatarImg(playerUser).then(e => avatar.src = e);
       avatar.style.borderRadius = '100%'
       avatar.width = avatar.height = 25;
       avatar.style.margin = '5px';
       avatar.onmousedown = e => e.preventDefault();
-      avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
+      avatar.onclick = () => ProfileInfo(playerObjectId);
       const nick = document.createElement('span');
-      if(user[PacketDataKeys.VIP]) {
-        const img = createElement('img', { width: 20, height: 20, css: { verticalAlign: 'text-bottom' } });
-        getTexture(`vip/0M.png`).then(e => img.src = e);
-        nick.appendChild(img);
-      }
-      createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
-      if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
+      // if(playerUser[PacketDataKeys.VIP]) {
+        // const img = createElement('img', { width: 20, height: 20, css: { verticalAlign: 'text-bottom' } });
+        // getTexture(`vip/0M.png`).then(e => img.src = e);
+        // nick.appendChild(img);
+      // }
+      createElement('span', { css: { marginLeft: '2px' }, text: playerUser[PacketDataKeys.VIP] ? username + ` ${playerUser[PacketDataKeys.VIP]}` : username, appendTo: nick });
+      if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
       nick.className = 'black';
-      nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);
+      nick.onclick = () => this.addNickToInput(username);
       div.style.display = 'flex';
       div.style.textAlign = 'left';
       div.style.alignItems = 'center';

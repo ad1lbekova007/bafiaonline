@@ -141,6 +141,8 @@ class App extends Events<AppEvents> {
       this.resources[`role_${i}`] = await fs.loadImageAsDataURL(`${this.config.path}/assets/textures/roles/${i}.png`,);
     }
     this.resources["unknownChat"] = await fs.loadImageAsDataURL(`${this.config.path}/assets/textures/roles/unknown_chat.png`,);
+    this.resources["barmanChat"] = await fs.loadImageAsDataURL(`${this.config.path}/assets/textures/roles/barman_chat.png`,);
+    this.resources["mafiaChat"] = await fs.loadImageAsDataURL(`${this.config.path}/assets/textures/roles/mafia_chat.png`,);
   }
   #initCommands(){
     CommandManager.register(new KickCommand());

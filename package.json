@@ -6,7 +6,8 @@
   },
   "scripts": {
     "start": "bun .",
-    "a": "esbuild game/src/index.ts --bundle --minify --outfile=game/image/main.js",
+    "a": "esbuild game/src/index.ts --bundle --outfile=game/image/main.js",
+    "aM": "esbuild game/src/index.ts --bundle --minify --outfile=game/image/main.js",
     "b": "esbuild launcher/src/index.ts --bundle --serve=80 --servedir=run --watch --outfile=run/index.js",
     "c": "esbuild game/src/index.ts --bundle --minify --outfile=game/image/main.js && bun run build",
     "e": "esbuild launcher/src/index.ts --bundle --outfile=run/index.js",
@@ -19,7 +20,7 @@
     "nbuild": "node build/generateImage",
     "nbuildgame": "esbuild game/src/index.ts --bundle --minify --outfile=game/image/main.js && pnpm run nbuild",
     "buildtest": "esbuild build/generateImage.ts --bundle --minify --platform=node --outfile=build/generateImage.js",
-    "buildG": "pnpm run a && pnpm run nbuild && pnpm run e",
+    "buildG": "pnpm run aM && pnpm run nbuild && pnpm run e",
     "dev": "pnpm run a && pnpm run nbuild && pnpm run b",
     "devLauncher": "pnpm run b"
   }

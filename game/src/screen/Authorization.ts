@@ -31,77 +31,82 @@ export default class Authorization extends Screen {
     title.textContent = `Авторизация`;
     div.appendChild(title);
 
-    // const email = document.createElement('input');
-    // email.placeholder = 'e-mail или ник';
-    // div.appendChild(email);
-    // div.appendChild(document.createElement('br'));
+    const email = document.createElement('input');
+    email.placeholder = 'e-mail или ник';
+    div.appendChild(email);
+    div.appendChild(document.createElement('br'));
 
-    // const password = document.createElement('input');
-    // password.placeholder = 'Пароль';
-    // password.type = 'password'
-    // password.autocomplete = "off"
-    // password.readOnly = true
-    // password.style.marginTop = '5px';
-    // password.onfocus = () => password.readOnly = false
-    // div.appendChild(password);
-    // div.appendChild(document.createElement('br'));
+    const password = document.createElement('input');
+    password.placeholder = 'Пароль';
+    password.type = 'password'
+    password.autocomplete = "off"
+    password.readOnly = true
+    password.style.marginTop = '5px';
+    password.onfocus = () => password.readOnly = false
+    div.appendChild(password);
+    div.appendChild(document.createElement('br'));
 
-    // const forgetPass = createElement('div', {
-    //   css: {
-    //     margin: '3px',
-    //     textAlign: 'center',
-    //     fontSize: '15px',
-    //     color: '#8888f8',
-    //     textDecoration: 'underline',
-    //     cursor: 'pointer',
-    //     userSelect: 'none'
-    //   },
-    //   html: 'Забыл пароль?'
-    // });
-    // forgetPass.onclick = async() => {
-    //   const email = await PromptBox(`Для сброса пароля, пожалуйста, введите зарегистрированный в игре email`, { height: 200 });
-    //   App.server.send(PacketDataKeys.USER_RESET_PASSWORD, {
-    //     [PacketDataKeys.EMAIL]: email,
-    //     [PacketDataKeys.APP_LANGUAGE]: 'RUS'
-    //   });
-    // }
-    // div.appendChild(forgetPass);
+    const forgetPass = createElement('div', {
+      css: {
+        margin: '3px',
+        textAlign: 'center',
+        fontSize: '15px',
+        color: '#8888f8',
+        textDecoration: 'underline',
+        cursor: 'pointer',
+        userSelect: 'none'
+      },
+      html: 'Забыл пароль?'
+    });
+    forgetPass.onclick = async() => {
+      const email = await PromptBox(`Для сброса пароля, пожалуйста, введите зарегистрированный в игре email`, { height: 200 });
+      App.server.send(PacketDataKeys.USER_RESET_PASSWORD, {
+        [PacketDataKeys.EMAIL]: email,
+        [PacketDataKeys.APP_LANGUAGE]: 'RUS'
+      });
+    }
+    div.appendChild(forgetPass);
 
-    // const or = document.createElement('p');
-    // or.textContent = 'или';
-    // or.style.margin = '5px';
-    // div.appendChild(or);
+    const or = document.createElement('p');
+    or.textContent = 'или';
+    or.style.margin = '5px';
+    div.appendChild(or);
 
-    // const token = document.createElement('input');
-    // token.placeholder = 'Токен';
-    // div.appendChild(token);
-    // div.appendChild(document.createElement('br'));
+    const token = document.createElement('input');
+    token.placeholder = 'Токен';
+    div.appendChild(token);
+    div.appendChild(document.createElement('br'));
 
-    // const userId = document.createElement('input');
-    // userId.placeholder = 'ID пользователя';
-    // userId.style.marginTop = '5px';
-    // div.appendChild(userId);
-    // div.appendChild(document.createElement('br'));
-    // div.appendChild(document.createElement('br'));
+    const userId = document.createElement('input');
+    userId.placeholder = 'ID пользователя';
+    userId.style.marginTop = '5px';
+    div.appendChild(userId);
+    div.appendChild(document.createElement('br'));
+    div.appendChild(document.createElement('br'));
 
-    // const btnLogin = document.createElement('button');
-    // btnLogin.textContent = 'Войти';
-    // btnLogin.onclick = async() => {
-    //   await App.server.auth.auth({ email: email.value, password: password.value, token: token.value, userId: userId.value });
-    // }
-    // div.appendChild(btnLogin);
+    const btnLogin = document.createElement('button');
+    btnLogin.textContent = 'Войти';
+    btnLogin.onclick = async() => {
+      await App.server.auth.auth({ email: email.value, password: password.value, token: token.value, userId: userId.value });
+    }
+    div.appendChild(btnLogin);
 
-    // const btnReg = document.createElement('button');
-    // btnReg.textContent = 'Регистрация';
-    // btnReg.onclick = async () => {
-    //   await App.server.auth.signUp({ email: email.value, password: password.value });
-    // }
-    // div.appendChild(btnReg);
+    const btnReg = document.createElement('button');
+    btnReg.textContent = 'Регистрация';
+    btnReg.onclick = async () => {
+      await App.server.auth.signUp({ email: email.value, password: password.value });
+    }
+    div.appendChild(btnReg);
 
     const text = document.createElement('p');
+//     text.innerHTML = `
+// Бафия временно недоступна из-за обновления Мафии<br/>
+// <br/>
+// Мы не собираем данные аккаунтов.<br/>
+// Наш исходный код открыт <a href="https://github.com/lumik0/bafiaonline">Github</a><br/>
+// <br/>
+// `;
     text.innerHTML = `
-Бафия временно недоступна из-за обновления Мафии<br/>
-<br/>
 Мы не собираем данные аккаунтов.<br/>
 Наш исходный код открыт <a href="https://github.com/lumik0/bafiaonline">Github</a><br/>
 <br/>

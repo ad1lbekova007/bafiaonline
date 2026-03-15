@@ -253,7 +253,7 @@ export default class Launcher {
                 margin: '2px',
                 padding: '5px',
                 borderRadius: '5px',
-                background: pr.name == '' ? '#57e057' : pr.name == self.selectedProfile ? selected : notSelected
+                background: pr.name == self.selectedProfile ? selected : notSelected
               }
             });
             const avatar = createElement('img', {
@@ -263,9 +263,9 @@ export default class Launcher {
                 borderRadius: '100%'
               }
             });
-            loadImage(`https://dottap.com/mafia/profile_photo/${pr.userId}.jpg?v=${Math.random()}`).then(e => avatar.src = e);
+            loadImage(`https://dottap.com/mafia/profile_photo/${pr.userId}?v=${Math.random()}`).then(e => avatar.src = e);
             const nick = createElement('span', {
-              text: pr.name || `Новый аккаунт (${pr.email})`,
+              text: pr.name || pr.email,
               css: {
                 fontSize: '12px'
               }
@@ -323,7 +323,7 @@ export default class Launcher {
             }
           });
           remove.onclick = async () => {
-            const p = self.profiles.findIndex(e => e.name == self.selectedProfile || self.selectedProfile == `Новый аккаунт (${e.email})`);
+            const p = self.profiles.findIndex(e => e.name == self.selectedProfile || self.selectedProfile == e.email);
             if(p != -1) {
               const profile = self.profiles[p];
               if(!confirm('Вы уверены что хотите удалить профиль "'+profile.name+'"?')) return;

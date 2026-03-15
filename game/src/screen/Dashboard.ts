@@ -290,7 +290,7 @@ export default class Dashboard extends Screen {
     btnProfile.textContent = 'Профиль';
     btnProfile.style.width = '60%'
     btnProfile.style.margin = '3px'
-    btnProfile.onclick = () => ProfileInfo(App.user.objectId);
+    btnProfile.onclick = () => ProfileInfo(App.user.playerObjectId);
     div.appendChild(btnProfile);
     div.appendChild(document.createElement('br'));
 

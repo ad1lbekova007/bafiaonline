@@ -204,8 +204,10 @@ export default class GlobalChat extends Screen {
     const sticker = m[PacketDataKeys.MESSAGE_STICKER];
     const user = m[PacketDataKeys.USER];
     const objectId = user ? user[PacketDataKeys.OBJECT_ID] : '';
+    const playerObjectId = user ? user[PacketDataKeys.PLAYER_OBJECT_ID] : '';
+    const username = user?.[PacketDataKeys.USERNAME] ?? '';
 
-    if(user){
+    if(user ? type != 2 && type != 3 : user){
       if(this.lastMessage && this.lastMessage.divM && this.lastMessage.user[PacketDataKeys.USERNAME] == user[PacketDataKeys.USERNAME]) {
         const msg = document.createElement('span');
         // @ts-ignore
@@ -232,17 +234,17 @@ export default class GlobalChat extends Screen {
         avatar.height = 35;
         avatar.style.margin = '5px';
         avatar.onmousedown = e => e.preventDefault();
-        avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
+        avatar.onclick = () => ProfileInfo(playerObjectId);
         const nick = document.createElement('span');
-        if(user[PacketDataKeys.VIP]) {
-          const img = createElement('img', { width: 20, height: 20 });
-          getTexture(`vip/0M.png`).then(e => img.src = e);
-          nick.appendChild(img);
-        }
-        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
-        if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
+        // if(user[PacketDataKeys.VIP]) {
+        //   const img = createElement('img', { width: 20, height: 20 });
+        //   getTexture(`vip/0M.png`).then(e => img.src = e);
+        //   nick.appendChild(img);
+        // }
+        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.VIP] ? username + ` ${user[PacketDataKeys.VIP]}` : username, appendTo: nick });
+        if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
         nick.className = 'black';
-        nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);
+        nick.onclick = () => this.addNickToInput(username);
         const msg = document.createElement('span');
         // @ts-ignore
         let cleanText = (users[objectId] == 'dev') ? text : noXSS(text);
@@ -260,7 +262,7 @@ export default class GlobalChat extends Screen {
       }
     } else {
       const div = document.createElement('div');
-      const nickElement = `<span style="${text == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text}</span>`;
+      const nickElement = `<span style="${text == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${username}</span>`;
       if(type == 2 || type == 3) div.innerHTML = type == 2 ? `Игрок ${nickElement} вошёл` : `Игрок ${nickElement} вышел`;
       else div.textContent = noXSS(text);
       div.style.color = type == 2 ? '#22640A' : type == 3 ? '#940000' : 'black';
@@ -270,9 +272,9 @@ export default class GlobalChat extends Screen {
       this.lastMessage = { user: undefined, divM: undefined };
 
       if(type == 2 || type == 3){
-        if(this.joinLeaveMessages[text])
-          this.messagesElem.removeChild(this.joinLeaveMessages[text]);
-        this.joinLeaveMessages[text] = div;
+        if(this.joinLeaveMessages[username])
+          this.messagesElem.removeChild(this.joinLeaveMessages[username]);
+        this.joinLeaveMessages[username] = div;
       }
     }
 
@@ -329,6 +331,9 @@ export default class GlobalChat extends Screen {
 
     for(let i = 0; i < users.length; i++){
       const user = users[i];
+      const username = user[PacketDataKeys.USERNAME];
+      const playerUser = user[PacketDataKeys.PLAYER_USER];
+      const playerObjectId = playerUser[PacketDataKeys.PLAYER_OBJECT_ID];
       const div = document.createElement('div');
       div.style.display = 'flex';
       div.style.textAlign = 'left';
@@ -339,17 +344,17 @@ export default class GlobalChat extends Screen {
       avatar.width = avatar.height = 25;
       avatar.style.margin = '5px';
       avatar.onmousedown = e => e.preventDefault();
-      avatar.onclick = () => ProfileInfo(user[PacketDataKeys.OBJECT_ID]);
+      avatar.onclick = () => ProfileInfo(playerObjectId);
       const nick = document.createElement('span');
-      if(user[PacketDataKeys.VIP]) {
-        const img = createElement('img', { width: 20, height: 20, css: { verticalAlign: 'text-bottom' } });
-        getTexture(`vip/0M.png`).then(e => img.src = e);
-        nick.appendChild(img);
-      }
-      createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
-      if(user[PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
+      // if(user[PacketDataKeys.VIP]) {
+      //   const img = createElement('img', { width: 20, height: 20, css: { verticalAlign: 'text-bottom' } });
+      //   getTexture(`vip/0M.png`).then(e => img.src = e);
+      //   nick.appendChild(img);
+      // }
+      createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.VIP] ? username + ` ${user[PacketDataKeys.VIP]}` : username, appendTo: nick });
+      if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
       nick.className = 'black';
-      nick.onclick = () => this.addNickToInput(user[PacketDataKeys.USERNAME]);
+      nick.onclick = () => this.addNickToInput(username);
       div.appendChild(avatar);
       div.appendChild(nick);
       this.playersListElem.appendChild(div);

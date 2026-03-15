@@ -361,7 +361,11 @@ const PacketDataKeys = {
   USER_RESET_PASSWORD_SENDED: "usrps",
   USER_WITH_EMAIL_NOT_EXISTS: "uwene",
   USTMR: 'ustmr',
-  USRSFR: 'usrsfr'
+  USRSFR: 'usrsfr',
+  USER_ID: 'usid',
+  PLAYER_USER: 'pu',
+  PLAYER_OBJECT_ID: 'puo',
+  PLAYER_ROLES: 'pls'
 } as const
 
 export default PacketDataKeys

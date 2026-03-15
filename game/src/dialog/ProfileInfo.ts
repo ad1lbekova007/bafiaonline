@@ -49,7 +49,7 @@ function calculateStatsWithRoles(profile: any) {
   };
 }
 
-export default async function ProfileInfo(userObjectId: string){
+export default async function ProfileInfo(playerObjectId: string){
   const zoom = getZoom();
   const box = new Box({ title: 'ПРОФИЛЬ', width: (App.width/zoom)/.85, height: (App.height/zoom)/.75, canCloseAnywhere: true });
   // box.element.style.zoom = (zoom / 1.75) + '';
@@ -57,7 +57,7 @@ export default async function ProfileInfo(userObjectId: string){
   box.content.style.overflowY = 'overlay';
 
   App.server.send(PacketDataKeys.GET_USER_PROFILE, {
-    [PacketDataKeys.USER_RECEIVER]: userObjectId,
+    [PacketDataKeys.USER_RECEIVER]: playerObjectId,
     [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
     [PacketDataKeys.TOKEN]: App.user.token
   });
@@ -73,6 +73,7 @@ export default async function ProfileInfo(userObjectId: string){
     nextLevelExperience: pud[PacketDataKeys.NEXT_LEVEL_EXPERIENCE],
     prevLevelExperience: pud[PacketDataKeys.PREVIOUS_LEVEL_EXPERIENCE],
     objectId: pud[PacketDataKeys.OBJECT_ID],
+    playerObjectId: pud[PacketDataKeys.PLAYER_OBJECT_ID],
     photo: pud[PacketDataKeys.PHOTO],
     roleStats: pud[PacketDataKeys.PLAYER_ROLE_STATISTICS],
     sex: pud[PacketDataKeys.SEX],
@@ -92,7 +93,7 @@ export default async function ProfileInfo(userObjectId: string){
     friendFlag: ud[PacketDataKeys.FRIENDSHIP_FLAG]
   }
 
-  const isMe = typeof profile.gold == 'number';
+  const isMe = profile.playerObjectId == App.user.playerObjectId;
 
   let isViewingAvatar = false;
 
@@ -165,13 +166,13 @@ export default async function ProfileInfo(userObjectId: string){
     btns.appendChild(e);
   }
 
-  if(userObjectId != App.user.objectId) {
+  if(!isMe) {
     if(!profile.friend){
       addButton('Добавить в друзья', async() => {
         const e = await ConfirmBox(`Отправить заявку на добавление данного пользователя в друзья?`, { title: `ДОБАВИТЬ В ДРУЗЬЯ` });
         if(e){
           App.server.send(PacketDataKeys.ADD_FRIEND, {
-            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: userObjectId
+            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: playerObjectId
           });
           const data = await App.server.awaitPacket([PacketDataKeys.ADD_FRIEND, PacketDataKeys.YOUR_FRIENDSHIP_LIST_FULL]);
           if(data[PacketDataKeys.TYPE] == PacketDataKeys.YOUR_FRIENDSHIP_LIST_FULL){
@@ -180,7 +181,7 @@ export default async function ProfileInfo(userObjectId: string){
           }
           if(data[PacketDataKeys.TYPE] == PacketDataKeys.ADD_FRIEND){
             box.destroy();
-            ProfileInfo(userObjectId);
+            ProfileInfo(playerObjectId);
           }
         }
       });
@@ -189,7 +190,7 @@ export default async function ProfileInfo(userObjectId: string){
         const e = await ConfirmBox(`Принять заявку в друзья от данного пользователя`, { title: `ПРИНЯТЬ ДРУЖБУ` });
         if(e) {
           App.server.send(PacketDataKeys.ADD_FRIEND, {
-            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: userObjectId
+            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: playerObjectId
           });
           const data = await App.server.awaitPacket([PacketDataKeys.ADD_FRIEND, PacketDataKeys.YOUR_FRIENDSHIP_LIST_FULL]);
           if(data[PacketDataKeys.TYPE] == PacketDataKeys.YOUR_FRIENDSHIP_LIST_FULL){
@@ -198,7 +199,7 @@ export default async function ProfileInfo(userObjectId: string){
           }
           if(data[PacketDataKeys.TYPE] == PacketDataKeys.ADD_FRIEND){
             box.destroy();
-            ProfileInfo(userObjectId);
+            ProfileInfo(playerObjectId);
           }
         }
       });
@@ -207,12 +208,12 @@ export default async function ProfileInfo(userObjectId: string){
         const e = await ConfirmBox(`Отменить запрос дружбы?`, { title: `ОТМЕНИТЬ ЗАПРОС` });
         if(e) {
           App.server.send(PacketDataKeys.REMOVE_FRIEND, {
-            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: userObjectId
+            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: playerObjectId
           });
           const data = await App.server.awaitPacket([PacketDataKeys.REMOVE_FRIEND]);
           if(data[PacketDataKeys.TYPE] == PacketDataKeys.REMOVE_FRIEND){
             box.destroy();
-            ProfileInfo(userObjectId);
+            ProfileInfo(playerObjectId);
           }
         }
       });
@@ -221,18 +222,18 @@ export default async function ProfileInfo(userObjectId: string){
         const e = await ConfirmBox(`Удалить данного пользователя из друзей? Все личные сообщения так-же будут удалены.`, { title: `УДАЛИТЬ ИЗ ДРУЗЕЙ`, height: 175 });
         if(e) {
           App.server.send(PacketDataKeys.REMOVE_FRIEND, {
-            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: userObjectId
+            [PacketDataKeys.FRIEND_USER_OBJECT_ID]: playerObjectId
           });
           const data = await App.server.awaitPacket([PacketDataKeys.REMOVE_FRIEND]);
           if(data[PacketDataKeys.TYPE] == PacketDataKeys.REMOVE_FRIEND){
             box.destroy();
-            ProfileInfo(userObjectId);
+            ProfileInfo(playerObjectId);
           }
         }
       });
       addButton('Личные сообщения', async()=>{
         box.destroy();
-        App.screen = new PrivateChat(profile.friend, userObjectId, pud);
+        App.screen = new PrivateChat(profile.friend, playerObjectId, pud);
       });
     }
   }
@@ -244,7 +245,7 @@ export default async function ProfileInfo(userObjectId: string){
         if(c){
           App.server.send(PacketDataKeys.KICK_USER, {
             [PacketDataKeys.ROOM_OBJECT_ID]: room[PacketDataKeys.OBJECT_ID],
-            [PacketDataKeys.USER_OBJECT_ID]: userObjectId
+            [PacketDataKeys.USER_OBJECT_ID]: playerObjectId
           });
           box.destroy();
         }
@@ -336,7 +337,7 @@ export default async function ProfileInfo(userObjectId: string){
   add(statDev, 'Пол', profile.sex == Sex.WOMEN ? 'Женский' : 'Мужской');
   add(statDev, 'Уровень', profile.level + ` (${profile.prevLevelExperience}/${profile.nextLevelExperience})`);
 
-  add(statDev, `ID Объекта`, userObjectId);
+  add(statDev, `ID Объекта`, playerObjectId);
   add(statDev, `Последний вход`, formatDate(profile.updated));
   add(statDev, `Сервер`, profile.serverLanguage);
   div.appendChild(statDev);
