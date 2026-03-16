@@ -1,3 +1,6 @@
+// не читайте код пж, иначе глаза выпадут
+// хочу переписать но хз когда
+
 import App from "../App";
 import { MessageStyle, Role, RuRoles } from "../enums";
 import PacketDataKeys from "../../../core/src/PacketDataKeys";
