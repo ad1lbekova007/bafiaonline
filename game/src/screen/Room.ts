@@ -20,6 +20,7 @@ import ContextMenu from "../component/ContextMenu";
 import users from '../../../core/users.json';
 import { History } from "./History";
 import CommandManager from "../command/CommandManager";
+import Dashboard from "./Dashboard";
 
 export function isMafia(role: Role): boolean {
   return [Role.MAFIA, Role.BARMAN, Role.TERRORIST, Role.INFORMER].includes(role);
@@ -58,7 +59,7 @@ export default class Room extends Screen {
   isInitialized = false
   preInitCallback: Function = () => {}
 
-  modelType = 0;
+  modelType = 1;
   title = 'Комната';
   maxPlayers = 8
   minPlayers = 1
@@ -104,7 +105,10 @@ export default class Room extends Screen {
     password?: string
     sendRoomEnter?: boolean
     isHistory?: boolean
-    data?: any
+    isMM?: boolean
+    dontWaitForAnswer?: boolean
+    data?: any,
+    selectedRoles?: Role[]
   } = {}){
     super('Room');
 
@@ -119,6 +123,15 @@ export default class Room extends Screen {
       this.localFirstMessages = options.data.messages;
     }
     App.title = 'Комната';
+    
+    if(options.isMM){
+      this.title = 'Соревновательный режим';
+      App.title = 'Соревновательный режим';
+      this.maxPlayers = 12;
+    }
+    if(options.selectedRoles){
+      this.selectedRoles = options.selectedRoles;
+    }
 
     this.oldAppSettingsData = JSON.parse(JSON.stringify(App.settings.data));
 
@@ -155,7 +168,7 @@ export default class Room extends Screen {
     this.loadingDivElem.appendChild(this.loadingElem);
 
     this.on('back', () => {
-      App.screen = this.isHistory ? new History() : new Rooms();
+      App.screen = this.options.isMM ? new Dashboard() : this.isHistory ? new History() : new Rooms();
     });
 
     this.init();
@@ -178,68 +191,75 @@ export default class Room extends Screen {
       [PacketDataKeys.ROOM_PASS]: this.options.password ? md5salt(this.options.password) : '',
       [PacketDataKeys.ROOM_OBJECT_ID]: this.roomObjectId
     });
-    const rData = await App.server.awaitPacket([PacketDataKeys.ROOM_ENTER, PacketDataKeys.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys.GAME_STARTED, PacketDataKeys.USER_IN_ANOTHER_ROOM, PacketDataKeys.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys.USER_LEVEL_NOT_ENOUGH, PacketDataKeys.USER_KICKED, PacketDataKeys.ROOM_CREATED, PacketDataKeys.MAXIMUM_PLAYERS], 2000);
-    if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_PASSWORD_IS_WRONG_ERROR){
-      App.screen = new Rooms();
-      MessageBox('Неправильный пароль!');
-      return;
-    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.GAME_STARTED){
-      App.screen = new Rooms();
-      MessageBox('Игра уже началась');
-      return;
-    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_IN_ANOTHER_ROOM){
-      App.screen = new Rooms();
-      MessageBox('Нельзя зайти');
-      return;
-    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_USING_DOUBLE_ACCOUNT){
-      App.screen = new Rooms();
-      MessageBox(`В данной комнате уже есть игрок, который подключен к тому же интернет подключению, что и вы
+    let stats;
+    if(!this.options.dontWaitForAnswer){
+      const rData = await App.server.awaitPacket([PacketDataKeys.ROOM_ENTER, PacketDataKeys.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys.GAME_STARTED, PacketDataKeys.USER_IN_ANOTHER_ROOM, PacketDataKeys.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys.USER_LEVEL_NOT_ENOUGH, PacketDataKeys.USER_KICKED, PacketDataKeys.ROOM_CREATED, PacketDataKeys.MAXIMUM_PLAYERS], 2000);
+      if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_PASSWORD_IS_WRONG_ERROR){
+        App.screen = new Rooms();
+        MessageBox('Неправильный пароль!');
+        return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.GAME_STARTED){
+        App.screen = new Rooms();
+        MessageBox('Игра уже началась');
+        return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_IN_ANOTHER_ROOM){
+        App.screen = new Rooms();
+        MessageBox('Нельзя зайти');
+        return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_USING_DOUBLE_ACCOUNT){
+        App.screen = new Rooms();
+        MessageBox(`В данной комнате уже есть игрок, который подключен к тому же интернет подключению, что и вы
 
-Вероятно вы и этот игрок используете общую точку доступа к сети интернет
+  Вероятно вы и этот игрок используете общую точку доступа к сети интернет
 
-Если вы хотите играть с данным игроком в одной комнате - создайте комнату с паролем или убедитесь, что вы подключены каждый к своей точке доступа или мобильным данным`, { height: 360 });
-      return;
-    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_LEVEL_NOT_ENOUGH){
-      App.screen = new Rooms();
-      MessageBox('Ваш уровень маленький');
-      return;
-    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_KICKED){
-      App.screen = new Rooms();
-      MessageBox('Вас выгнали');
-      return;
-    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.MAXIMUM_PLAYERS) {
-      App.screen = new Rooms();
-      MessageBox('Комната переполнена');
-      return;
-    } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_CREATED) {
-    } else if(rData[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_ENTER) {
-      App.screen = new Rooms();
-      MessageBox('Ошибка.. ' + JSON.stringify(rData));
-      return;
+  Если вы хотите играть с данным игроком в одной комнате - создайте комнату с паролем или убедитесь, что вы подключены каждый к своей точке доступа или мобильным данным`, { height: 360 });
+        return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_LEVEL_NOT_ENOUGH){
+        App.screen = new Rooms();
+        MessageBox('Ваш уровень маленький');
+        return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_KICKED){
+        App.screen = new Rooms();
+        MessageBox('Вас выгнали');
+        return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.MAXIMUM_PLAYERS) {
+        App.screen = new Rooms();
+        MessageBox('Комната переполнена');
+        return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_CREATED) {
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_STATISTICS) {
+        stats = rData;
+      } else if(rData[PacketDataKeys.TYPE] != PacketDataKeys.ROOM_ENTER) {
+        App.screen = new Rooms();
+        MessageBox('Ошибка.. ' + JSON.stringify(rData));
+        return;
+      }
+
+      const roomData = rData[PacketDataKeys.ROOM];
+      if(roomData && roomData[PacketDataKeys.OBJECT_ID] && roomData[PacketDataKeys.ROOM_MODEL_TYPE]){
+        this.roomObjectId = roomData[PacketDataKeys.OBJECT_ID]
+        this.modelType = roomData[PacketDataKeys.ROOM_MODEL_TYPE];
+        this.title = roomData[PacketDataKeys.TITLE];
+        this.maxPlayers = roomData[PacketDataKeys.MAX_PLAYERS];
+        this.minPlayers = roomData[PacketDataKeys.MIN_PLAYERS];
+        this.minLevel = roomData[PacketDataKeys.MIN_LEVEL];
+        this.isVipEnabled = roomData[PacketDataKeys.VIP_ENABLED];
+        this.selectedRoles = roomData[PacketDataKeys.SELECTED_ROLES];
+        this.status = roomData[PacketDataKeys.STATUS];
+        this.gameDayTime = roomData[PacketDataKeys.DAYTIME];
+      }
     }
-
-    const roomData = rData[PacketDataKeys.ROOM];
-    this.roomObjectId = roomData[PacketDataKeys.OBJECT_ID]
-    this.modelType = roomData[PacketDataKeys.ROOM_MODEL_TYPE];
-    this.title = roomData[PacketDataKeys.TITLE];
-    this.maxPlayers = roomData[PacketDataKeys.MAX_PLAYERS];
-    this.minPlayers = roomData[PacketDataKeys.MIN_PLAYERS];
-    this.minLevel = roomData[PacketDataKeys.MIN_LEVEL];
-    this.isVipEnabled = roomData[PacketDataKeys.VIP_ENABLED];
-    this.selectedRoles = roomData[PacketDataKeys.SELECTED_ROLES];
-    this.status = roomData[PacketDataKeys.STATUS];
-    this.gameDayTime = roomData[PacketDataKeys.DAYTIME];
     App.server.send(PacketDataKeys.CREATE_PLAYER, {
       [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
       [PacketDataKeys.TOKEN]: App.user.token,
       [PacketDataKeys.ROOM_OBJECT_ID]: this.roomObjectId,
-      [PacketDataKeys.ROOM_MODEL_TYPE]: 0
+      [PacketDataKeys.ROOM_MODEL_TYPE]: this.modelType
     });
 
-    const data = await App.server.awaitPacket(PacketDataKeys.ROOM_STATISTICS);
+    if(!stats) stats = await App.server.awaitPacket(PacketDataKeys.ROOM_STATISTICS);
 
     function preInit() {
-      const rs = data[PacketDataKeys.ROOM_STATISTICS];
+      const rs = stats![PacketDataKeys.ROOM_STATISTICS];
       if(self.messagesElem) {
         self.messages = [];
         self.messagesElem.innerHTML = '';
@@ -283,11 +303,13 @@ export default class Room extends Screen {
               isNightActionAlternative: pl[PacketDataKeys.IS_NIGHT_ACTION_ALTERNATIVE],
               isNightActionUsed: pl[PacketDataKeys.IS_NIGHT_ACTION_USED],
               userObjectId: uo,
+              playerObjectId: uo,
               role: pl[PacketDataKeys.ROLE],
               vote: pl[PacketDataKeys.VOTE] ?? 0
             }
             i++;
           }
+          // console.log(self.playersData["61092974-8103-41af-954b-7f6bc553b807"]);
         }
       } else {
         self.infoElem.innerHTML = `Регистрация`;
@@ -416,6 +438,7 @@ export default class Room extends Screen {
               isVipEnabled: this.isVipEnabled,
               selectedRoles: this.selectedRoles,
               gameDayTime: this.gameDayTime,
+              isMM: this.options.isMM,
               createdAt: Date.now()
             });
 
@@ -1020,6 +1043,7 @@ export default class Room extends Screen {
       nick.style.fontSize = '12px';
       nick.style.marginTop = '-2px';
       const roleImg = document.createElement('img');
+      // console.log(pl.playerObjectId == "61092974-8103-41af-954b-7f6bc553b807", pl);
       getRoleImg(pl.role ?? 0).then(e => roleImg.src = e);
       roleImg.width = 50;
       roleImg.height = 70;

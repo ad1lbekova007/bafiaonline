@@ -67,27 +67,27 @@ export default class Authorization extends Screen {
     }
     div.appendChild(forgetPass);
 
-    const or = document.createElement('p');
-    or.textContent = 'или';
-    or.style.margin = '5px';
-    div.appendChild(or);
+    // const or = document.createElement('p');
+    // or.textContent = 'или';
+    // or.style.margin = '5px';
+    // div.appendChild(or);
 
-    const token = document.createElement('input');
-    token.placeholder = 'Токен';
-    div.appendChild(token);
-    div.appendChild(document.createElement('br'));
+    // const token = document.createElement('input');
+    // token.placeholder = 'Токен';
+    // div.appendChild(token);
+    // div.appendChild(document.createElement('br'));
 
-    const userId = document.createElement('input');
-    userId.placeholder = 'ID пользователя';
-    userId.style.marginTop = '5px';
-    div.appendChild(userId);
-    div.appendChild(document.createElement('br'));
-    div.appendChild(document.createElement('br'));
+    // const userId = document.createElement('input');
+    // userId.placeholder = 'ID пользователя';
+    // userId.style.marginTop = '5px';
+    // div.appendChild(userId);
+    // div.appendChild(document.createElement('br'));
+    // div.appendChild(document.createElement('br'));
 
     const btnLogin = document.createElement('button');
     btnLogin.textContent = 'Войти';
     btnLogin.onclick = async() => {
-      await App.server.auth.auth({ email: email.value, password: password.value, token: token.value, userId: userId.value });
+      await App.server.auth.auth({ email: email.value, password: password.value });
     }
     div.appendChild(btnLogin);
 

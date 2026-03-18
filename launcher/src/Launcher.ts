@@ -48,13 +48,14 @@ const loadImage = (url: string) =>
   });
 
 export default class Launcher {
-  win: Window
+  win!: Window
 
   openedWindows: Window[] = [];
 
   options = {
     version: '',
     profile: '',
+    windowsInFS: false,
     theme: 'macos'
   }
   versions: Version[] = [];
@@ -71,14 +72,6 @@ export default class Launcher {
   settingsBtn!: HTMLButtonElement
 
   constructor(){
-    this.win = new Window({
-      title: `Лаунчер (${App.version})`,
-      // width: 700,
-      width: 400,
-      height: 300,
-      center: true
-    });
-
     this.#init();
   }
 
@@ -108,6 +101,15 @@ export default class Launcher {
 
   async #init(){
     await this.readData();
+    
+    this.win = new Window({
+      title: `Лаунчер (${App.version})`,
+      // width: 700,
+      width: 400,
+      height: 300,
+      center: true,
+      fillScreen: this.options.windowsInFS
+    });
 
     this.#initContent();
 
@@ -263,7 +265,7 @@ export default class Launcher {
                 borderRadius: '100%'
               }
             });
-            loadImage(`https://dottap.com/mafia/profile_photo/${pr.userId}?v=${Math.random()}`).then(e => avatar.src = e);
+            loadImage(`https://dottap.com/mafia/profile_photo/${pr.playerUserId}?v=${Math.random()}`).then(e => avatar.src = e);
             const nick = createElement('span', {
               text: pr.name || pr.email,
               css: {
@@ -524,7 +526,8 @@ export default class Launcher {
       e.appendChild(d);
       const t = createElement('span', {
         css: {
-          marginLeft: '10px'
+          marginLeft: '10px',
+          fontSize: 'smaller'
         },
         text
       });
@@ -555,7 +558,8 @@ export default class Launcher {
       e.appendChild(d);
       const t = createElement('span', {
         css: {
-          marginLeft: '10px'
+          marginLeft: '10px',
+          fontSize: 'smaller'
         },
         text
       });
@@ -578,6 +582,13 @@ export default class Launcher {
         }
       }
     });
+    if(!isMobile()) {
+      addCheckbox('Открывать окна в полноэкранном режиме', async v => {
+        this.options.windowsInFS = v;
+        await this.writeData();
+        location.reload();
+      }, this.options.windowsInFS);
+    }
   }
 
   addProfile() {
@@ -1061,6 +1072,7 @@ export default class Launcher {
       minWidth: 250,
       minHeight: 400,
       center: true,
+      fillScreen: this.options.windowsInFS,
       zoom: .7
     });
 

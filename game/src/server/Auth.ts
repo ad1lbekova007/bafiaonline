@@ -33,20 +33,22 @@ export default class Auth {
 
   constructor(private server: Server) {}
 
-  async addProfile({ name, email, password, token, userId }: { name?: string, email?: string, password?: string, token?: string, userId?: string }): Promise<boolean> {
+  /** true - добавлен, false - существует */
+  async addProfile({ name, email, password, token, userId, playerUserId }: { name?: string, email?: string, password?: string, token?: string, userId?: string, playerUserId?: string }): Promise<boolean> {
     const profiles = JSON.parse(await fs.readFile(App.getPathProfiles())) as Profile[];
 
-    const existing = profiles.findIndex(e => e.email == email || e.token == token || e.userId == userId);
+    const existing = profiles.findIndex(e => e.name == name || e.token == token || e.userId == userId);
     if(existing != -1) {
       profiles[existing] = {
         name: name ?? '',
         email,
         password,
         token,
-        userId
+        userId,
+        playerUserId
       }
       await fs.writeFile(App.getPathProfiles(), JSON.stringify(profiles));
-      return true;
+      return false;
     }
 
     profiles.push({
@@ -54,14 +56,15 @@ export default class Auth {
       email,
       password,
       token,
-      userId
+      userId,
+      playerUserId
     });
 
     await fs.writeFile(App.getPathProfiles(), JSON.stringify(profiles));
     return true;
   }
 
-  async auth(auth?: { email?: string, password?: string, token?: string, userId?: string }){
+  async auth(auth?: { email?: string, password?: string, token?: string, userId?: string, playerUserId?: string }){
     // @ts-ignore
     if(!auth) auth = App.config.auth;
 
@@ -92,9 +95,10 @@ export default class Auth {
         }
         App.screen = new Authorization();
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_SIGN_IN) {
-        const name = data[PacketDataKeys.USER_ID][PacketDataKeys.USERNAME];
-        const token = auth.token || data[PacketDataKeys.USER_ID][PacketDataKeys.TOKEN];
-        const userId = auth.userId || data[PacketDataKeys.USER_ID][PacketDataKeys.OBJECT_ID];
+        let name = data[PacketDataKeys.USER_ID][PacketDataKeys.USERNAME];
+        let token = auth.token || data[PacketDataKeys.USER_ID][PacketDataKeys.TOKEN];
+        let userId = auth.userId || data[PacketDataKeys.USER_ID][PacketDataKeys.OBJECT_ID];
+        let playerUserId = auth.playerUserId ?? '';
 
         const isReconnect = this.lastAuth && this.lastAuth.userId == userId;
 
@@ -102,18 +106,34 @@ export default class Auth {
           token,
           userId
         }
+        
+        token = App.user.token = data[PacketDataKeys.USER_ID][PacketDataKeys.TOKEN];
+        userId = App.user.objectId = data[PacketDataKeys.USER_ID][PacketDataKeys.USER_OBJECT_ID];
 
-        this.addProfile({
+        if(await this.addProfile({
           name,
           email: auth.email,
           password: auth.password,
           token,
-          userId
-        });
-
-        App.user.token = data[PacketDataKeys.USER_ID][PacketDataKeys.TOKEN];
-        App.user.objectId = data[PacketDataKeys.USER_ID][PacketDataKeys.USER_OBJECT_ID];
-        // App.user.update(data[PacketDataKeys.USER]);
+          userId,
+          playerUserId
+        })) {
+          App.server.send(PacketDataKeys.ADD_CLIENT_TO_DASHBOARD, {
+            [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
+            [PacketDataKeys.TOKEN]: App.user.token
+          });
+          const data = await App.server.awaitPacket(PacketDataKeys.DASHBOARD);
+          name = data.db.du.u;
+          playerUserId = data.db.du.puo;
+          await this.addProfile({
+            name,
+            email: auth.email,
+            password: auth.password,
+            token,
+            userId,
+            playerUserId
+          });
+        }
 
         App.user.bToken = generateRandomToken();
         if(isReconnect) {

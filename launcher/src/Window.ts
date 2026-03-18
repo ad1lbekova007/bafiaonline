@@ -251,6 +251,7 @@ export default class Window extends Events<WindowEvents> implements IWindow {
       open?: string
       close?: string
     }
+    fillScreen?: boolean
   }){
     super();
 
@@ -273,10 +274,13 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     this.zoom = options.zoom ?? 1
 
     const isM = isMobile() && !options.noMobile;
+    const fs = isM || options.fillScreen;
 
-    if(isM) {
+    if(fs){
       this.x = 0;
       this.y = 0;
+      this.moveable = false;
+      this.resizable = false;
       this.width = window.innerWidth / zoom;
       this.height = window.innerHeight / zoom;
       this.hasTitleBar = false;

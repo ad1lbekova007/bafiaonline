@@ -17,6 +17,9 @@ interface ScreenEvents {
 export default class Screen extends Events<ScreenEvents> {
   element: HTMLDivElement
 
+  intervals = new Map<string, number>();
+  timeouts = new Map<string, number>();
+
   constructor(public name = "Screen"){
     super();
     this.element = document.createElement('div');
@@ -50,12 +53,27 @@ export default class Screen extends Events<ScreenEvents> {
 
   }
 
+  setInterval(name: string, handler: Function, timeout: number){
+    this.intervals.set(name, setInterval(handler, timeout));
+  }
+  removeInterval(name: string) {
+    return this.intervals.delete(name);
+  }
+  setTimeout(name: string, handler: Function, timeout: number){
+    this.timeouts.set(name, setTimeout(handler, timeout));
+  }
+  removeTimeout(name: string) {
+    return this.timeouts.delete(name);
+  }
+
   tick(dt: number){
     this.emit('tick', dt);
   }
 
   destroy(){
     this.removeAllEvents();
+    this.intervals.forEach(e => clearInterval(e));
+    this.timeouts.forEach(e => clearTimeout(e));
     App.removeByKey(`screen_${this.name}`);
     App.server.removeByKey(`screen_${this.name}`);
     App.element.removeChild(this.element);

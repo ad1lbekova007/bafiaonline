@@ -11,4 +11,5 @@ export type Profile = {
   password?: string
   token?: string
   userId?: string
+  playerUserId?: string
 }

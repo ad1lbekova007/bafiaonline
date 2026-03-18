@@ -1711,8 +1711,8 @@
 
   // core/version.json
   var version_default = {
-    launcher: "Beta 1.0.2",
-    vanilla: "Beta 1.0.2"
+    launcher: "Beta 1.1",
+    vanilla: "Beta 1.1"
   };
 
   // launcher/src/App.ts
@@ -1899,13 +1899,29 @@
       });
     }
     element;
+    intervals = /* @__PURE__ */ new Map();
+    timeouts = /* @__PURE__ */ new Map();
     reconnect() {
+    }
+    setInterval(name, handler, timeout) {
+      this.intervals.set(name, setInterval(handler, timeout));
+    }
+    removeInterval(name) {
+      return this.intervals.delete(name);
+    }
+    setTimeout(name, handler, timeout) {
+      this.timeouts.set(name, setTimeout(handler, timeout));
+    }
+    removeTimeout(name) {
+      return this.timeouts.delete(name);
     }
     tick(dt) {
       this.emit("tick", dt);
     }
     destroy() {
       this.removeAllEvents();
+      this.intervals.forEach((e) => clearInterval(e));
+      this.timeouts.forEach((e) => clearTimeout(e));
       App_default2.removeByKey(`screen_${this.name}`);
       App_default2.server.removeByKey(`screen_${this.name}`);
       App_default2.element.removeChild(this.element);
@@ -2634,24 +2650,10 @@
         });
       };
       div.appendChild(forgetPass);
-      const or = document.createElement("p");
-      or.textContent = "\u0438\u043B\u0438";
-      or.style.margin = "5px";
-      div.appendChild(or);
-      const token = document.createElement("input");
-      token.placeholder = "\u0422\u043E\u043A\u0435\u043D";
-      div.appendChild(token);
-      div.appendChild(document.createElement("br"));
-      const userId = document.createElement("input");
-      userId.placeholder = "ID \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F";
-      userId.style.marginTop = "5px";
-      div.appendChild(userId);
-      div.appendChild(document.createElement("br"));
-      div.appendChild(document.createElement("br"));
       const btnLogin = document.createElement("button");
       btnLogin.textContent = "\u0412\u043E\u0439\u0442\u0438";
       btnLogin.onclick = async () => {
-        await App_default2.server.auth.auth({ email: email.value, password: password.value, token: token.value, userId: userId.value });
+        await App_default2.server.auth.auth({ email: email.value, password: password.value });
       };
       div.appendChild(btnLogin);
       const btnReg = document.createElement("button");
@@ -2923,6 +2925,14 @@
         this.localFirstMessages = options.data.messages;
       }
       App_default2.title = "\u041A\u043E\u043C\u043D\u0430\u0442\u0430";
+      if (options.isMM) {
+        this.title = "\u0421\u043E\u0440\u0435\u0432\u043D\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C";
+        App_default2.title = "\u0421\u043E\u0440\u0435\u0432\u043D\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C";
+        this.maxPlayers = 12;
+      }
+      if (options.selectedRoles) {
+        this.selectedRoles = options.selectedRoles;
+      }
       this.oldAppSettingsData = JSON.parse(JSON.stringify(App_default2.settings.data));
       (async () => {
         this.element.style.background = `url(${await getBackgroundImg("day3")}) 0% 0% / cover`;
@@ -2954,7 +2964,7 @@
       getTexture(`loading/2f.png`).then((e) => this.loadingElem.src = e);
       this.loadingDivElem.appendChild(this.loadingElem);
       this.on("back", () => {
-        App_default2.screen = this.isHistory ? new History() : new Rooms();
+        App_default2.screen = this.options.isMM ? new Dashboard() : this.isHistory ? new History() : new Rooms();
       });
       this.init();
     }
@@ -2984,7 +2994,7 @@
     isInitialized = false;
     preInitCallback = () => {
     };
-    modelType = 0;
+    modelType = 1;
     title = "\u041A\u043E\u043C\u043D\u0430\u0442\u0430";
     maxPlayers = 8;
     minPlayers = 1;
@@ -3022,65 +3032,72 @@
         [PacketDataKeys_default.ROOM_PASS]: this.options.password ? md5salt(this.options.password) : "",
         [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId
       });
-      const rData = await App_default2.server.awaitPacket([PacketDataKeys_default.ROOM_ENTER, PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys_default.GAME_STARTED, PacketDataKeys_default.USER_IN_ANOTHER_ROOM, PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH, PacketDataKeys_default.USER_KICKED, PacketDataKeys_default.ROOM_CREATED, PacketDataKeys_default.MAXIMUM_PLAYERS], 2e3);
-      if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR) {
-        App_default2.screen = new Rooms();
-        MessageBox_default("\u041D\u0435\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439 \u043F\u0430\u0440\u043E\u043B\u044C!");
-        return;
-      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.GAME_STARTED) {
-        App_default2.screen = new Rooms();
-        MessageBox_default("\u0418\u0433\u0440\u0430 \u0443\u0436\u0435 \u043D\u0430\u0447\u0430\u043B\u0430\u0441\u044C");
-        return;
-      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_IN_ANOTHER_ROOM) {
-        App_default2.screen = new Rooms();
-        MessageBox_default("\u041D\u0435\u043B\u044C\u0437\u044F \u0437\u0430\u0439\u0442\u0438");
-        return;
-      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT) {
-        App_default2.screen = new Rooms();
-        MessageBox_default(`\u0412 \u0434\u0430\u043D\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 \u0443\u0436\u0435 \u0435\u0441\u0442\u044C \u0438\u0433\u0440\u043E\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A \u0442\u043E\u043C\u0443 \u0436\u0435 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044E, \u0447\u0442\u043E \u0438 \u0432\u044B
+      let stats;
+      if (!this.options.dontWaitForAnswer) {
+        const rData = await App_default2.server.awaitPacket([PacketDataKeys_default.ROOM_ENTER, PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR, PacketDataKeys_default.GAME_STARTED, PacketDataKeys_default.USER_IN_ANOTHER_ROOM, PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT, PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH, PacketDataKeys_default.USER_KICKED, PacketDataKeys_default.ROOM_CREATED, PacketDataKeys_default.MAXIMUM_PLAYERS], 2e3);
+        if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_PASSWORD_IS_WRONG_ERROR) {
+          App_default2.screen = new Rooms();
+          MessageBox_default("\u041D\u0435\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439 \u043F\u0430\u0440\u043E\u043B\u044C!");
+          return;
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.GAME_STARTED) {
+          App_default2.screen = new Rooms();
+          MessageBox_default("\u0418\u0433\u0440\u0430 \u0443\u0436\u0435 \u043D\u0430\u0447\u0430\u043B\u0430\u0441\u044C");
+          return;
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_IN_ANOTHER_ROOM) {
+          App_default2.screen = new Rooms();
+          MessageBox_default("\u041D\u0435\u043B\u044C\u0437\u044F \u0437\u0430\u0439\u0442\u0438");
+          return;
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT) {
+          App_default2.screen = new Rooms();
+          MessageBox_default(`\u0412 \u0434\u0430\u043D\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 \u0443\u0436\u0435 \u0435\u0441\u0442\u044C \u0438\u0433\u0440\u043E\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A \u0442\u043E\u043C\u0443 \u0436\u0435 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044E, \u0447\u0442\u043E \u0438 \u0432\u044B
 
-\u0412\u0435\u0440\u043E\u044F\u0442\u043D\u043E \u0432\u044B \u0438 \u044D\u0442\u043E\u0442 \u0438\u0433\u0440\u043E\u043A \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0435 \u043E\u0431\u0449\u0443\u044E \u0442\u043E\u0447\u043A\u0443 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u043A \u0441\u0435\u0442\u0438 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442
+  \u0412\u0435\u0440\u043E\u044F\u0442\u043D\u043E \u0432\u044B \u0438 \u044D\u0442\u043E\u0442 \u0438\u0433\u0440\u043E\u043A \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0435 \u043E\u0431\u0449\u0443\u044E \u0442\u043E\u0447\u043A\u0443 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u043A \u0441\u0435\u0442\u0438 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442
 
-\u0415\u0441\u043B\u0438 \u0432\u044B \u0445\u043E\u0442\u0438\u0442\u0435 \u0438\u0433\u0440\u0430\u0442\u044C \u0441 \u0434\u0430\u043D\u043D\u044B\u043C \u0438\u0433\u0440\u043E\u043A\u043E\u043C \u0432 \u043E\u0434\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 - \u0441\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u0443 \u0441 \u043F\u0430\u0440\u043E\u043B\u0435\u043C \u0438\u043B\u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0432\u044B \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u044B \u043A\u0430\u0436\u0434\u044B\u0439 \u043A \u0441\u0432\u043E\u0435\u0439 \u0442\u043E\u0447\u043A\u0435 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u0438\u043B\u0438 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C`, { height: 360 });
-        return;
-      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH) {
-        App_default2.screen = new Rooms();
-        MessageBox_default("\u0412\u0430\u0448 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u043C\u0430\u043B\u0435\u043D\u044C\u043A\u0438\u0439");
-        return;
-      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_KICKED) {
-        App_default2.screen = new Rooms();
-        MessageBox_default("\u0412\u0430\u0441 \u0432\u044B\u0433\u043D\u0430\u043B\u0438");
-        return;
-      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.MAXIMUM_PLAYERS) {
-        App_default2.screen = new Rooms();
-        MessageBox_default("\u041A\u043E\u043C\u043D\u0430\u0442\u0430 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u043D\u0435\u043D\u0430");
-        return;
-      } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_CREATED) {
-      } else if (rData[PacketDataKeys_default.TYPE] != PacketDataKeys_default.ROOM_ENTER) {
-        App_default2.screen = new Rooms();
-        MessageBox_default("\u041E\u0448\u0438\u0431\u043A\u0430.. " + JSON.stringify(rData));
-        return;
+  \u0415\u0441\u043B\u0438 \u0432\u044B \u0445\u043E\u0442\u0438\u0442\u0435 \u0438\u0433\u0440\u0430\u0442\u044C \u0441 \u0434\u0430\u043D\u043D\u044B\u043C \u0438\u0433\u0440\u043E\u043A\u043E\u043C \u0432 \u043E\u0434\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 - \u0441\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u0443 \u0441 \u043F\u0430\u0440\u043E\u043B\u0435\u043C \u0438\u043B\u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0432\u044B \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u044B \u043A\u0430\u0436\u0434\u044B\u0439 \u043A \u0441\u0432\u043E\u0435\u0439 \u0442\u043E\u0447\u043A\u0435 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u0438\u043B\u0438 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C`, { height: 360 });
+          return;
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH) {
+          App_default2.screen = new Rooms();
+          MessageBox_default("\u0412\u0430\u0448 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u043C\u0430\u043B\u0435\u043D\u044C\u043A\u0438\u0439");
+          return;
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_KICKED) {
+          App_default2.screen = new Rooms();
+          MessageBox_default("\u0412\u0430\u0441 \u0432\u044B\u0433\u043D\u0430\u043B\u0438");
+          return;
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.MAXIMUM_PLAYERS) {
+          App_default2.screen = new Rooms();
+          MessageBox_default("\u041A\u043E\u043C\u043D\u0430\u0442\u0430 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u043D\u0435\u043D\u0430");
+          return;
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_CREATED) {
+        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ROOM_STATISTICS) {
+          stats = rData;
+        } else if (rData[PacketDataKeys_default.TYPE] != PacketDataKeys_default.ROOM_ENTER) {
+          App_default2.screen = new Rooms();
+          MessageBox_default("\u041E\u0448\u0438\u0431\u043A\u0430.. " + JSON.stringify(rData));
+          return;
+        }
+        const roomData = rData[PacketDataKeys_default.ROOM];
+        if (roomData && roomData[PacketDataKeys_default.OBJECT_ID] && roomData[PacketDataKeys_default.ROOM_MODEL_TYPE]) {
+          this.roomObjectId = roomData[PacketDataKeys_default.OBJECT_ID];
+          this.modelType = roomData[PacketDataKeys_default.ROOM_MODEL_TYPE];
+          this.title = roomData[PacketDataKeys_default.TITLE];
+          this.maxPlayers = roomData[PacketDataKeys_default.MAX_PLAYERS];
+          this.minPlayers = roomData[PacketDataKeys_default.MIN_PLAYERS];
+          this.minLevel = roomData[PacketDataKeys_default.MIN_LEVEL];
+          this.isVipEnabled = roomData[PacketDataKeys_default.VIP_ENABLED];
+          this.selectedRoles = roomData[PacketDataKeys_default.SELECTED_ROLES];
+          this.status = roomData[PacketDataKeys_default.STATUS];
+          this.gameDayTime = roomData[PacketDataKeys_default.DAYTIME];
+        }
       }
-      const roomData = rData[PacketDataKeys_default.ROOM];
-      this.roomObjectId = roomData[PacketDataKeys_default.OBJECT_ID];
-      this.modelType = roomData[PacketDataKeys_default.ROOM_MODEL_TYPE];
-      this.title = roomData[PacketDataKeys_default.TITLE];
-      this.maxPlayers = roomData[PacketDataKeys_default.MAX_PLAYERS];
-      this.minPlayers = roomData[PacketDataKeys_default.MIN_PLAYERS];
-      this.minLevel = roomData[PacketDataKeys_default.MIN_LEVEL];
-      this.isVipEnabled = roomData[PacketDataKeys_default.VIP_ENABLED];
-      this.selectedRoles = roomData[PacketDataKeys_default.SELECTED_ROLES];
-      this.status = roomData[PacketDataKeys_default.STATUS];
-      this.gameDayTime = roomData[PacketDataKeys_default.DAYTIME];
       App_default2.server.send(PacketDataKeys_default.CREATE_PLAYER, {
         [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
         [PacketDataKeys_default.TOKEN]: App_default2.user.token,
         [PacketDataKeys_default.ROOM_OBJECT_ID]: this.roomObjectId,
-        [PacketDataKeys_default.ROOM_MODEL_TYPE]: 0
+        [PacketDataKeys_default.ROOM_MODEL_TYPE]: this.modelType
       });
-      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.ROOM_STATISTICS);
+      if (!stats) stats = await App_default2.server.awaitPacket(PacketDataKeys_default.ROOM_STATISTICS);
       function preInit() {
-        const rs = data[PacketDataKeys_default.ROOM_STATISTICS];
+        const rs = stats[PacketDataKeys_default.ROOM_STATISTICS];
         if (self2.messagesElem) {
           self2.messages = [];
           self2.messagesElem.innerHTML = "";
@@ -3124,6 +3141,7 @@
                 isNightActionAlternative: pl[PacketDataKeys_default.IS_NIGHT_ACTION_ALTERNATIVE],
                 isNightActionUsed: pl[PacketDataKeys_default.IS_NIGHT_ACTION_USED],
                 userObjectId: uo,
+                playerObjectId: uo,
                 role: pl[PacketDataKeys_default.ROLE],
                 vote: pl[PacketDataKeys_default.VOTE] ?? 0
               };
@@ -3247,6 +3265,7 @@
                 isVipEnabled: this.isVipEnabled,
                 selectedRoles: this.selectedRoles,
                 gameDayTime: this.gameDayTime,
+                isMM: this.options.isMM,
                 createdAt: Date.now()
               });
               await fs_default.writeFile(`${App_default2.config.path}/history.json`, JSON.stringify(history2));
@@ -6190,11 +6209,28 @@
         [PacketDataKeys_default.TOKEN]: App_default2.user.token
       });
       App_default2.server.send("mmguiabk", { mmbpa: 12 });
-      const data = await App_default2.server.awaitPacket("mmuiabk");
-      this.online = data.mmuiabk;
-      this.search();
+      App_default2.server.awaitPacket("mmuiabk").then((e) => this.online = e.mmuiabk);
+      const data = await App_default2.server.awaitPacket(["mmms", "mmrr", "mmag"]);
+      if (data.ty == "mmrr") {
+        App_default2.screen = new Room(data.rr.o, {
+          isMM: true,
+          sendRoomEnter: false,
+          dontWaitForAnswer: true,
+          selectedRoles: data.rr.sr
+        });
+        return;
+      }
+      if (data.ty == "mmsr") {
+        this.selectRole(data.mmlt, data.mmcusr);
+        return;
+      }
+      this.search(data);
     }
-    async search() {
+    async search(data) {
+      this.removeInterval("selection");
+      this.removeInterval("search");
+      this.removeByKey("search");
+      let isSearching = false, isAccepting = false, timer = 0;
       this.el = createElement("div", {
         css: {
           display: "flex",
@@ -6203,7 +6239,7 @@
         },
         appendTo: this.element
       });
-      const online = createElement("div", {
+      const info = createElement("div", {
         text: "\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u044E\u0442: " + this.online,
         css: {
           margin: "5px"
@@ -6211,19 +6247,203 @@
         appendTo: this.el
       });
       const btn = createElement("button", { text: "\u041D\u0430\u0447\u0430\u0442\u044C \u043F\u043E\u0438\u0441\u043A", appendTo: this.el });
+      if (data.ty == "mmag") {
+        timer = data.mmlt;
+        isAccepting = true;
+        btn.innerHTML = `\u041F\u0440\u0438\u043D\u044F\u0442\u044C (${timer})`;
+        info.innerText = `\u041F\u0440\u0438\u043D\u044F\u043B\u0438: ${data.mmagua}`;
+      }
+      this.setInterval("search", () => {
+        if (!isAccepting) return;
+        try {
+          timer--;
+          btn.innerHTML = `\u041F\u0440\u0438\u043D\u044F\u0442\u044C (${timer})`;
+        } catch {
+        }
+      }, 1e3);
+      if (data.mmms) {
+        if (data.mmms.mmuir) {
+          const btn2 = createElement("button", { text: "\u0412\u0435\u0440\u043D\u0443\u0442\u044C\u0441\u044F \u0432 \u0438\u0433\u0440\u0443", appendTo: this.el });
+          btn2.onclick = () => {
+            App_default2.server.send("mmrtr", {});
+          };
+        }
+      }
       btn.onclick = async () => {
-        const video = createElement("img", {
-          src: "../game/meme.gif",
-          width: 275,
-          height: 150
-        });
-        MessageBox_default(`\u0421\u043A\u043E\u0440\u043E... (\u0441\u0435\u0433\u043E\u0434\u043D\u044F)
-
-        `, {
-          element: video,
-          height: 325
-        });
+        if (isAccepting) {
+          App_default2.server.send("mmag", {});
+          btn.disabled = true;
+          return;
+        }
+        if (isSearching) {
+          App_default2.server.send("mmruk", {});
+          App_default2.server.send("mmguiabk", { mmbpa: 12 });
+          btn.innerHTML = "\u041D\u0430\u0447\u0430\u0442\u044C \u043F\u043E\u0438\u0441\u043A";
+          info.innerText = "\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u044E\u0442: " + this.online;
+        } else {
+          App_default2.server.send("mmauk", { mmbpa: 12 });
+          btn.innerHTML = "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u043E\u0438\u0441\u043A";
+          info.innerText = "\u0412 \u043F\u043E\u0438\u0441\u043A\u0435..";
+        }
+        isSearching = !isSearching;
       };
+      this.on("message", (d) => {
+        if (d[PacketDataKeys_default.TYPE] == "mmfun") {
+          info.innerText = "\u041D\u0430\u0439\u0434\u0435\u043D\u043E \u0438\u0433\u0440\u043E\u043A\u043E\u0432 (" + d.mmfun + "/12)";
+        } else if (d[PacketDataKeys_default.TYPE] == "mmuiabk") {
+          this.online = d.mmuiabk;
+          if (!isSearching) info.innerText = "\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u044E\u0442: " + this.online;
+        } else if (d[PacketDataKeys_default.TYPE] == "mmag") {
+          isAccepting = true;
+          btn.innerHTML = "\u041F\u0440\u0438\u043D\u044F\u0442\u044C";
+          info.innerText = "\u041F\u0440\u0438\u043D\u044F\u043B\u0438: 0";
+        } else if (d[PacketDataKeys_default.TYPE] == "mmagu") {
+          info.innerText = "\u041F\u0440\u0438\u043D\u044F\u043B\u0438: " + d.mmagua;
+        } else if (d[PacketDataKeys_default.TYPE] == "mmsr") {
+          this.selectRole(d.mmlt, d.mmcusr);
+        } else if (d[PacketDataKeys_default.TYPE] == "mmib") {
+          const type = d.mmbt;
+          const timeout = d.mmbut;
+          const reason = type == 1 ? `\u0412\u044B \u043D\u0435 \u043F\u0440\u0438\u0441\u043E\u0435\u0434\u0438\u043D\u0438\u043B\u0438\u0441\u044C \u043A \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0435\u0439 \u0438\u0433\u0440\u0435` : `\u0442\u0438\u043F \u043F\u0440\u0438\u0447\u0438\u043D\u044B: ${type}`;
+          isSearching = false;
+          btn.innerHTML = "\u041D\u0430\u0447\u0430\u0442\u044C \u043F\u043E\u0438\u0441\u043A";
+          info.innerText = "\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u044E\u0442: " + this.online;
+          MessageBox_default(`\u041F\u043E\u0438\u0441\u043A \u0438\u0433\u0440 \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E \u0437\u0430\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D.
+
+${reason}
+
+\u041E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u043A\u0438:
+${format_default(timeout, "genitive")}`, { height: 250 });
+        } else if (d[PacketDataKeys_default.TYPE] == "mmrr") {
+          const room = {
+            objectId: d[PacketDataKeys_default.OBJECT_ID]
+          };
+          App_default2.server.send("mmruk", {});
+          App_default2.screen = new Room(room.objectId, {
+            isMM: true,
+            sendRoomEnter: false,
+            dontWaitForAnswer: true
+          });
+        }
+      }).key("search");
+    }
+    async selectRole(timer = 30, roles = []) {
+      const self2 = this;
+      this.removeInterval("search");
+      this.removeInterval("selection");
+      this.removeByKey("search");
+      try {
+        this.el.remove();
+      } catch {
+      }
+      this.el = createElement("div", {
+        css: {
+          display: "flex",
+          flexDirection: "column",
+          padding: "20px"
+        },
+        appendTo: this.element
+      });
+      const info = createElement("div", {
+        text: "" + timer,
+        css: {
+          margin: "5px"
+        },
+        appendTo: this.el
+      });
+      const eroles = {};
+      function addRole(role) {
+        const e = createElement("div", {
+          css: {
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            padding: "5px",
+            margin: "3px",
+            borderRadius: "5px",
+            background: "linear-gradient(90deg, transparent, #81be81)"
+          },
+          appendTo: self2.el
+        });
+        const img = createElement("img", {
+          width: 30,
+          appendTo: e
+        });
+        const inp = createElement("input", {
+          type: "checkbox",
+          css: {
+            zoom: 2
+          },
+          checked: true,
+          appendTo: e
+        });
+        const span = createElement("span", {
+          text: RuRoles[role - 1],
+          css: {
+            marginLeft: "5px"
+          },
+          appendTo: e
+        });
+        const right = createElement("span", {
+          text: "12 / 12",
+          css: {
+            marginLeft: "5px",
+            marginRight: "0 auto"
+          },
+          appendTo: e
+        });
+        inp.onchange = () => {
+          if (inp.checked) {
+            App_default2.server.send("mmsr", { r: role });
+          } else {
+            App_default2.server.send("mmusr", { r: role });
+          }
+        };
+        getRoleImg(role).then((e2) => img.src = e2);
+        eroles[role + ""] = { element: e, right, many: 12 };
+      }
+      addRole(6 /* TERRORIST */);
+      addRole(9 /* BARMAN */);
+      addRole(11 /* INFORMER */);
+      addRole(2 /* DOCTOR */);
+      addRole(5 /* LOVER */);
+      addRole(7 /* JOURNALIST */);
+      addRole(8 /* BODYGUARD */);
+      addRole(10 /* SPY */);
+      this.setInterval("selection", () => {
+        try {
+          timer--;
+          info.innerHTML = "" + timer;
+        } catch {
+        }
+      }, 1e3);
+      this.on("message", (d) => {
+        if (d[PacketDataKeys_default.TYPE] == "mmrc") {
+          for (let r in d.mmrc) {
+            const i = d.mmrc[r];
+            const e = eroles[r];
+            if (e) {
+              e.many = i;
+              if (e.many > 5) {
+                e.element.style.background = "linear-gradient(90deg, transparent, #81be81)";
+              } else {
+                e.element.style.background = "linear-gradient(90deg, transparent, #c05656)";
+              }
+              e.right.innerHTML = `${i} / 12`;
+            }
+          }
+        } else if (d[PacketDataKeys_default.TYPE] == "mmrr") {
+          const room = {
+            objectId: d[PacketDataKeys_default.OBJECT_ID]
+          };
+          App_default2.server.send("mmruk", {});
+          App_default2.screen = new Room(room.objectId, {
+            isMM: true,
+            sendRoomEnter: false,
+            dontWaitForAnswer: true
+          });
+        }
+      });
     }
   };
 
@@ -6602,26 +6822,29 @@
       this.server = server;
     }
     lastAuth;
-    async addProfile({ name, email, password, token, userId }) {
+    /** true - добавлен, false - существует */
+    async addProfile({ name, email, password, token, userId, playerUserId }) {
       const profiles = JSON.parse(await fs_default.readFile(App_default2.getPathProfiles()));
-      const existing = profiles.findIndex((e) => e.email == email || e.token == token || e.userId == userId);
+      const existing = profiles.findIndex((e) => e.name == name || e.token == token || e.userId == userId);
       if (existing != -1) {
         profiles[existing] = {
           name: name ?? "",
           email,
           password,
           token,
-          userId
+          userId,
+          playerUserId
         };
         await fs_default.writeFile(App_default2.getPathProfiles(), JSON.stringify(profiles));
-        return true;
+        return false;
       }
       profiles.push({
         name: name ?? "",
         email,
         password,
         token,
-        userId
+        userId,
+        playerUserId
       });
       await fs_default.writeFile(App_default2.getPathProfiles(), JSON.stringify(profiles));
       return true;
@@ -6663,23 +6886,41 @@
           }
           App_default2.screen = new Authorization();
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_SIGN_IN) {
-          const name = data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.USERNAME];
-          const token = auth.token || data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.TOKEN];
-          const userId = auth.userId || data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.OBJECT_ID];
+          let name = data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.USERNAME];
+          let token = auth.token || data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.TOKEN];
+          let userId = auth.userId || data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.OBJECT_ID];
+          let playerUserId = auth.playerUserId ?? "";
           const isReconnect = this.lastAuth && this.lastAuth.userId == userId;
           this.lastAuth = {
             token,
             userId
           };
-          this.addProfile({
+          token = App_default2.user.token = data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.TOKEN];
+          userId = App_default2.user.objectId = data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.USER_OBJECT_ID];
+          if (await this.addProfile({
             name,
             email: auth.email,
             password: auth.password,
             token,
-            userId
-          });
-          App_default2.user.token = data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.TOKEN];
-          App_default2.user.objectId = data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.USER_OBJECT_ID];
+            userId,
+            playerUserId
+          })) {
+            App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_DASHBOARD, {
+              [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+              [PacketDataKeys_default.TOKEN]: App_default2.user.token
+            });
+            const data2 = await App_default2.server.awaitPacket(PacketDataKeys_default.DASHBOARD);
+            name = data2.db.du.u;
+            playerUserId = data2.db.du.puo;
+            await this.addProfile({
+              name,
+              email: auth.email,
+              password: auth.password,
+              token,
+              userId,
+              playerUserId
+            });
+          }
           App_default2.user.bToken = generateRandomToken();
           if (isReconnect) {
             App_default2.screen.reconnect();
@@ -9238,9 +9479,12 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.maxButton = options.maxButton ?? true;
       this.zoom = options.zoom ?? 1;
       const isM = isMobile() && !options.noMobile;
-      if (isM) {
+      const fs = isM || options.fillScreen;
+      if (fs) {
         this.x = 0;
         this.y = 0;
+        this.moveable = false;
+        this.resizable = false;
         this.width = window.innerWidth / zoom;
         this.height = window.innerHeight / zoom;
         this.hasTitleBar = false;
@@ -9962,6 +10206,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     options = {
       version: "",
       profile: "",
+      windowsInFS: false,
       theme: "macos"
     };
     versions = [];
@@ -9976,13 +10221,6 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     updateBtn;
     settingsBtn;
     constructor() {
-      this.win = new Window({
-        title: `\u041B\u0430\u0443\u043D\u0447\u0435\u0440 (${App_default.version})`,
-        // width: 700,
-        width: 400,
-        height: 300,
-        center: true
-      });
       this.#init();
     }
     async readVersion(src) {
@@ -10006,6 +10244,14 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     }
     async #init() {
       await this.readData();
+      this.win = new Window({
+        title: `\u041B\u0430\u0443\u043D\u0447\u0435\u0440 (${App_default.version})`,
+        // width: 700,
+        width: 400,
+        height: 300,
+        center: true,
+        fillScreen: this.options.windowsInFS
+      });
       this.#initContent();
       if (this.versions.length == 0) {
         this.win.lock();
@@ -10146,7 +10392,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
                   borderRadius: "100%"
                 }
               });
-              loadImage(`https://dottap.com/mafia/profile_photo/${pr.userId}?v=${Math.random()}`).then((e) => avatar.src = e);
+              loadImage(`https://dottap.com/mafia/profile_photo/${pr.playerUserId}?v=${Math.random()}`).then((e) => avatar.src = e);
               const nick = createElement("span", {
                 text: pr.name || pr.email,
                 css: {
@@ -10394,7 +10640,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         e.appendChild(d);
         const t = createElement("span", {
           css: {
-            marginLeft: "10px"
+            marginLeft: "10px",
+            fontSize: "smaller"
           },
           text
         });
@@ -10424,7 +10671,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         e.appendChild(d);
         const t = createElement("span", {
           css: {
-            marginLeft: "10px"
+            marginLeft: "10px",
+            fontSize: "smaller"
           },
           text
         });
@@ -10446,6 +10694,13 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
           }
         }
       });
+      if (!isMobile()) {
+        addCheckbox("\u041E\u0442\u043A\u0440\u044B\u0432\u0430\u0442\u044C \u043E\u043A\u043D\u0430 \u0432 \u043F\u043E\u043B\u043D\u043E\u044D\u043A\u0440\u0430\u043D\u043D\u043E\u043C \u0440\u0435\u0436\u0438\u043C\u0435", async (v) => {
+          this.options.windowsInFS = v;
+          await this.writeData();
+          location.reload();
+        }, this.options.windowsInFS);
+      }
     }
     addProfile() {
       {
@@ -10897,6 +11152,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         minWidth: 250,
         minHeight: 400,
         center: true,
+        fillScreen: this.options.windowsInFS,
         zoom: 0.7
       });
       window["main"](config2, win, win.content);
