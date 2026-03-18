@@ -12,6 +12,7 @@ import Screen from "./Screen";
 
 export default class PrivateChat extends Screen {
   messagesElem!: HTMLDivElement
+  writingElem!: HTMLDivElement
   input!: HTMLInputElement
 
   constructor(public friendObjectId: string, public friendUserObjectId: string, public user: any){
@@ -50,7 +51,7 @@ export default class PrivateChat extends Screen {
       [PacketDataKeys.FRIENDSHIP]: this.friendObjectId
     });
 
-    const data = await App.server.awaitPacket(PacketDataKeys.PRIVATE_CHAT_LIST_MESSAGES);
+    const data = await App.server.awaitPacket("pcmsr");
 
     this.messagesElem = document.createElement('div');
     this.messagesElem.style.height = (App.height - (isMobile() ? 110 : 90)) + 'px';
@@ -65,6 +66,14 @@ export default class PrivateChat extends Screen {
     this.messagesElem.style.flexDirection = 'column';
     this.messagesElem.style.justifyContent = 'flex-start';
     this.element.appendChild(this.messagesElem);
+
+    this.writingElem = createElement('div', {
+      css: {
+        width: '100%',
+        display: 'none'
+      },
+      appendTo: this.element
+    });
 
     const footer = document.createElement('div');
     footer.style.width = '100%';
@@ -97,8 +106,12 @@ export default class PrivateChat extends Screen {
     footer.appendChild(this.input);
 
     this.on('message', data => {
-      if(data[PacketDataKeys.TYPE] == PacketDataKeys.PRIVATE_CHAT_LAST_MESSAGE){
+      if(data[PacketDataKeys.TYPE] == "pcmr"){
         this.addMessage(data[PacketDataKeys.MESSAGE]);
+      } else if(data[PacketDataKeys.TYPE] == 'pruint'){
+        this.writingElem.style.display = 'none';
+      } else if(data[PacketDataKeys.TYPE] == 'pruit') {
+        this.writingElem.style.display = 'block';
       }
     });
 
@@ -116,25 +129,29 @@ export default class PrivateChat extends Screen {
 
   messages = 0
   lastMessage!: {
-    userObjectId?: string,
+    objectId?: string
+    playerObjectId?: string,
     divM?: HTMLElement
   }
   lastMessageDate!: {
-    userObjectId?: string,
+    objectId?: string
+    playerObjectId?: string,
     elem?: HTMLElement
   }
   addMessage(m: any, deleteFirst = this.messages > 100 ? true : false){
     const text = m[PacketDataKeys.TEXT];
     const type = m[PacketDataKeys.MESSAGE_TYPE];
     const sticker = m[PacketDataKeys.MESSAGE_STICKER];
-    const userObjectId = m[PacketDataKeys.USER_OBJECT_ID];
-    const user = App.user.objectId == userObjectId ? App.user : this.user;
-    const username = App.user.objectId == userObjectId ? App.user.username : this.user[PacketDataKeys.USERNAME]
+    const objectId = m[PacketDataKeys.OBJECT_ID];
+    const playerObjectId = m[PacketDataKeys.PLAYER_OBJECT_ID];
+    const isMe = App.user.playerObjectId == playerObjectId;
+    const user = isMe ? App.user : this.user;
+    const username = isMe ? App.user.username : this.user[PacketDataKeys.USERNAME];
     const created = m[PacketDataKeys.CREATED];
     const accepted = m[PacketDataKeys.ACCEPTED];
 
-    if(userObjectId && !m.isDate){
-      if(this.lastMessage && this.lastMessage.divM && this.lastMessage.userObjectId == userObjectId){
+    if(objectId && !m.isDate){
+      if(this.lastMessage && this.lastMessage.divM && this.lastMessage.playerObjectId == playerObjectId){
         const msg = document.createElement('span');
         msg.textContent = noXSS(text);
         msg.className = 'black';
@@ -157,14 +174,14 @@ export default class PrivateChat extends Screen {
         avatar.height = 35;
         avatar.style.margin = '5px';
         avatar.onmousedown = e => e.preventDefault();
-        avatar.onclick = () => ProfileInfo(userObjectId);
+        avatar.onclick = () => ProfileInfo(playerObjectId);
         const nick = document.createElement('span');
-        if(user[PacketDataKeys.VIP]) {
-          const img = createElement('img', { width: 20, height: 20 });
-          getTexture(`vip/0M.png`).then(e => img.src = e);
-          nick.appendChild(img);
-        }
-        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.USERNAME], appendTo: nick });
+        // if(user[PacketDataKeys.VIP]) {
+        //   const img = createElement('img', { width: 20, height: 20 });
+        //   getTexture(`vip/0M.png`).then(e => img.src = e);
+        //   nick.appendChild(img);
+        // }
+        createElement('span', { css: { marginLeft: '2px' }, text: user[PacketDataKeys.VIP] ? username + ` ${user[PacketDataKeys.VIP]}` : username, appendTo: nick });
         if(App.settings.data.hideUsername && username == App.user.username) nick.style.filter = 'blur(5px)';
         nick.className = 'black';
         nick.onclick = () => this.addNickToInput(username);
@@ -173,13 +190,13 @@ export default class PrivateChat extends Screen {
         msg.style.color = 'black';
         msg.style.userSelect = 'text';
         this.messagesElem.appendChild(div);
-        this.lastMessage = { userObjectId, divM }
+        this.lastMessage = { objectId, playerObjectId, divM }
         div.appendChild(avatar);
         div.appendChild(divM);
         divM.appendChild(nick);
         divM.appendChild(msg);
 
-        this.addMessage({ isDate: true, [PacketDataKeys.TEXT]: `${formatDate(created)}`, [PacketDataKeys.ACCEPTED]: accepted, [PacketDataKeys.USER_OBJECT_ID]: userObjectId }, deleteFirst);
+        this.addMessage({ isDate: true, [PacketDataKeys.TEXT]: `${formatDate(created)}`, [PacketDataKeys.ACCEPTED]: accepted, [PacketDataKeys.OBJECT_ID]: objectId }, deleteFirst);
       }
     } else {
       const div = document.createElement('div');
@@ -190,7 +207,7 @@ export default class PrivateChat extends Screen {
       div.style.textAlign = 'right';
       div.style.padding = '3px';
       this.messagesElem.appendChild(div);
-      this.lastMessageDate = { userObjectId, elem: div };
+      this.lastMessageDate = { objectId, playerObjectId, elem: div };
     }
     if(this.messagesElem.scrollHeight - App.height - this.messagesElem.scrollTop < 75)
       this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: 'smooth' });
@@ -232,11 +249,11 @@ export default class PrivateChat extends Screen {
     }
 
     App.server.send(PacketDataKeys.PRIVATE_CHAT_MESSAGE_CREATE, {
+      [PacketDataKeys.FRIENDSHIP]: this.friendObjectId,
       [PacketDataKeys.MESSAGE]: {
-        [PacketDataKeys.FRIENDSHIP]: this.friendObjectId,
-        [PacketDataKeys.MESSAGE_STYLE]: options.messageStyle ?? 0,
-        [PacketDataKeys.MESSAGE_STICKER]: options.messageSticker ?? false,
-        [PacketDataKeys.TEXT]: message
+        [PacketDataKeys.TEXT]: message,
+        [PacketDataKeys.MESSAGE_STYLE]: 3,
+        [PacketDataKeys.MESSAGE_STICKER]: false
       }
     });
   }

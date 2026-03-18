@@ -333,7 +333,7 @@ export default class GlobalChat extends Screen {
       const user = users[i];
       const username = user[PacketDataKeys.USERNAME];
       const playerUser = user[PacketDataKeys.PLAYER_USER];
-      const playerObjectId = playerUser[PacketDataKeys.PLAYER_OBJECT_ID];
+      const playerObjectId = user[PacketDataKeys.PLAYER_OBJECT_ID];
       const div = document.createElement('div');
       div.style.display = 'flex';
       div.style.textAlign = 'left';

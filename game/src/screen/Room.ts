@@ -21,7 +21,6 @@ import users from '../../../core/users.json';
 import { History } from "./History";
 import CommandManager from "../command/CommandManager";
 
-
 export function isMafia(role: Role): boolean {
   return [Role.MAFIA, Role.BARMAN, Role.TERRORIST, Role.INFORMER].includes(role);
 }
@@ -721,17 +720,17 @@ export default class Room extends Screen {
       this.#changeHeightMessagesElem();
     });
 
-    this.rolesElem.innerHTML = '';
-    for(const r in this.playerRoles){
-      const amount = this.playerRoles[r];
-      const img = document.createElement('img');
-      getRoleImg((r as unknown as Role) + 1).then(e => img.src = e);
-      img.width = 25;
-      img.height = 35;
-      img.onmousedown = e => e.preventDefault();
-      if(amount == 0) img.style.opacity = '.5';
-      this.rolesElem.appendChild(img);
-    }
+    // this.rolesElem.innerHTML = '';
+    // for(const r in this.playerRoles){
+    //   const amount = this.playerRoles[r];
+    //   const img = document.createElement('img');
+    //   getRoleImg((r as unknown as Role) + 1).then(e => img.src = e);
+    //   img.width = 25;
+    //   img.height = 35;
+    //   img.onmousedown = e => e.preventDefault();
+    //   if(amount == 0) img.style.opacity = '.5';
+    //   this.rolesElem.appendChild(img);
+    // }
 
     const yourRoleMsg = `Вы<br/>${RuRoles[this.me()?.role! - 1]}`;
     let timer: HTMLDivElement, mafia: HTMLDivElement, mir: HTMLDivElement, giveUpButton: HTMLButtonElement;

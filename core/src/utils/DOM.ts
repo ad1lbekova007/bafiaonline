@@ -101,6 +101,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   value?: string
   width?: number
   height?: number
+  src?: string
   appendTo?: HTMLElement
   css?: CSSStyleDeclaration|object
   attr?: ([string, string])[]
@@ -116,6 +117,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   if(options.value) (elem as HTMLInputElement).value = options.value;
   if(options.width) (elem as HTMLImageElement).width = options.width;
   if(options.height) (elem as HTMLImageElement).height = options.height;
+  if(options.src) (elem as HTMLImageElement).src = options.src;
   if(options.css){
     for(const key in options.css){
       // @ts-ignore

@@ -1,6 +1,6 @@
 import Box from "./Box";
 
-export default async function(message: string, options: { btnText?: string, title?: string, height?: number } = {}){
+export default async function(message: string, options: { btnText?: string, title?: string, height?: number, element?: HTMLElement } = {}){
   const box = new Box({ title: options.title, height: options.height });
 
   const messageElem = document.createElement('div');
@@ -9,6 +9,10 @@ export default async function(message: string, options: { btnText?: string, titl
   messageElem.style.textAlign = 'center';
   messageElem.style.padding = '15px 5px';
   box.content.appendChild(messageElem);
+
+  if(options.element){
+    messageElem.appendChild(options.element);
+  }
 
   const footer = document.createElement('div');
   footer.style.width = '100%';

@@ -15,6 +15,8 @@ import Settings from "./Settings";
 import Box from "../dialog/Box";
 import { Profile } from "../../../launcher/src/enums";
 import { History } from "./History";
+// @ts-ignore
+import Matchmaking from "./Matchmaking";
 
 function pngToJpgBase64(file: File, quality = 0.9): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -208,7 +210,7 @@ export default class Dashboard extends Screen {
     }
     avatar.onmousedown = e => e.preventDefault();
     getAvatarImg({
-      [PacketDataKeys.OBJECT_ID]: App.user.objectId,
+      [PacketDataKeys.PLAYER_OBJECT_ID]: App.user.playerObjectId,
       [PacketDataKeys.PHOTO]: App.user.photo,
     }).then(e => avatar.src = e);
     nick.textContent = App.user.username;
@@ -234,7 +236,7 @@ export default class Dashboard extends Screen {
     btnMM.textContent = 'Соревновательный';
     btnMM.style.width = '60%'
     btnMM.style.margin = '3px'
-    btnMM.disabled = true;
+    btnMM.onclick = () => App.screen = new Matchmaking();
     div.appendChild(btnMM);
     div.appendChild(document.createElement('br'));
 

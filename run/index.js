@@ -2528,6 +2528,9 @@
     messageElem.style.textAlign = "center";
     messageElem.style.padding = "15px 5px";
     box.content.appendChild(messageElem);
+    if (options.element) {
+      messageElem.appendChild(options.element);
+    }
     const footer = document.createElement("div");
     footer.style.width = "100%";
     footer.style.position = "absolute";
@@ -3508,17 +3511,6 @@
       this.on("resize", () => {
         this.#changeHeightMessagesElem();
       });
-      this.rolesElem.innerHTML = "";
-      for (const r in this.playerRoles) {
-        const amount = this.playerRoles[r];
-        const img = document.createElement("img");
-        getRoleImg(r + 1).then((e) => img.src = e);
-        img.width = 25;
-        img.height = 35;
-        img.onmousedown = (e) => e.preventDefault();
-        if (amount == 0) img.style.opacity = ".5";
-        this.rolesElem.appendChild(img);
-      }
       const yourRoleMsg = `\u0412\u044B<br/>${RuRoles[this.me()?.role - 1]}`;
       let timer, mafia, mir, giveUpButton;
       {
@@ -5067,7 +5059,7 @@
           photo: f[PacketDataKeys_default.PHOTO],
           objectId
         } : f[PacketDataKeys_default.USER];
-        const userObjectId = !this.isSearch ? user[PacketDataKeys_default.OBJECT_ID] : objectId;
+        const userObjectId = !this.isSearch ? user[PacketDataKeys_default.PLAYER_OBJECT_ID] : objectId;
         const username = !this.isSearch ? user[PacketDataKeys_default.USERNAME] : f[PacketDataKeys_default.USERNAME];
         const newMessages = Number(f[PacketDataKeys_default.NEW_MESSAGES]);
         let isClicked = false;
@@ -5207,6 +5199,7 @@
       this.init();
     }
     messagesElem;
+    writingElem;
     input;
     async init() {
       App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_PRIVATE_CHAT, {
@@ -5214,7 +5207,7 @@
         [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
         [PacketDataKeys_default.FRIENDSHIP]: this.friendObjectId
       });
-      const data = await App_default2.server.awaitPacket(PacketDataKeys_default.PRIVATE_CHAT_LIST_MESSAGES);
+      const data = await App_default2.server.awaitPacket("pcmsr");
       this.messagesElem = document.createElement("div");
       this.messagesElem.style.height = App_default2.height - (isMobile() ? 110 : 90) + "px";
       this.messagesElem.style.textAlign = "center";
@@ -5228,6 +5221,13 @@
       this.messagesElem.style.flexDirection = "column";
       this.messagesElem.style.justifyContent = "flex-start";
       this.element.appendChild(this.messagesElem);
+      this.writingElem = createElement("div", {
+        css: {
+          width: "100%",
+          display: "none"
+        },
+        appendTo: this.element
+      });
       const footer = document.createElement("div");
       footer.style.width = "100%";
       this.element.appendChild(footer);
@@ -5255,8 +5255,12 @@
       this.on("keydown", (e) => e.key == "Enter" && this.input.focus());
       footer.appendChild(this.input);
       this.on("message", (data2) => {
-        if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.PRIVATE_CHAT_LAST_MESSAGE) {
+        if (data2[PacketDataKeys_default.TYPE] == "pcmr") {
           this.addMessage(data2[PacketDataKeys_default.MESSAGE]);
+        } else if (data2[PacketDataKeys_default.TYPE] == "pruint") {
+          this.writingElem.style.display = "none";
+        } else if (data2[PacketDataKeys_default.TYPE] == "pruit") {
+          this.writingElem.style.display = "block";
         }
       });
       this.on("resize", () => {
@@ -5275,13 +5279,15 @@
       const text = m[PacketDataKeys_default.TEXT];
       const type = m[PacketDataKeys_default.MESSAGE_TYPE];
       const sticker = m[PacketDataKeys_default.MESSAGE_STICKER];
-      const userObjectId = m[PacketDataKeys_default.USER_OBJECT_ID];
-      const user = App_default2.user.objectId == userObjectId ? App_default2.user : this.user;
-      const username = App_default2.user.objectId == userObjectId ? App_default2.user.username : this.user[PacketDataKeys_default.USERNAME];
+      const objectId = m[PacketDataKeys_default.OBJECT_ID];
+      const playerObjectId = m[PacketDataKeys_default.PLAYER_OBJECT_ID];
+      const isMe = App_default2.user.playerObjectId == playerObjectId;
+      const user = isMe ? App_default2.user : this.user;
+      const username = isMe ? App_default2.user.username : this.user[PacketDataKeys_default.USERNAME];
       const created = m[PacketDataKeys_default.CREATED];
       const accepted = m[PacketDataKeys_default.ACCEPTED];
-      if (userObjectId && !m.isDate) {
-        if (this.lastMessage && this.lastMessage.divM && this.lastMessage.userObjectId == userObjectId) {
+      if (objectId && !m.isDate) {
+        if (this.lastMessage && this.lastMessage.divM && this.lastMessage.playerObjectId == playerObjectId) {
           const msg = document.createElement("span");
           msg.textContent = noXSS(text);
           msg.className = "black";
@@ -5304,14 +5310,9 @@
           avatar.height = 35;
           avatar.style.margin = "5px";
           avatar.onmousedown = (e) => e.preventDefault();
-          avatar.onclick = () => ProfileInfo(userObjectId);
+          avatar.onclick = () => ProfileInfo(playerObjectId);
           const nick = document.createElement("span");
-          if (user[PacketDataKeys_default.VIP]) {
-            const img = createElement("img", { width: 20, height: 20 });
-            getTexture(`vip/0M.png`).then((e) => img.src = e);
-            nick.appendChild(img);
-          }
-          createElement("span", { css: { marginLeft: "2px" }, text: user[PacketDataKeys_default.USERNAME], appendTo: nick });
+          createElement("span", { css: { marginLeft: "2px" }, text: user[PacketDataKeys_default.VIP] ? username + ` ${user[PacketDataKeys_default.VIP]}` : username, appendTo: nick });
           if (App_default2.settings.data.hideUsername && username == App_default2.user.username) nick.style.filter = "blur(5px)";
           nick.className = "black";
           nick.onclick = () => this.addNickToInput(username);
@@ -5320,12 +5321,12 @@
           msg.style.color = "black";
           msg.style.userSelect = "text";
           this.messagesElem.appendChild(div);
-          this.lastMessage = { userObjectId, divM };
+          this.lastMessage = { objectId, playerObjectId, divM };
           div.appendChild(avatar);
           div.appendChild(divM);
           divM.appendChild(nick);
           divM.appendChild(msg);
-          this.addMessage({ isDate: true, [PacketDataKeys_default.TEXT]: `${formatDate(created)}`, [PacketDataKeys_default.ACCEPTED]: accepted, [PacketDataKeys_default.USER_OBJECT_ID]: userObjectId }, deleteFirst);
+          this.addMessage({ isDate: true, [PacketDataKeys_default.TEXT]: `${formatDate(created)}`, [PacketDataKeys_default.ACCEPTED]: accepted, [PacketDataKeys_default.OBJECT_ID]: objectId }, deleteFirst);
         }
       } else {
         const div = document.createElement("div");
@@ -5336,7 +5337,7 @@
         div.style.textAlign = "right";
         div.style.padding = "3px";
         this.messagesElem.appendChild(div);
-        this.lastMessageDate = { userObjectId, elem: div };
+        this.lastMessageDate = { objectId, playerObjectId, elem: div };
       }
       if (this.messagesElem.scrollHeight - App_default2.height - this.messagesElem.scrollTop < 75)
         this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: "smooth" });
@@ -5371,11 +5372,11 @@
         message = Array.from({ length: [...message].length - 1 }, () => symbols[Math.random() * symbols.length | 0]).join("");
       }
       App_default2.server.send(PacketDataKeys_default.PRIVATE_CHAT_MESSAGE_CREATE, {
+        [PacketDataKeys_default.FRIENDSHIP]: this.friendObjectId,
         [PacketDataKeys_default.MESSAGE]: {
-          [PacketDataKeys_default.FRIENDSHIP]: this.friendObjectId,
-          [PacketDataKeys_default.MESSAGE_STYLE]: options.messageStyle ?? 0,
-          [PacketDataKeys_default.MESSAGE_STICKER]: options.messageSticker ?? false,
-          [PacketDataKeys_default.TEXT]: message
+          [PacketDataKeys_default.TEXT]: message,
+          [PacketDataKeys_default.MESSAGE_STYLE]: 3,
+          [PacketDataKeys_default.MESSAGE_STICKER]: false
         }
       });
     }
@@ -5975,7 +5976,7 @@
         const user = users[i];
         const username = user[PacketDataKeys_default.USERNAME];
         const playerUser = user[PacketDataKeys_default.PLAYER_USER];
-        const playerObjectId = playerUser[PacketDataKeys_default.PLAYER_OBJECT_ID];
+        const playerObjectId = user[PacketDataKeys_default.PLAYER_OBJECT_ID];
         const div = document.createElement("div");
         div.style.display = "flex";
         div.style.textAlign = "left";
@@ -6156,6 +6157,76 @@
     }
   };
 
+  // game/src/screen/Matchmaking.ts
+  var Matchmaking = class extends Screen {
+    online = 0;
+    el;
+    constructor() {
+      super("Matchmaking");
+      App_default2.title = "\u0421\u043E\u0440\u0435\u0432\u043D\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439";
+      (async () => this.element.style.background = `url(${await getBackgroundImg("menu3")}) 0% 0% / cover`)();
+      const header = document.createElement("div");
+      header.className = "header";
+      this.element.appendChild(header);
+      const back = document.createElement("button");
+      back.className = "back";
+      back.onclick = () => this.emit("back");
+      header.appendChild(back);
+      const backImg = document.createElement("img");
+      backImg.width = 24;
+      getTexture(`ui/Jb.png`).then((e) => backImg.src = e);
+      back.appendChild(backImg);
+      const titleElem = document.createElement("label");
+      titleElem.textContent = "\u0421\u043E\u0440\u0435\u0432\u043D\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439";
+      header.appendChild(titleElem);
+      this.on("back", () => {
+        App_default2.screen = new Dashboard();
+      });
+      this.init();
+    }
+    async init() {
+      App_default2.server.send("mmgsk", {
+        [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.TOKEN]: App_default2.user.token
+      });
+      App_default2.server.send("mmguiabk", { mmbpa: 12 });
+      const data = await App_default2.server.awaitPacket("mmuiabk");
+      this.online = data.mmuiabk;
+      this.search();
+    }
+    async search() {
+      this.el = createElement("div", {
+        css: {
+          display: "flex",
+          flexDirection: "column",
+          padding: "20px"
+        },
+        appendTo: this.element
+      });
+      const online = createElement("div", {
+        text: "\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u044E\u0442: " + this.online,
+        css: {
+          margin: "5px"
+        },
+        appendTo: this.el
+      });
+      const btn = createElement("button", { text: "\u041D\u0430\u0447\u0430\u0442\u044C \u043F\u043E\u0438\u0441\u043A", appendTo: this.el });
+      btn.onclick = async () => {
+        const video = createElement("img", {
+          src: "../game/meme.gif",
+          width: 275,
+          height: 150
+        });
+        MessageBox_default(`\u0421\u043A\u043E\u0440\u043E... (\u0441\u0435\u0433\u043E\u0434\u043D\u044F)
+
+        `, {
+          element: video,
+          height: 325
+        });
+      };
+    }
+  };
+
   // game/src/screen/Dashboard.ts
   function pngToJpgBase64(file, quality = 0.9) {
     return new Promise((resolve, reject) => {
@@ -6321,7 +6392,7 @@
       };
       avatar.onmousedown = (e) => e.preventDefault();
       getAvatarImg({
-        [PacketDataKeys_default.OBJECT_ID]: App_default2.user.objectId,
+        [PacketDataKeys_default.PLAYER_OBJECT_ID]: App_default2.user.playerObjectId,
         [PacketDataKeys_default.PHOTO]: App_default2.user.photo
       }).then((e) => avatar.src = e);
       nick.textContent = App_default2.user.username;
@@ -6345,7 +6416,7 @@
       btnMM.textContent = "\u0421\u043E\u0440\u0435\u0432\u043D\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439";
       btnMM.style.width = "60%";
       btnMM.style.margin = "3px";
-      btnMM.disabled = true;
+      btnMM.onclick = () => App_default2.screen = new Matchmaking();
       div.appendChild(btnMM);
       div.appendChild(document.createElement("br"));
       const btnGlobalChat = document.createElement("button");
@@ -8864,7 +8935,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     if (user == "\u041C\u0430\u0444\u0438\u044F") return App_default2.resources["mafiaChat"];
     if (!user || typeof user == "string") return App_default2.resources["unknownChat"];
     const ph = user[PacketDataKeys_default.PHOTO] ?? user.photo;
-    const uo = user[PacketDataKeys_default.OBJECT_ID] ?? user[PacketDataKeys_default.PLAYER_OBJECT_ID] ?? user.objectId;
+    const uo = user[PacketDataKeys_default.OBJECT_ID] ?? user[PacketDataKeys_default.PLAYER_OBJECT_ID] ?? user.playerObjectId;
     const cacheKey = `avatars_${uo}`;
     if (App_default2.resources[cacheKey]) {
       return App_default2.resources[cacheKey];
@@ -8992,6 +9063,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     if (options.value) elem.value = options.value;
     if (options.width) elem.width = options.width;
     if (options.height) elem.height = options.height;
+    if (options.src) elem.src = options.src;
     if (options.css) {
       for (const key in options.css) {
         elem.style[key] = options.css[key];

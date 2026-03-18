@@ -80,7 +80,7 @@ export async function getAvatarImg(user?: any): Promise<string> {
   if(!user || typeof user == 'string') return App.resources['unknownChat'];
 
   const ph = user[PacketDataKeys.PHOTO] ?? user.photo;
-  const uo = user[PacketDataKeys.OBJECT_ID] ?? user[PacketDataKeys.PLAYER_OBJECT_ID] ?? user.objectId;
+  const uo = user[PacketDataKeys.OBJECT_ID] ?? user[PacketDataKeys.PLAYER_OBJECT_ID] ?? user.playerObjectId;
 
   const cacheKey = `avatars_${uo}`;
   if(App.resources[cacheKey]) {
