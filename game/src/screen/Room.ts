@@ -18,6 +18,7 @@ import users from '../../../core/users.json';
 import { History } from "./History";
 import CommandManager from "../command/CommandManager";
 
+
 export function isMafia(role: Role): boolean {
   return [Role.MAFIA, Role.BARMAN, Role.TERRORIST, Role.INFORMER].includes(role);
 }
