@@ -1,3 +1,5 @@
+// https://github.com/unelected/zafiaonline.py/blob/zafiaonline/src/zafiaonline/structures/packet_data_keys.py
+
 const PacketDataKeys = {
   ACCEPTED: "a",
   ACCEPT_MESSAGES: "ac",
