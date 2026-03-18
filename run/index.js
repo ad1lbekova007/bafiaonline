@@ -2929,6 +2929,7 @@
         this.title = "\u0421\u043E\u0440\u0435\u0432\u043D\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C";
         App_default2.title = "\u0421\u043E\u0440\u0435\u0432\u043D\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C";
         this.maxPlayers = 12;
+        this.modelType = 1;
       }
       if (options.selectedRoles) {
         this.selectedRoles = options.selectedRoles;
@@ -2994,7 +2995,7 @@
     isInitialized = false;
     preInitCallback = () => {
     };
-    modelType = 1;
+    modelType = 0;
     title = "\u041A\u043E\u043C\u043D\u0430\u0442\u0430";
     maxPlayers = 8;
     minPlayers = 1;

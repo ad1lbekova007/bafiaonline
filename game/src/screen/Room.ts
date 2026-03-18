@@ -59,7 +59,7 @@ export default class Room extends Screen {
   isInitialized = false
   preInitCallback: Function = () => {}
 
-  modelType = 1;
+  modelType = 0;
   title = 'Комната';
   maxPlayers = 8
   minPlayers = 1
@@ -128,6 +128,7 @@ export default class Room extends Screen {
       this.title = 'Соревновательный режим';
       App.title = 'Соревновательный режим';
       this.maxPlayers = 12;
+      this.modelType = 1;
     }
     if(options.selectedRoles){
       this.selectedRoles = options.selectedRoles;
