@@ -236,7 +236,7 @@ export default async function ProfileInfo(playerObjectId: string){
       });
     } else if(profile.friendFlag == 2){
       addButton('Принять дружбу', async() => {
-        const e = await ConfirmBox(`Принять заявку в друзья от данного пользователя`, { title: `ПРИНЯТЬ ДРУЖБУ` });
+        const e = await ConfirmBox(`Принять заявку в друзья от данного пользователя?`, { title: `ПРИНЯТЬ ДРУЖБУ` });
         if(e) {
           App.server.send(PacketDataKeys.ADD_FRIEND, {
             [PacketDataKeys.FRIEND_USER_OBJECT_ID]: playerObjectId
@@ -384,8 +384,7 @@ export default async function ProfileInfo(playerObjectId: string){
   add(statDev, 'Серебро', profile.sliver);
   if(typeof profile.gold == 'number') add(statDev, 'Золото', profile.gold);
   add(statDev, 'Пол', profile.sex == Sex.WOMEN ? 'Женский' : 'Мужской');
-  add(statDev, 'Уровень', profile.level + ` (${profile.prevLevelExperience}/${profile.nextLevelExperience})`);
-
+  // add(statDev, 'Уровень', profile.level + ` (${profile.prevLevelExperience}/${profile.nextLevelExperience})`);
   add(statDev, `player object id`, playerObjectId);
   // add(statDev, `Последний вход`, formatDate(profile.updated));
   // add(statDev, `Сервер`, profile.serverLanguage);

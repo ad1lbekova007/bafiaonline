@@ -76,6 +76,8 @@ export default class Room extends Screen {
 
   oldAppSettingsData: any;
 
+  kicks: Record<string, number> = {}
+
   usersWaiting: string[] = [];
   playersData: Record<string, {
     index?: number
@@ -472,6 +474,11 @@ export default class Room extends Screen {
         // App.screen = new Rooms();
         // await wait(500);
         // App.screen = new Room(this.roomObjectId, this.options);
+      } else if(data[PacketDataKeys.TYPE] == data[PacketDataKeys.KICK_USER]){
+        const kicker = data[PacketDataKeys.KICK_USER_OBJECT_ID];
+        const puo = data[PacketDataKeys.PLAYER_OBJECT_ID];
+        const timer = data[PacketDataKeys.TIMER];
+        this.kicks[puo] = timer;
       }
     });
 
@@ -1079,7 +1086,8 @@ export default class Room extends Screen {
       }
       if(!pl.role && typeof pl.preRole == 'number' && pl.preRole > -1){
         const roleImg = document.createElement('img');
-        getTexture(`roles/a${pl.preRole}.png`).then(e => roleImg.src = e);
+        // console.log(pl.preRole);
+        getTexture(`roles/a${pl.preRole}.png`).then(e => roleImg.src = e).catch(console.error);
         roleImg.width = 50;
         roleImg.height = 70;
         roleImg.style.position = 'absolute';
@@ -1177,15 +1185,15 @@ export default class Room extends Screen {
 
     this.messages.push(m);
 
-    if((user ? type != 2 && type != 3 && type != 13 : user) || type == 10 || type == 25 || type == 26 || type == 29){
-      const username = user ? user[PacketDataKeys.USERNAME] : type == 25 || type == 26 ? 'Информатор' : type == 29 ? 'Бармен' : type == 10 ? 'Мафия' : '???';
+    if((user ? type != 2 && type != 3 && type != 13 && type != 24 && type != 25 : user) || type == 10 || type == 26 || type == 29){
+      const username = user ? user[PacketDataKeys.USERNAME] : type == 26 ? 'Информатор' : type == 29 ? 'Бармен' : type == 10 ? 'Мафия' : '???';
       let msgText = text || '', color = 'black';
       if(type == 10 || type == 14) { msgText = `Голосует за [${text}]`; color = '#186400' }
       else if(type == 12) { color = `#545454` }
       else if(type == 16) { msgText = `Сдался`; color = '#940000' }
       else if(type == 18) { color = '#113B81' }
       else if(type == 19) { msgText = `ВЗОРВАЛ игрока [${text}]`; color = '#940000' }
-      else if(type == 21) { msgText = `ВЗОРВАЛ игрока [${text}], но игрок был под защитой телохранителя и остался жив!`; color = '#940000' }
+      else if(type == 20) { msgText = `ВЗОРВАЛ игрока [${text}], но игрок был под защитой телохранителя и остался жив!`; color = '#940000' }
       if(this.lastMessage && this.lastMessage.divM && this.lastMessage.username == username){
         const msg = document.createElement('span');
         // @ts-ignore
@@ -1244,7 +1252,7 @@ export default class Room extends Screen {
         nickElement = `<span style="${username == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${username}</span>`,
         nick1Element = text && text.split('#').length > 1 ? `<span style="${text.split('#')[0] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text.split('#')[0]}</span>` : '',
         nick2Element = text && text.split('#').length > 1 ? `<span style="${text.split('#')[2] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${text.split('#')[2]}</span>` : '',
-        nick3Element = m[PacketDataKeys.USERNAME] ? `<span style="${m[PacketDataKeys.USERNAME][PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${m[PacketDataKeys.USERNAME][PacketDataKeys.USERNAME]}</span>` : '';
+        nick3Element = m[PacketDataKeys.USERNAME] ? `<span style="${m[PacketDataKeys.USERNAME]["0"][PacketDataKeys.USERNAME] == App.user.username && App.settings.data.hideUsername ? 'filter: blur(5px)' : ''}">${m[PacketDataKeys.USERNAME]["0"][PacketDataKeys.USERNAME]}</span>` : '';
       if(type == 2) { msg = `Игрок ${nickElement} вошёл`; color = '#186400'; xssAllowed = true }
       else if(type == 3) { msg = `Игрок ${nickElement} вышел`; color = '#940000'; xssAllowed = true }
       else if(type == 4) { msg = `Игра началась` }
@@ -1260,7 +1268,9 @@ export default class Room extends Screen {
       else if(type == 21) { msg = `СРОЧНАЯ НОВОСТЬ!\nЖурналист провел расследование и как оказалось игроки [${nick1Element}] и [${nick2Element}] играют в разных командах`; color = '#940000'; xssAllowed = true }
       else if(type == 22) { msg = `ничья` }
       else if(type == 24) {
-        msg = `[${text.split('#')[0]}] начал голосование, чтобы выгнать игрока [${nick3Element}] из комнаты\n`;
+        console.log(this.kicks);
+        console.log(typeof this.kicks[m[PacketDataKeys.USERNAME]["0"][PacketDataKeys.PLAYER_OBJECT_ID]] == 'number');
+        msg = `[${nickElement}] начал голосование, чтобы выгнать игрока [${nick3Element}] из комнаты\n`;
         xssAllowed = true;
         color = '#113B81';
       }
@@ -1272,10 +1282,12 @@ export default class Room extends Screen {
       this.messagesElem.appendChild(div);
       this.lastMessage = {};
 
-      if(type == 24){
+      // && typeof this.kicks[m[PacketDataKeys.USERNAME]["0"][PacketDataKeys.PLAYER_OBJECT_ID]] == 'number'
+      if(type == 24 && m[PacketDataKeys.USERNAME]){
+        const t = this.kicks[m[PacketDataKeys.USERNAME]["0"][PacketDataKeys.PLAYER_OBJECT_ID]] ?? 10;
         const timer = document.createElement('p');
         timer.style.margin = '5px';
-        timer.textContent = `10`;
+        timer.textContent = `${t}`;
         div.appendChild(timer);
         const btnYes = document.createElement('button');
         btnYes.textContent = `Выгнать`;
@@ -1305,6 +1317,7 @@ export default class Room extends Screen {
             const t = data[PacketDataKeys.TIMER];
             timer.textContent = t;
             if(t < 1){
+              delete this.kicks[m[PacketDataKeys.USERNAME][0][PacketDataKeys.PLAYER_OBJECT_ID]];
               this.removeByKey('kick');
             }
           }

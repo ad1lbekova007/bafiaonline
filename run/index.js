@@ -3026,6 +3026,7 @@
     playersStat;
     isHistory = false;
     oldAppSettingsData;
+    kicks = {};
     usersWaiting = [];
     playersData = {};
     players = [];
@@ -3305,6 +3306,11 @@
             if (this.playersData[puo])
               this.playersData[puo].role = role;
           }
+        } else if (data[PacketDataKeys_default.TYPE] == data[PacketDataKeys_default.KICK_USER]) {
+          const kicker = data[PacketDataKeys_default.KICK_USER_OBJECT_ID];
+          const puo = data[PacketDataKeys_default.PLAYER_OBJECT_ID];
+          const timer = data[PacketDataKeys_default.TIMER];
+          this.kicks[puo] = timer;
         }
       });
       this.rolesElem = document.createElement("div");
@@ -3837,7 +3843,7 @@
         }
         if (!pl.role && typeof pl.preRole == "number" && pl.preRole > -1) {
           const roleImg2 = document.createElement("img");
-          getTexture(`roles/a${pl.preRole}.png`).then((e) => roleImg2.src = e);
+          getTexture(`roles/a${pl.preRole}.png`).then((e) => roleImg2.src = e).catch(console.error);
           roleImg2.width = 50;
           roleImg2.height = 70;
           roleImg2.style.position = "absolute";
@@ -3927,8 +3933,8 @@
       const objectId = m[PacketDataKeys_default.OBJECT_ID] ?? "";
       const playerObjectId = user ? user[PacketDataKeys_default.PLAYER_OBJECT_ID] : "";
       this.messages.push(m);
-      if ((user ? type != 2 && type != 3 && type != 13 : user) || type == 10 || type == 25 || type == 26 || type == 29) {
-        const username = user ? user[PacketDataKeys_default.USERNAME] : type == 25 || type == 26 ? "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0440" : type == 29 ? "\u0411\u0430\u0440\u043C\u0435\u043D" : type == 10 ? "\u041C\u0430\u0444\u0438\u044F" : "???";
+      if ((user ? type != 2 && type != 3 && type != 13 && type != 24 && type != 25 : user) || type == 10 || type == 26 || type == 29) {
+        const username = user ? user[PacketDataKeys_default.USERNAME] : type == 26 ? "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0440" : type == 29 ? "\u0411\u0430\u0440\u043C\u0435\u043D" : type == 10 ? "\u041C\u0430\u0444\u0438\u044F" : "???";
         let msgText = text || "", color = "black";
         if (type == 10 || type == 14) {
           msgText = `\u0413\u043E\u043B\u043E\u0441\u0443\u0435\u0442 \u0437\u0430 [${text}]`;
@@ -3943,7 +3949,7 @@
         } else if (type == 19) {
           msgText = `\u0412\u0417\u041E\u0420\u0412\u0410\u041B \u0438\u0433\u0440\u043E\u043A\u0430 [${text}]`;
           color = "#940000";
-        } else if (type == 21) {
+        } else if (type == 20) {
           msgText = `\u0412\u0417\u041E\u0420\u0412\u0410\u041B \u0438\u0433\u0440\u043E\u043A\u0430 [${text}], \u043D\u043E \u0438\u0433\u0440\u043E\u043A \u0431\u044B\u043B \u043F\u043E\u0434 \u0437\u0430\u0449\u0438\u0442\u043E\u0439 \u0442\u0435\u043B\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u0435\u043B\u044F \u0438 \u043E\u0441\u0442\u0430\u043B\u0441\u044F \u0436\u0438\u0432!`;
           color = "#940000";
         }
@@ -3999,7 +4005,7 @@
       } else {
         const div = document.createElement("div");
         const username = user?.[PacketDataKeys_default.USERNAME];
-        let msg = text, color = "black", xssAllowed = false, nickElement = `<span style="${username == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${username}</span>`, nick1Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[0] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[0]}</span>` : "", nick2Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[2] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[2]}</span>` : "", nick3Element = m[PacketDataKeys_default.USERNAME] ? `<span style="${m[PacketDataKeys_default.USERNAME][PacketDataKeys_default.USERNAME] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${m[PacketDataKeys_default.USERNAME][PacketDataKeys_default.USERNAME]}</span>` : "";
+        let msg = text, color = "black", xssAllowed = false, nickElement = `<span style="${username == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${username}</span>`, nick1Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[0] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[0]}</span>` : "", nick2Element = text && text.split("#").length > 1 ? `<span style="${text.split("#")[2] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${text.split("#")[2]}</span>` : "", nick3Element = m[PacketDataKeys_default.USERNAME] ? `<span style="${m[PacketDataKeys_default.USERNAME]["0"][PacketDataKeys_default.USERNAME] == App_default2.user.username && App_default2.settings.data.hideUsername ? "filter: blur(5px)" : ""}">${m[PacketDataKeys_default.USERNAME]["0"][PacketDataKeys_default.USERNAME]}</span>` : "";
         if (type == 2) {
           msg = `\u0418\u0433\u0440\u043E\u043A ${nickElement} \u0432\u043E\u0448\u0451\u043B`;
           color = "#186400";
@@ -4048,7 +4054,9 @@
         } else if (type == 22) {
           msg = `\u043D\u0438\u0447\u044C\u044F`;
         } else if (type == 24) {
-          msg = `[${text.split("#")[0]}] \u043D\u0430\u0447\u0430\u043B \u0433\u043E\u043B\u043E\u0441\u043E\u0432\u0430\u043D\u0438\u0435, \u0447\u0442\u043E\u0431\u044B \u0432\u044B\u0433\u043D\u0430\u0442\u044C \u0438\u0433\u0440\u043E\u043A\u0430 [${nick3Element}] \u0438\u0437 \u043A\u043E\u043C\u043D\u0430\u0442\u044B
+          console.log(this.kicks);
+          console.log(typeof this.kicks[m[PacketDataKeys_default.USERNAME]["0"][PacketDataKeys_default.PLAYER_OBJECT_ID]] == "number");
+          msg = `[${nickElement}] \u043D\u0430\u0447\u0430\u043B \u0433\u043E\u043B\u043E\u0441\u043E\u0432\u0430\u043D\u0438\u0435, \u0447\u0442\u043E\u0431\u044B \u0432\u044B\u0433\u043D\u0430\u0442\u044C \u0438\u0433\u0440\u043E\u043A\u0430 [${nick3Element}] \u0438\u0437 \u043A\u043E\u043C\u043D\u0430\u0442\u044B
 `;
           xssAllowed = true;
           color = "#113B81";
@@ -4065,10 +4073,11 @@
         div.style.margin = "3px";
         this.messagesElem.appendChild(div);
         this.lastMessage = {};
-        if (type == 24) {
+        if (type == 24 && m[PacketDataKeys_default.USERNAME]) {
+          const t = this.kicks[m[PacketDataKeys_default.USERNAME]["0"][PacketDataKeys_default.PLAYER_OBJECT_ID]] ?? 10;
           const timer = document.createElement("p");
           timer.style.margin = "5px";
-          timer.textContent = `10`;
+          timer.textContent = `${t}`;
           div.appendChild(timer);
           const btnYes = document.createElement("button");
           btnYes.textContent = `\u0412\u044B\u0433\u043D\u0430\u0442\u044C`;
@@ -4094,9 +4103,10 @@
           div.appendChild(btnNo);
           this.on("message", (data) => {
             if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.KICK_TIMER) {
-              const t = data[PacketDataKeys_default.TIMER];
-              timer.textContent = t;
-              if (t < 1) {
+              const t2 = data[PacketDataKeys_default.TIMER];
+              timer.textContent = t2;
+              if (t2 < 1) {
+                delete this.kicks[m[PacketDataKeys_default.USERNAME][0][PacketDataKeys_default.PLAYER_OBJECT_ID]];
                 this.removeByKey("kick");
               }
             }
@@ -5118,6 +5128,7 @@
         const userObjectId = !this.isSearch ? user[PacketDataKeys_default.PLAYER_OBJECT_ID] : objectId;
         const username = !this.isSearch ? user[PacketDataKeys_default.USERNAME] : f[PacketDataKeys_default.USERNAME];
         const newMessages = Number(f[PacketDataKeys_default.NEW_MESSAGES]);
+        const accepted = f[PacketDataKeys_default.ACCEPTED];
         let isClicked = false;
         const e = document.createElement("div");
         e.style.background = "rgba(200,200,200,.4)";
@@ -5200,6 +5211,34 @@
             div1.appendChild(img);
           }
           btns.appendChild(div1);
+        }
+        if (accepted === 0) {
+          const btnAcceptFriend = createElement("button", {
+            className: "green",
+            text: "\u041F\u0440\u0438\u043D\u044F\u0442\u044C",
+            appendTo: btns
+          });
+          btnAcceptFriend.onclick = async () => {
+            isClicked = true;
+            const e2 = await ConfirmBox_default(`\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0443 \u0432 \u0434\u0440\u0443\u0437\u044C\u044F \u043E\u0442 \u0434\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F?`, { title: `\u041F\u0420\u0418\u041D\u042F\u0422\u042C \u0414\u0420\u0423\u0416\u0411\u0423` });
+            if (e2) {
+              App_default2.server.send(PacketDataKeys_default.ADD_FRIEND, {
+                [PacketDataKeys_default.FRIEND_USER_OBJECT_ID]: userObjectId
+              });
+              const data2 = await App_default2.server.awaitPacket([PacketDataKeys_default.ADD_FRIEND, PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL]);
+              if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.YOUR_FRIENDSHIP_LIST_FULL) {
+                MessageBox_default(`\u0421\u043F\u0438\u0441\u043E\u043A \u0432\u0430\u0448\u0438\u0445 \u0434\u0440\u0443\u0437\u0435\u0439 \u043F\u043E\u043B\u043E\u043D. \u0412\u044B \u0443\u0436\u0435 \u0434\u043E\u0431\u0430\u0432\u0438\u043B\u0438 ${data2[PacketDataKeys_default.FRIENDSHIP_LIST_LIMIT]} \u0434\u0440\u0443\u0437\u0435\u0439 \u0432 \u0441\u043F\u0438\u0441\u043E\u043A \u0434\u0440\u0443\u0437\u0435\u0439
+
+\u0412\u044B \u0441\u043C\u043E\u0436\u0435\u0442\u0435 \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C 200 \u0434\u0440\u0443\u0437\u0435\u0439, \u0435\u0441\u043B\u0438 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0435 VIP
+
+\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u043E\u0441\u0432\u043E\u0431\u043E\u0434\u0438\u0442\u0435 \u0441\u043F\u0438\u0441\u043E\u043A \u0432\u0430\u0448\u0438\u0445 \u0434\u0440\u0443\u0437\u0435\u0439`);
+                return;
+              }
+              if (data2[PacketDataKeys_default.TYPE] == PacketDataKeys_default.ADD_FRIEND) {
+                btnAcceptFriend.style.display = "none";
+              }
+            }
+          };
         }
         if (!this.isSearch) {
           const btnRemoveFriend = createElement("button", {
@@ -5644,7 +5683,7 @@
         });
       } else if (profile.friendFlag == 2) {
         addButton("\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0434\u0440\u0443\u0436\u0431\u0443", async () => {
-          const e = await ConfirmBox_default(`\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0443 \u0432 \u0434\u0440\u0443\u0437\u044C\u044F \u043E\u0442 \u0434\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F`, { title: `\u041F\u0420\u0418\u041D\u042F\u0422\u042C \u0414\u0420\u0423\u0416\u0411\u0423` });
+          const e = await ConfirmBox_default(`\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0443 \u0432 \u0434\u0440\u0443\u0437\u044C\u044F \u043E\u0442 \u0434\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F?`, { title: `\u041F\u0420\u0418\u041D\u042F\u0422\u042C \u0414\u0420\u0423\u0416\u0411\u0423` });
           if (e) {
             App_default2.server.send(PacketDataKeys_default.ADD_FRIEND, {
               [PacketDataKeys_default.FRIEND_USER_OBJECT_ID]: playerObjectId
@@ -5788,7 +5827,6 @@
     add(statDev, "\u0421\u0435\u0440\u0435\u0431\u0440\u043E", profile.sliver);
     if (typeof profile.gold == "number") add(statDev, "\u0417\u043E\u043B\u043E\u0442\u043E", profile.gold);
     add(statDev, "\u041F\u043E\u043B", profile.sex == 1 /* WOMEN */ ? "\u0416\u0435\u043D\u0441\u043A\u0438\u0439" : "\u041C\u0443\u0436\u0441\u043A\u043E\u0439");
-    add(statDev, "\u0423\u0440\u043E\u0432\u0435\u043D\u044C", profile.level + ` (${profile.prevLevelExperience}/${profile.nextLevelExperience})`);
     add(statDev, `player object id`, playerObjectId);
     div.appendChild(statDev);
     box.content.appendChild(div);
@@ -6304,7 +6342,7 @@
       this.removeInterval("selection");
       this.removeInterval("search");
       this.removeByKey("search");
-      let isSearching = false, isAccepting = false, timer = 0;
+      let isSearching = false, isAccepting = false, timer = 0, roomMM = false;
       this.el = createElement("div", {
         css: {
           display: "flex",
@@ -6321,6 +6359,7 @@
         appendTo: this.el
       });
       const btn = createElement("button", { text: "\u041D\u0430\u0447\u0430\u0442\u044C \u043F\u043E\u0438\u0441\u043A", appendTo: this.el });
+      const btn2 = createElement("button", { text: "\u0412\u0435\u0440\u043D\u0443\u0442\u044C\u0441\u044F \u0432 \u0438\u0433\u0440\u0443", appendTo: this.el, hide: true });
       if (data.ty == "mmag") {
         timer = data.mmlt;
         isAccepting = true;
@@ -6337,10 +6376,11 @@
       }, 1e3);
       if (data.mmms) {
         if (data.mmms.mmuir) {
-          const btn2 = createElement("button", { text: "\u0412\u0435\u0440\u043D\u0443\u0442\u044C\u0441\u044F \u0432 \u0438\u0433\u0440\u0443", appendTo: this.el });
+          btn2.style.display = "block";
           btn2.onclick = () => {
             App_default2.server.send("mmrtr", {});
           };
+          roomMM = true;
         }
       }
       btn.onclick = async () => {
@@ -6354,10 +6394,13 @@
           App_default2.server.send("mmguiabk", { mmbpa: 12 });
           btn.innerHTML = "\u041D\u0430\u0447\u0430\u0442\u044C \u043F\u043E\u0438\u0441\u043A";
           info.innerText = "\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u044E\u0442: " + this.online;
+          if (roomMM)
+            btn2.style.display = "block";
         } else {
           App_default2.server.send("mmauk", { mmbpa: 12 });
           btn.innerHTML = "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u043E\u0438\u0441\u043A";
           info.innerText = "\u0412 \u043F\u043E\u0438\u0441\u043A\u0435..";
+          btn2.style.display = "none";
         }
         isSearching = !isSearching;
       };
@@ -6578,6 +6621,10 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
       function updateInfo() {
         nick.textContent = App_default2.user.username;
         getTexture(`rank/rank${Math.round(App_default2.user.level / 2)}_36.png`).then((e) => rankImg.src = e);
+        getAvatarImg({
+          [PacketDataKeys_default.PLAYER_OBJECT_ID]: App_default2.user.playerObjectId,
+          [PacketDataKeys_default.PHOTO]: App_default2.user.photo
+        }).then((e) => avatar.src = e);
         rankLvl.textContent = `${App_default2.user.level}`;
         rankProgress.max = App_default2.user.nextLevelExperience;
         rankProgress.value = App_default2.user.previousLevelExperience;
@@ -6606,11 +6653,11 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
         appendTo: rankEl
       });
       const rankLvl2 = createElement("span", { appendTo: rankEl });
-      const btnSettings = createElement("button", { css: { width: "40px", height: "30px", lineHeight: "35px", padding: "0" }, appendTo: rankEl });
+      const btnSettings = createElement("button", { css: { width: "40px", height: "30px", lineHeight: "38px", padding: "0" }, appendTo: rankEl });
       const btnIconSettings = createElement("img", { width: 20, appendTo: btnSettings });
       getTexture("ui/ei.png").then((e) => btnIconSettings.src = e);
       btnSettings.onclick = () => App_default2.screen = new Settings();
-      const btnProfile = createElement("button", { css: { width: "40px", height: "30px", lineHeight: "35px", padding: "0" }, appendTo: rankEl });
+      const btnProfile = createElement("button", { css: { width: "40px", height: "30px", lineHeight: "38px", padding: "0" }, appendTo: rankEl });
       const btnIconProfile = createElement("img", { width: 20, appendTo: btnProfile });
       getTexture("ui/f-.png").then((e) => btnIconProfile.src = e);
       btnProfile.onclick = () => ProfileInfo(App_default2.user.playerObjectId);
@@ -6741,10 +6788,6 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
         await box.wait("destroy");
       };
       avatar.onmousedown = (e) => e.preventDefault();
-      getAvatarImg({
-        [PacketDataKeys_default.PLAYER_OBJECT_ID]: App_default2.user.playerObjectId,
-        [PacketDataKeys_default.PHOTO]: App_default2.user.photo
-      }).then((e) => avatar.src = e);
       nick.textContent = App_default2.user.username;
       if (App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
       div.appendChild(avatar);

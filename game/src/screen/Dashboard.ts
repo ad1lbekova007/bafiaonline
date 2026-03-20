@@ -91,6 +91,10 @@ export default class Dashboard extends Screen {
     function updateInfo(){
       nick.textContent = App.user.username;
       getTexture(`rank/rank${Math.round(App.user.level / 2)}_36.png`).then(e => rankImg.src = e);
+      getAvatarImg({
+        [PacketDataKeys.PLAYER_OBJECT_ID]: App.user.playerObjectId,
+        [PacketDataKeys.PHOTO]: App.user.photo,
+      }).then(e => avatar.src = e);
       rankLvl.textContent = `${App.user.level}`;
       rankProgress.max = App.user.nextLevelExperience;
       rankProgress.value = App.user.previousLevelExperience;
@@ -121,12 +125,12 @@ export default class Dashboard extends Screen {
     });
     const rankLvl2 = createElement('span', { appendTo: rankEl });
     
-    const btnSettings = createElement('button', { css: { width: '40px', height: '30px', lineHeight: '35px', padding: '0' }, appendTo: rankEl });
+    const btnSettings = createElement('button', { css: { width: '40px', height: '30px', lineHeight: '38px', padding: '0' }, appendTo: rankEl });
     const btnIconSettings = createElement('img', { width: 20, appendTo: btnSettings });
     getTexture('ui/ei.png').then(e => btnIconSettings.src = e);
     btnSettings.onclick = () => App.screen = new Settings();
 
-    const btnProfile = createElement('button', { css: { width: '40px', height: '30px', lineHeight: '35px', padding: '0' }, appendTo: rankEl });
+    const btnProfile = createElement('button', { css: { width: '40px', height: '30px', lineHeight: '38px', padding: '0' }, appendTo: rankEl });
     const btnIconProfile = createElement('img', { width: 20, appendTo: btnProfile });
     getTexture('ui/f-.png').then(e => btnIconProfile.src = e);
     btnProfile.onclick = () => ProfileInfo(App.user.playerObjectId);
@@ -270,10 +274,6 @@ export default class Dashboard extends Screen {
       await box.wait('destroy');
     }
     avatar.onmousedown = e => e.preventDefault();
-    getAvatarImg({
-      [PacketDataKeys.PLAYER_OBJECT_ID]: App.user.playerObjectId,
-      [PacketDataKeys.PHOTO]: App.user.photo,
-    }).then(e => avatar.src = e);
     nick.textContent = App.user.username;
     if(App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
     div.appendChild(avatar);

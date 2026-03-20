@@ -74,7 +74,7 @@ export default class Matchmaking extends Screen {
     this.removeInterval('selection');
     this.removeInterval('search');
     this.removeByKey('search');
-    let isSearching = false, isAccepting = false, timer = 0;
+    let isSearching = false, isAccepting = false, timer = 0, roomMM = false;
     this.el = createElement('div', {
       css: {
         display: 'flex',
@@ -91,6 +91,7 @@ export default class Matchmaking extends Screen {
       appendTo: this.el
     })
     const btn = createElement('button', { text: 'Начать поиск', appendTo: this.el });
+    const btn2 = createElement('button', { text: 'Вернуться в игру', appendTo: this.el, hide: true });
 
     if(data.ty == 'mmag'){
       timer = data.mmlt;
@@ -109,10 +110,11 @@ export default class Matchmaking extends Screen {
 
     if(data.mmms) {
       if(data.mmms.mmuir){
-        const btn = createElement('button', { text: 'Вернуться в игру', appendTo: this.el });
-        btn.onclick = () => {
+        btn2.style.display = 'block';
+        btn2.onclick = () => {
           App.server.send('mmrtr', {})
         }
+        roomMM = true;
       }
     }
 
@@ -127,11 +129,14 @@ export default class Matchmaking extends Screen {
         App.server.send('mmguiabk', { mmbpa: 12 });
         btn.innerHTML = 'Начать поиск';
         info.innerText = 'Сейчас играют: ' + this.online;
+        if(roomMM)
+          btn2.style.display = 'block';
       } else {
         App.server.send('mmauk', { mmbpa: 12 });
 
         btn.innerHTML = 'Отменить поиск';
         info.innerText = 'В поиске..';
+        btn2.style.display = 'none';
       }
       isSearching = !isSearching;
     }

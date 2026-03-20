@@ -4,6 +4,7 @@ import { formatDate } from '../../../core/src/utils/format';
 import { wait } from '../../../core/src/utils/utils';
 import App from '../App';
 import ConfirmBox from '../dialog/ConfirmBox';
+import MessageBox from '../dialog/MessageBox';
 import ProfileInfo from '../dialog/ProfileInfo';
 import { getAvatarImg, getBackgroundImg, getTexture } from '../utils/Resources';
 import Dashboard from './Dashboard';
@@ -173,6 +174,7 @@ export default class Friends extends Screen {
       const userObjectId = !this.isSearch ? user[PacketDataKeys.PLAYER_OBJECT_ID] : objectId;
       const username = !this.isSearch ? user[PacketDataKeys.USERNAME] : f[PacketDataKeys.USERNAME];
       const newMessages = Number(f[PacketDataKeys.NEW_MESSAGES]);
+      const accepted = f[PacketDataKeys.ACCEPTED];
       let isClicked = false;
 
       const e = document.createElement('div');
@@ -266,6 +268,30 @@ export default class Friends extends Screen {
         btns.appendChild(div1);
       }
 
+      if(accepted === 0){
+        const btnAcceptFriend = createElement('button', {
+          className: 'green',
+          text: 'Принять',
+          appendTo: btns
+        });
+        btnAcceptFriend.onclick = async() => {
+          isClicked = true;
+          const e = await ConfirmBox(`Принять заявку в друзья от данного пользователя?`, { title: `ПРИНЯТЬ ДРУЖБУ` });
+          if(e) {
+            App.server.send(PacketDataKeys.ADD_FRIEND, {
+              [PacketDataKeys.FRIEND_USER_OBJECT_ID]: userObjectId
+            });
+            const data = await App.server.awaitPacket([PacketDataKeys.ADD_FRIEND, PacketDataKeys.YOUR_FRIENDSHIP_LIST_FULL]);
+            if(data[PacketDataKeys.TYPE] == PacketDataKeys.YOUR_FRIENDSHIP_LIST_FULL){
+              MessageBox(`Список ваших друзей полон. Вы уже добавили ${data[PacketDataKeys.FRIENDSHIP_LIST_LIMIT]} друзей в список друзей\n\nВы сможете добавить 200 друзей, если подключите VIP\n\nПожалуйста, освободите список ваших друзей`);
+              return;
+            }
+            if(data[PacketDataKeys.TYPE] == PacketDataKeys.ADD_FRIEND){
+              btnAcceptFriend.style.display = 'none';
+            }
+          }
+        }
+      }
       if(!this.isSearch){
         const btnRemoveFriend = createElement('button', {
           className: 'gray',
