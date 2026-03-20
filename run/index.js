@@ -2750,8 +2750,9 @@
       elem.style.position = "fixed";
       elem.style.display = "flex";
       elem.style.flexDirection = "column";
-      elem.style.left = event.pageX / winZoom / zoom + "px";
-      elem.style.top = event.pageY / winZoom / zoom + "px";
+      elem.style.visibility = "hidden";
+      elem.style.left = "0px";
+      elem.style.top = "0px";
       for (let i = 0; i < menu.length; i++) {
         const btn = menu[i];
         const e = document.createElement("button");
@@ -2762,6 +2763,18 @@
         elem.appendChild(e);
       }
       this.elem.appendChild(elem);
+      const rect = elem.getBoundingClientRect();
+      const menuW = rect.width / zoom;
+      const menuH = rect.height / zoom;
+      let x = event.pageX / winZoom / zoom;
+      let y = event.pageY / winZoom / zoom;
+      const screenW = window.innerWidth / winZoom / zoom;
+      const screenH = window.innerHeight / winZoom / zoom;
+      if (x + menuW > screenW) x -= menuW;
+      if (y + menuH > screenH) y -= menuH;
+      elem.style.left = x + "px";
+      elem.style.top = y + "px";
+      elem.style.visibility = "visible";
       this.on("click", async () => {
         await wait(0);
         this.destroy();
