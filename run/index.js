@@ -10306,7 +10306,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   });
   var Launcher = class {
     win;
-    isDevMode = true;
+    isDevMode = false;
     openedWindows = [];
     options = {
       version: "",

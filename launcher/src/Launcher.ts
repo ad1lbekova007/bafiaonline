@@ -50,7 +50,7 @@ const loadImage = (url: string) =>
 export default class Launcher {
   win!: Window
 
-  isDevMode = true;
+  isDevMode = false;
 
   openedWindows: Window[] = [];
 
