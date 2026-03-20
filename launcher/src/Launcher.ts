@@ -50,6 +50,8 @@ const loadImage = (url: string) =>
 export default class Launcher {
   win!: Window
 
+  isDevMode = true;
+
   openedWindows: Window[] = [];
 
   options = {
@@ -61,7 +63,7 @@ export default class Launcher {
   versions: Version[] = [];
   profiles: Profile[] = [];
   selectedVersion: Version | null = null;
-  selectedProfile: string | null = null;
+  selectedProfile: Profile | null = null;
 
   statusText!: HTMLDivElement
   progressBar!: HTMLProgressElement
@@ -78,19 +80,15 @@ export default class Launcher {
   async readVersion(src: string): Promise<Version|null> {
     try {
       await createScript({ src });
-      // @ts-ignore
-      const version: Version = window['version'];
-      // @ts-ignore
-      delete window['version'];
+      const version: Version = (window as any)['version'];
+      delete (window as any)['version'];
       return version;
     } catch {
       try{
         const t = await(await fetch(src)).text();
         window['eval'](t);
-        // @ts-ignore
-        const version: Version = window['version'];
-        // @ts-ignore
-        delete window['version'];
+        const version: Version = (window as any)['version'];
+        delete (window as any)['version'];
         return version;
       }catch{
         return null;
@@ -143,6 +141,7 @@ export default class Launcher {
     if(!(await fs.existsFile('/options.json'))) fs.writeFile(`/options.json`, JSON.stringify({
       version: '',
       profile: '',
+      windowsInFS: false,
       theme: 'macos'
     }));
     this.versions = JSON.parse(await fs.readFile(`/versions.json`));
@@ -255,7 +254,7 @@ export default class Launcher {
                 margin: '2px',
                 padding: '5px',
                 borderRadius: '5px',
-                background: pr.name == self.selectedProfile ? selected : notSelected
+                background: pr.userId == self.selectedProfile?.userId ? selected : notSelected
               }
             });
             const avatar = createElement('img', {
@@ -273,7 +272,7 @@ export default class Launcher {
               }
             });
             el.onclick = () => {
-              self.selectedProfile = pr.name;
+              self.selectedProfile = pr;
               elems.forEach(e => e.style.background = notSelected);
               el.style.background = selected;
             }
@@ -325,7 +324,7 @@ export default class Launcher {
             }
           });
           remove.onclick = async () => {
-            const p = self.profiles.findIndex(e => e.name == self.selectedProfile || self.selectedProfile == e.email);
+            const p = self.profiles.findIndex(e => e.userId == self.selectedProfile?.userId || self.selectedProfile?.email == e.email);
             if(p != -1) {
               const profile = self.profiles[p];
               if(!confirm('Вы уверены что хотите удалить профиль "'+profile.name+'"?')) return;
@@ -355,7 +354,8 @@ export default class Launcher {
           remove.appendChild(removeText);
           self.listProfiles.appendChild(remove);
         }
-        self.selectedProfile = self.options.profile;
+        const p = self.profiles.find(e => e.userId == self.options.profile);
+        if(p) self.selectedProfile = p;
         update()
         elem.appendChild(this.listProfiles);
       }), true);
@@ -432,9 +432,9 @@ export default class Launcher {
     this.playBtn.style.background = '#b3f8b3'
     this.playBtn.onclick = async() => {
       const v = this.versions.find(e => e.name == this.listVersions.value);
-      const p = this.profiles.find(e => e.name == this.selectedProfile);
+      const p = this.profiles.find(e => e.userId == this.selectedProfile?.userId);
       if(v) {
-        console.log(p);
+        // console.log(p);
         this.runGame(v, p);
       } else {
         alert(`Не найдена версия\n\nОбратитесь в техподдержку`);
@@ -446,12 +446,29 @@ export default class Launcher {
     this.updateBtn.innerHTML = `Обновить`;
     this.updateBtn.style.margin = '1px';
     this.updateBtn.onclick = async () => {
+      let updated = false;
       this.win.lock();
       for await(const ver of updateVersions){
         this.statusText.textContent = 'Проверка..';
 
         const version = await this.readVersion(ver.scriptPath!);
-        if(version) await this.downloadVersion({...version, ...ver});
+        if(version && ver.sha1 != version.sha1) {
+          await this.downloadVersion({...version, ...ver});
+          updated = true;
+        }
+      }
+      if(!updated){
+        this.statusText.textContent = '';
+        this.win.unlock();
+      }
+
+      if(this.isDevMode) {
+        const v = this.versions.find(e => e.name == this.options.version);
+        const p = this.profiles.find(e => e.userId == this.options.profile);
+        if(v){
+          this.runGame(v, p);
+        }
+        return;
       }
     }
     btns.appendChild(this.updateBtn);
@@ -1039,7 +1056,7 @@ export default class Launcher {
   }
 
   async runGame(version: Version, profile?: Profile) {
-    this.win.lock();
+    this.win?.lock();
     const config = JSON.parse(await fs.readFile(`${version.path}/config.json`)) as Config;
     const mainScript = await fs.readFile(`${version.path}/main.js`);
 
@@ -1059,9 +1076,9 @@ export default class Launcher {
         // userId: profile.userId
       }
     }
-    if(this.options.version != version.name || this.options.profile != profile?.name){
+    if(this.options.version != version.name || this.options.profile != profile?.userId){
       this.options.version = version.name;
-      this.options.profile = profile ? profile.name : '';
+      this.options.profile = profile ? profile.userId! : '';
       this.writeData();
     }
 
@@ -1081,9 +1098,9 @@ export default class Launcher {
 
     this.openedWindows.push(win);
 
-    this.win.unlock();
+    this.win?.unlock();
     
     await win.wait('close');
-    this.#initContent();
+    if(this.win) this.#initContent();
   }
 }

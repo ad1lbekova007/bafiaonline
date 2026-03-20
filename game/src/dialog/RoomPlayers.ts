@@ -41,7 +41,9 @@ export default async function(roomId: string) {
     const e = createElement('div', {
       css: {
         display: 'flex',
-        alignItems: 'center'
+        alignItems: 'center',
+        marginLeft: '10px',
+        marginRight: '10px'
       }
     });
     const avatar = createElement('img', {
@@ -53,7 +55,7 @@ export default async function(roomId: string) {
       height: 30,
     });
     getAvatarImg(pl).then(e => avatar.src = e);
-    avatar.onclick = () => ProfileInfo(pl[PacketDataKeys.OBJECT_ID]);
+    avatar.onclick = () => ProfileInfo(pl[PacketDataKeys.PLAYER_OBJECT_ID]);
     const nick = createElement('span', {
       text: noXSS(pl[PacketDataKeys.USERNAME]),
       css: {

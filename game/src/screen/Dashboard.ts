@@ -17,6 +17,7 @@ import { Profile } from "../../../launcher/src/enums";
 import { History } from "./History";
 // @ts-ignore
 import Matchmaking from "./Matchmaking";
+import { createElement } from "../../../core/src/utils/DOM";
 
 function pngToJpgBase64(file: File, quality = 0.9): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -79,15 +80,66 @@ export default class Dashboard extends Screen {
     this.init();
   }
   async init(){
-    const div = document.createElement('div');
-    div.style.textAlign = 'center';
+    const div = createElement('div', {
+      css: {
+        textAlign: 'center',
+        fontSize: 'smaller'
+      }
+    });
     this.element.appendChild(div);
 
-    const avatar = document.createElement('img');
+    function updateInfo(){
+      nick.textContent = App.user.username;
+      getTexture(`rank/rank${Math.round(App.user.level / 2)}_36.png`).then(e => rankImg.src = e);
+      rankLvl.textContent = `${App.user.level}`;
+      rankProgress.max = App.user.nextLevelExperience;
+      rankProgress.value = App.user.previousLevelExperience;
+      rankLvl2.textContent = `${App.user.previousLevelExperience}/${App.user.nextLevelExperience}`;
+    }
+
+    const rankEl = createElement('div', {
+      css: {
+        display: 'flex',
+        width: '100%',
+        padding: '10px',
+        alignItems: 'center'
+      },
+      appendTo: div
+    });
+    const rankImg = createElement('img', {
+      width: 20,
+      appendTo: rankEl,
+    });
+    const rankLvl = createElement('span', { appendTo: rankEl });
+    const rankProgress = createElement('progress', {
+      css: {
+        width: `calc(100% - 220px)`,
+        margin: '5px'
+      },
+      value: '0',
+      appendTo: rankEl
+    });
+    const rankLvl2 = createElement('span', { appendTo: rankEl });
+    
+    const btnSettings = createElement('button', { css: { width: '40px', height: '30px', lineHeight: '35px', padding: '0' }, appendTo: rankEl });
+    const btnIconSettings = createElement('img', { width: 20, appendTo: btnSettings });
+    getTexture('ui/ei.png').then(e => btnIconSettings.src = e);
+    btnSettings.onclick = () => App.screen = new Settings();
+
+    const btnProfile = createElement('button', { css: { width: '40px', height: '30px', lineHeight: '35px', padding: '0' }, appendTo: rankEl });
+    const btnIconProfile = createElement('img', { width: 20, appendTo: btnProfile });
+    getTexture('ui/f-.png').then(e => btnIconProfile.src = e);
+    btnProfile.onclick = () => ProfileInfo(App.user.playerObjectId);
+
+    const avatar = createElement('img', {
+      css: {
+        borderRadius: '100%',
+        margin: '5px'
+      },
+      width: 100,
+      height: 100
+    });
     const nick = document.createElement('span');
-    avatar.style.borderRadius = '100%'
-    avatar.width = avatar.height = 100;
-    avatar.style.margin = '5px';
     avatar.onclick = async() => {
       App.server.send(PacketDataKeys.USER_GET_DEFAULT_PHOTOS, {});
       const data = await App.server.awaitPacket(PacketDataKeys.USER_DEFAULT_PHOTOS);
@@ -101,11 +153,14 @@ export default class Dashboard extends Screen {
       });
 
       const box = new Box({ title: 'ФОТО ПРОФИЛЯ', width: 325, height: 240, canCloseAnywhere: true });
-      const e = document.createElement('div');
-      e.style.display = 'flex';
-      e.style.padding = '5px'
-      e.style.alignItems = 'center';
-      e.style.flexDirection = 'column';
+      const e = createElement('div', {
+        css: {
+          display: 'flex',
+          padding: '5px',
+          alignItems: 'center',
+          flexDirection: 'column'
+        }
+      });
       box.content.appendChild(e);
       const btnUpload = document.createElement('button');
       btnUpload.textContent = 'Загрузить';
@@ -170,20 +225,26 @@ export default class Dashboard extends Screen {
         input.remove();
       }
       e.appendChild(btnUpload);
-      const orList = document.createElement('span');
-      orList.textContent = 'или выберите из списка:';
-      orList.style.padding = '10px';
-      orList.style.color = 'black';
+      const orList = createElement('span', {
+        css: {
+          padding: '10px',
+          color: 'black'
+        },
+        text: 'или выберите из списка:'
+      });
       e.appendChild(orList);
-      const images = document.createElement('div');
-      images.style.display = 'flex';
-      images.style.flexWrap = 'wrap'
-      images.style.width = '300px';
-      images.style.height = '100px';
-      images.style.background = '#969696';
-      images.style.borderRadius = '10px';
-      images.style.overflowY = 'overlay';
-      images.style.padding = '5px';
+      const images = createElement('div', {
+        css: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          width: '300px',
+          height: '100px',
+          background: '#969696',
+          borderRadius: '10px',
+          overflowY: 'overlay',
+          padding: '5px'
+        }
+      });
       for(const p of photos){
         const img = document.createElement('img');
         img.src = `https://dottap.com/mafia/profile_photo/default/${p}.jpg`;
@@ -280,22 +341,6 @@ export default class Dashboard extends Screen {
     // div.appendChild(btnShop);
     // div.appendChild(document.createElement('br'));
 
-    const btnSettings = document.createElement('button');
-    btnSettings.textContent = 'Настройки';
-    btnSettings.style.width = '60%'
-    btnSettings.style.margin = '3px'
-    btnSettings.onclick = () => App.screen = new Settings();
-    div.appendChild(btnSettings);
-    div.appendChild(document.createElement('br'));
-
-    const btnProfile = document.createElement('button');
-    btnProfile.textContent = 'Профиль';
-    btnProfile.style.width = '60%'
-    btnProfile.style.margin = '3px'
-    btnProfile.onclick = () => ProfileInfo(App.user.playerObjectId);
-    div.appendChild(btnProfile);
-    div.appendChild(document.createElement('br'));
-
     // const btnRules = document.createElement('button');
     // btnRules.textContent = 'Правила';
     // btnRules.style.width = '60%'
@@ -341,6 +386,8 @@ export default class Dashboard extends Screen {
       btnClose.onclick = () => App.win.close()
       div.appendChild(btnClose);
     }
+    
+    updateInfo();
 
     App.server.send(PacketDataKeys.ADD_CLIENT_TO_DASHBOARD, {
       [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
@@ -352,8 +399,8 @@ export default class Dashboard extends Screen {
     App.user.update(du);
     App.user.goldCoins = db[PacketDataKeys.USER_ACCOUNT_COINS][PacketDataKeys.GOLD_COINS];
     App.user.sliverCoins = db[PacketDataKeys.USER_ACCOUNT_COINS][PacketDataKeys.SILVER_COINS];
-
-    nick.textContent = du[PacketDataKeys.USERNAME];
+    
+    updateInfo();
 
     if(du[PacketDataKeys.USERNAME] == '') (async () => {
       async function send() {

@@ -83,7 +83,8 @@ export default class Room extends Screen {
     alive?: boolean
     userObjectId?: string
     playerObjectId?: string
-    role?: number
+    role?: Role
+    preRole?: Role
     affectedByRoles?: Role[]
     isDayActionUsed?: boolean
     isNightActionAlternative?: boolean
@@ -237,7 +238,7 @@ export default class Room extends Screen {
       }
 
       const roomData = rData[PacketDataKeys.ROOM];
-      if(roomData && roomData[PacketDataKeys.OBJECT_ID] && roomData[PacketDataKeys.ROOM_MODEL_TYPE]){
+      if(roomData && roomData[PacketDataKeys.OBJECT_ID] && typeof roomData[PacketDataKeys.ROOM_MODEL_TYPE] == 'number'){
         this.roomObjectId = roomData[PacketDataKeys.OBJECT_ID]
         this.modelType = roomData[PacketDataKeys.ROOM_MODEL_TYPE];
         this.title = roomData[PacketDataKeys.TITLE];
@@ -1016,9 +1017,13 @@ export default class Room extends Screen {
         continue;
       }
       async function contextMenuCallback(event: PointerEvent){
-        const cx = new ContextMenu(self.playersData[uo].alive ?
-          ['Пользователь', `${self.playersData[uo].autoClick ? '✅ ' : ''}Авто-клик`] :
-          ['Пользователь']
+        const cx = new ContextMenu(
+          self.playersData[uo].alive ?
+            typeof self.playersData[uo].role == 'number' ?
+              ['Пользователь', `${self.playersData[uo].autoClick ? '✅ ' : ''}Авто-клик`]
+            :
+              ['Пользователь', `${self.playersData[uo].autoClick ? '✅ ' : ''}Авто-клик`, `Отметить роль`]
+          : ['Пользователь']
         , event);
         const result = await cx.waitForResult();
         if(result == `${self.playersData[uo].autoClick ? '✅ ' : ''}Авто-клик`){
@@ -1026,16 +1031,25 @@ export default class Room extends Screen {
           self.playersData[uo].didAutoClick = false;
         } else if(result == 'Пользователь'){
           ProfileInfo(uo);
+        } else if(result == 'Отметить роль'){
+          const cx2 = new ContextMenu(['Убрать', ...RuRoles], event);
+          const r = await cx2.waitForResult();
+          if(r == 'Убрать') self.playersData[uo].preRole = undefined;
+          else self.playersData[uo].preRole = (RuRoles.findIndex(e => e == r)) + 1;
+          self.updatePlayersGame();
         }
       }
 
       const username = pl.username ?? '?';
-      const div = document.createElement('div');
-      div.style.margin = '2px';
-      div.style.width = '50px';
-      div.style.textAlign = 'center';
-      div.style.position = 'relative';
-      div.style.height = '100px';
+      const div = createElement('div', {
+        css: {
+          margin: '2px',
+          width: '50px',
+          textAlign: 'center',
+          position: 'relative',
+          height: '100px'
+        }
+      });
       const nick = document.createElement('div');
       nick.innerHTML = (App.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(pl.index ?? 0) + 1}</span> ` : '') + noXSS(username);
       nick.className = 'black';
@@ -1045,7 +1059,7 @@ export default class Room extends Screen {
       nick.style.marginTop = '-2px';
       const roleImg = document.createElement('img');
       // console.log(pl.playerObjectId == "61092974-8103-41af-954b-7f6bc553b807", pl);
-      getRoleImg(pl.role ?? 0).then(e => roleImg.src = e);
+      getRoleImg(pl.role as number ?? 0).then(e => roleImg.src = e);
       roleImg.width = 50;
       roleImg.height = 70;
       roleImg.oncontextmenu = contextMenuCallback
@@ -1062,6 +1076,18 @@ export default class Room extends Screen {
         deadImg.onclick = () => this.addNickToInput(username);
         deadImg.oncontextmenu = contextMenuCallback
         div.appendChild(deadImg);
+      }
+      if(!pl.role && typeof pl.preRole == 'number' && pl.preRole > -1){
+        const roleImg = document.createElement('img');
+        getTexture(`roles/a${pl.preRole}.png`).then(e => roleImg.src = e);
+        roleImg.width = 50;
+        roleImg.height = 70;
+        roleImg.style.position = 'absolute';
+        roleImg.style.left = '0';
+        roleImg.onmousedown = e => e.preventDefault();
+        roleImg.onclick = () => this.addNickToInput(username);
+        roleImg.oncontextmenu = contextMenuCallback
+        div.appendChild(roleImg);
       }
 
       if(typeof this.playersData[uo].vote == 'number' && this.playersData[uo].vote > 0){

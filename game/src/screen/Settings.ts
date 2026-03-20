@@ -138,7 +138,7 @@ export default class Settings extends Screen{
       btn.onclick = onClick;
       d.appendChild(btn);
     }
-    addButton('Тема', 'Настроить', () => MessageBox('Скоро..'));
+    addButton('Оформление', 'Настроить', () => MessageBox('Скоро..'));
     addSlider('Масштаб', v => {
       App.settings.data.window.zoom = v;
       App.element.style.zoom = v + '';
@@ -152,19 +152,19 @@ export default class Settings extends Screen{
     addCheckbox('Удалять все сообщения после начала игры?', v => {
       App.settings.data.game.clearMessages = v;
     }, App.settings.data.game.clearMessages);
-    addCheckbox('Сохранять историю комнаты после конца игры?', v => {
+    addCheckbox('Хранить историю после игры?', v => {
       App.settings.data.game.saveHistory = v;
     }, App.settings.data.game.saveHistory);
     addCheckbox('Скрывать никнейм везде', v => {
       App.settings.data.hideUsername = v;
     }, App.settings.data.hideUsername);
-    addCheckbox('Показывать номера игроков', v => {
-      App.settings.data.game.showIndexPl = v;
-    }, App.settings.data.game.showIndexPl);
-    addCheckbox('Показывать номер игрока в сообщении', v => {
-      App.settings.data.game.showIndexPlChat = v;
-    }, App.settings.data.game.showIndexPlChat);
-    addCheckbox('Для разработчиков\nЭто удобно для создания мода и т.д.', v => {
+    // addCheckbox('Показывать номера игроков', v => {
+    //   App.settings.data.game.showIndexPl = v;
+    // }, App.settings.data.game.showIndexPl);
+    // addCheckbox('Показывать номер игрока в сообщении', v => {
+    //   App.settings.data.game.showIndexPlChat = v;
+    // }, App.settings.data.game.showIndexPlChat);
+    addCheckbox('Режим разработчика', v => {
       App.settings.data.developer = v;
     }, App.settings.data.developer);
 

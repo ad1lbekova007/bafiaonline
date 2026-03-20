@@ -1711,8 +1711,8 @@
 
   // core/version.json
   var version_default = {
-    launcher: "Beta 1.1",
-    vanilla: "Beta 1.1"
+    launcher: "Beta 1.1.1",
+    vanilla: "Beta 1.1.1"
   };
 
   // launcher/src/App.ts
@@ -3077,7 +3077,7 @@
           return;
         }
         const roomData = rData[PacketDataKeys_default.ROOM];
-        if (roomData && roomData[PacketDataKeys_default.OBJECT_ID] && roomData[PacketDataKeys_default.ROOM_MODEL_TYPE]) {
+        if (roomData && roomData[PacketDataKeys_default.OBJECT_ID] && typeof roomData[PacketDataKeys_default.ROOM_MODEL_TYPE] == "number") {
           this.roomObjectId = roomData[PacketDataKeys_default.OBJECT_ID];
           this.modelType = roomData[PacketDataKeys_default.ROOM_MODEL_TYPE];
           this.title = roomData[PacketDataKeys_default.TITLE];
@@ -3769,7 +3769,7 @@
         }
         async function contextMenuCallback(event) {
           const cx = new ContextMenu(
-            self2.playersData[uo].alive ? ["\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C", `${self2.playersData[uo].autoClick ? "\u2705 " : ""}\u0410\u0432\u0442\u043E-\u043A\u043B\u0438\u043A`] : ["\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C"],
+            self2.playersData[uo].alive ? typeof self2.playersData[uo].role == "number" ? ["\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C", `${self2.playersData[uo].autoClick ? "\u2705 " : ""}\u0410\u0432\u0442\u043E-\u043A\u043B\u0438\u043A`] : ["\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C", `${self2.playersData[uo].autoClick ? "\u2705 " : ""}\u0410\u0432\u0442\u043E-\u043A\u043B\u0438\u043A`, `\u041E\u0442\u043C\u0435\u0442\u0438\u0442\u044C \u0440\u043E\u043B\u044C`] : ["\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C"],
             event
           );
           const result = await cx.waitForResult();
@@ -3778,15 +3778,24 @@
             self2.playersData[uo].didAutoClick = false;
           } else if (result == "\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C") {
             ProfileInfo(uo);
+          } else if (result == "\u041E\u0442\u043C\u0435\u0442\u0438\u0442\u044C \u0440\u043E\u043B\u044C") {
+            const cx2 = new ContextMenu(["\u0423\u0431\u0440\u0430\u0442\u044C", ...RuRoles], event);
+            const r = await cx2.waitForResult();
+            if (r == "\u0423\u0431\u0440\u0430\u0442\u044C") self2.playersData[uo].preRole = void 0;
+            else self2.playersData[uo].preRole = RuRoles.findIndex((e) => e == r) + 1;
+            self2.updatePlayersGame();
           }
         }
         const username = pl.username ?? "?";
-        const div = document.createElement("div");
-        div.style.margin = "2px";
-        div.style.width = "50px";
-        div.style.textAlign = "center";
-        div.style.position = "relative";
-        div.style.height = "100px";
+        const div = createElement("div", {
+          css: {
+            margin: "2px",
+            width: "50px",
+            textAlign: "center",
+            position: "relative",
+            height: "100px"
+          }
+        });
         const nick = document.createElement("div");
         nick.innerHTML = (App_default2.settings.data.game.showIndexPl ? `<span style="color: #ab1457; font-weight: bold">${(pl.index ?? 0) + 1}</span> ` : "") + noXSS(username);
         nick.className = "black";
@@ -3812,6 +3821,18 @@
           deadImg.onclick = () => this.addNickToInput(username);
           deadImg.oncontextmenu = contextMenuCallback;
           div.appendChild(deadImg);
+        }
+        if (!pl.role && typeof pl.preRole == "number" && pl.preRole > -1) {
+          const roleImg2 = document.createElement("img");
+          getTexture(`roles/a${pl.preRole}.png`).then((e) => roleImg2.src = e);
+          roleImg2.width = 50;
+          roleImg2.height = 70;
+          roleImg2.style.position = "absolute";
+          roleImg2.style.left = "0";
+          roleImg2.onmousedown = (e) => e.preventDefault();
+          roleImg2.onclick = () => this.addNickToInput(username);
+          roleImg2.oncontextmenu = contextMenuCallback;
+          div.appendChild(roleImg2);
         }
         if (typeof this.playersData[uo].vote == "number" && this.playersData[uo].vote > 0) {
           const vote = this.playersData[uo].vote;
@@ -4539,7 +4560,9 @@
       const e = createElement("div", {
         css: {
           display: "flex",
-          alignItems: "center"
+          alignItems: "center",
+          marginLeft: "10px",
+          marginRight: "10px"
         }
       });
       const avatar = createElement("img", {
@@ -4551,7 +4574,7 @@
         height: 30
       });
       getAvatarImg(pl).then((e2) => avatar.src = e2);
-      avatar.onclick = () => ProfileInfo(pl[PacketDataKeys_default.OBJECT_ID]);
+      avatar.onclick = () => ProfileInfo(pl[PacketDataKeys_default.PLAYER_OBJECT_ID]);
       const nick = createElement("span", {
         text: noXSS(pl[PacketDataKeys_default.USERNAME]),
         css: {
@@ -5434,15 +5457,20 @@
     };
   }
   async function ProfileInfo(playerObjectId) {
-    const zoom = getZoom();
-    const box = new Box({ title: "\u041F\u0420\u041E\u0424\u0418\u041B\u042C", width: App_default2.width / zoom / 0.85, height: App_default2.height / zoom / 0.75, canCloseAnywhere: true });
-    box.content.style.overflowY = "overlay";
     App_default2.server.send(PacketDataKeys_default.GET_USER_PROFILE, {
       [PacketDataKeys_default.USER_RECEIVER]: playerObjectId,
       [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
       [PacketDataKeys_default.TOKEN]: App_default2.user.token
     });
-    const data = await App_default2.server.awaitPacket(PacketDataKeys_default.USER_PROFILE);
+    let data;
+    try {
+      data = await App_default2.server.awaitPacket(PacketDataKeys_default.USER_PROFILE, 3e3);
+    } catch {
+      return;
+    }
+    const zoom = getZoom();
+    const box = new Box({ title: "\u041F\u0420\u041E\u0424\u0418\u041B\u042C", width: App_default2.width / zoom / 0.85, height: App_default2.height / zoom / 0.75, canCloseAnywhere: true });
+    box.content.style.overflowY = "overlay";
     const ud = data[PacketDataKeys_default.USER_PROFILE];
     const room = ud[PacketDataKeys_default.ROOM];
     const pud = ud[PacketDataKeys_default.PROFILE_USER_DATA];
@@ -5473,30 +5501,70 @@
     };
     const isMe = profile.playerObjectId == App_default2.user.playerObjectId;
     let isViewingAvatar = false;
-    const div = document.createElement("div");
-    div.style.width = "100%";
-    div.style.display = "flex";
-    div.style.flexDirection = "column";
-    div.style.alignItems = "center";
-    div.style.overflowY = "overlay";
-    const badge = document.createElement("div");
-    badge.style.width = badge.style.height = "20px";
-    badge.style.minWidth = badge.style.minHeight = "20px";
-    badge.style.maxWidth = badge.style.maxHeight = "20px";
-    badge.style.boxSizing = "border-box";
-    badge.style.background = profile.isOnline ? "#3fe33f" : "#636363";
-    badge.style.border = "2px solid white";
-    badge.style.borderRadius = "100%";
-    badge.style.position = "relative";
-    badge.style.left = "-40px";
-    badge.style.top = "-80px";
-    const avatar = document.createElement("img");
-    avatar.src = await getAvatarImg(pud);
-    avatar.style.borderRadius = "100%";
-    avatar.width = avatar.height = 100;
-    avatar.style.margin = "5px";
-    avatar.style.transition = ".5s";
-    avatar.style.marginBottom = "-10px";
+    const div = createElement("div", {
+      css: {
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        overflowY: "overlay",
+        fontSize: "smaller"
+      }
+    });
+    const rankEl = createElement("div", {
+      css: {
+        display: "flex",
+        width: "100%",
+        padding: "10px",
+        alignItems: "center",
+        color: "black"
+      },
+      appendTo: div
+    });
+    const rankImg = createElement("img", {
+      width: 20,
+      appendTo: rankEl
+    });
+    getTexture(`rank/rank${Math.round(profile.level / 2)}_36.png`).then((e) => rankImg.src = e);
+    const rankLvl = createElement("span", { text: profile.level + "", appendTo: rankEl });
+    const rankProgress = createElement("progress", {
+      css: {
+        width: `calc(100% - 140px)`,
+        margin: "5px"
+      },
+      value: "0",
+      appendTo: rankEl
+    });
+    rankProgress.max = profile.nextLevelExperience;
+    rankProgress.value = profile.prevLevelExperience;
+    const rankLvl2 = createElement("span", { appendTo: rankEl, text: `${profile.prevLevelExperience}/${profile.nextLevelExperience}` });
+    const badge = createElement("div", {
+      css: {
+        width: "20px",
+        minWidth: "20px",
+        minHeight: "20px",
+        maxWidth: "20px",
+        maxHeight: "20px",
+        boxSizing: "border-box",
+        background: profile.isOnline ? "#3fe33f" : "#636363",
+        border: "2px solid white",
+        borderRadius: "100px",
+        position: "relative",
+        left: "-40px",
+        top: "-80px"
+      }
+    });
+    const avatar = createElement("img", {
+      css: {
+        borderRadius: "100%",
+        margin: "5px",
+        transition: ".5s",
+        marginBottom: "-10px"
+      },
+      width: 100,
+      height: 100
+    });
+    getAvatarImg(pud).then((e) => avatar.src = e);
     avatar.onmousedown = (e) => e.preventDefault();
     avatar.onclick = () => {
       const zoom2 = getZoom();
@@ -5686,8 +5754,8 @@
       d.style.borderRadius = "5px";
       const img = document.createElement("img");
       fs_default.loadImageAsDataURL(`${App_default2.config.path}/assets/textures/roles/${id}.png`).then((e) => img.src = e);
-      img.width = 50;
-      img.height = 70;
+      img.width = 40;
+      img.height = 55;
       img.onmousedown = (e) => e.preventDefault();
       const v = document.createElement("div");
       v.textContent = profile.roleStats[id];
@@ -5708,9 +5776,7 @@
     if (typeof profile.gold == "number") add(statDev, "\u0417\u043E\u043B\u043E\u0442\u043E", profile.gold);
     add(statDev, "\u041F\u043E\u043B", profile.sex == 1 /* WOMEN */ ? "\u0416\u0435\u043D\u0441\u043A\u0438\u0439" : "\u041C\u0443\u0436\u0441\u043A\u043E\u0439");
     add(statDev, "\u0423\u0440\u043E\u0432\u0435\u043D\u044C", profile.level + ` (${profile.prevLevelExperience}/${profile.nextLevelExperience})`);
-    add(statDev, `ID \u041E\u0431\u044A\u0435\u043A\u0442\u0430`, playerObjectId);
-    add(statDev, `\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u0432\u0445\u043E\u0434`, formatDate(profile.updated));
-    add(statDev, `\u0421\u0435\u0440\u0432\u0435\u0440`, profile.serverLanguage);
+    add(statDev, `player object id`, playerObjectId);
     div.appendChild(statDev);
     box.content.appendChild(div);
     return await box.wait("destroy");
@@ -6144,7 +6210,7 @@
         btn.onclick = onClick;
         d.appendChild(btn);
       }
-      addButton("\u0422\u0435\u043C\u0430", "\u041D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C", () => MessageBox_default("\u0421\u043A\u043E\u0440\u043E.."));
+      addButton("\u041E\u0444\u043E\u0440\u043C\u043B\u0435\u043D\u0438\u0435", "\u041D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C", () => MessageBox_default("\u0421\u043A\u043E\u0440\u043E.."));
       addSlider("\u041C\u0430\u0441\u0448\u0442\u0430\u0431", (v) => {
         App_default2.settings.data.window.zoom = v;
         App_default2.element.style.zoom = v + "";
@@ -6158,19 +6224,13 @@
       addCheckbox("\u0423\u0434\u0430\u043B\u044F\u0442\u044C \u0432\u0441\u0435 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044F \u043F\u043E\u0441\u043B\u0435 \u043D\u0430\u0447\u0430\u043B\u0430 \u0438\u0433\u0440\u044B?", (v) => {
         App_default2.settings.data.game.clearMessages = v;
       }, App_default2.settings.data.game.clearMessages);
-      addCheckbox("\u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E \u043A\u043E\u043C\u043D\u0430\u0442\u044B \u043F\u043E\u0441\u043B\u0435 \u043A\u043E\u043D\u0446\u0430 \u0438\u0433\u0440\u044B?", (v) => {
+      addCheckbox("\u0425\u0440\u0430\u043D\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E \u043F\u043E\u0441\u043B\u0435 \u0438\u0433\u0440\u044B?", (v) => {
         App_default2.settings.data.game.saveHistory = v;
       }, App_default2.settings.data.game.saveHistory);
       addCheckbox("\u0421\u043A\u0440\u044B\u0432\u0430\u0442\u044C \u043D\u0438\u043A\u043D\u0435\u0439\u043C \u0432\u0435\u0437\u0434\u0435", (v) => {
         App_default2.settings.data.hideUsername = v;
       }, App_default2.settings.data.hideUsername);
-      addCheckbox("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C \u043D\u043E\u043C\u0435\u0440\u0430 \u0438\u0433\u0440\u043E\u043A\u043E\u0432", (v) => {
-        App_default2.settings.data.game.showIndexPl = v;
-      }, App_default2.settings.data.game.showIndexPl);
-      addCheckbox("\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0442\u044C \u043D\u043E\u043C\u0435\u0440 \u0438\u0433\u0440\u043E\u043A\u0430 \u0432 \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0438", (v) => {
-        App_default2.settings.data.game.showIndexPlChat = v;
-      }, App_default2.settings.data.game.showIndexPlChat);
-      addCheckbox("\u0414\u043B\u044F \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432\n\u042D\u0442\u043E \u0443\u0434\u043E\u0431\u043D\u043E \u0434\u043B\u044F \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u044F \u043C\u043E\u0434\u0430 \u0438 \u0442.\u0434.", (v) => {
+      addCheckbox("\u0420\u0435\u0436\u0438\u043C \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u0430", (v) => {
         App_default2.settings.data.developer = v;
       }, App_default2.settings.data.developer);
       this.element.appendChild(e);
@@ -6495,14 +6555,61 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
       this.init();
     }
     async init() {
-      const div = document.createElement("div");
-      div.style.textAlign = "center";
+      const div = createElement("div", {
+        css: {
+          textAlign: "center",
+          fontSize: "smaller"
+        }
+      });
       this.element.appendChild(div);
-      const avatar = document.createElement("img");
+      function updateInfo() {
+        nick.textContent = App_default2.user.username;
+        getTexture(`rank/rank${Math.round(App_default2.user.level / 2)}_36.png`).then((e) => rankImg.src = e);
+        rankLvl.textContent = `${App_default2.user.level}`;
+        rankProgress.max = App_default2.user.nextLevelExperience;
+        rankProgress.value = App_default2.user.previousLevelExperience;
+        rankLvl2.textContent = `${App_default2.user.previousLevelExperience}/${App_default2.user.nextLevelExperience}`;
+      }
+      const rankEl = createElement("div", {
+        css: {
+          display: "flex",
+          width: "100%",
+          padding: "10px",
+          alignItems: "center"
+        },
+        appendTo: div
+      });
+      const rankImg = createElement("img", {
+        width: 20,
+        appendTo: rankEl
+      });
+      const rankLvl = createElement("span", { appendTo: rankEl });
+      const rankProgress = createElement("progress", {
+        css: {
+          width: `calc(100% - 220px)`,
+          margin: "5px"
+        },
+        value: "0",
+        appendTo: rankEl
+      });
+      const rankLvl2 = createElement("span", { appendTo: rankEl });
+      const btnSettings = createElement("button", { css: { width: "40px", height: "30px", lineHeight: "35px", padding: "0" }, appendTo: rankEl });
+      const btnIconSettings = createElement("img", { width: 20, appendTo: btnSettings });
+      getTexture("ui/ei.png").then((e) => btnIconSettings.src = e);
+      btnSettings.onclick = () => App_default2.screen = new Settings();
+      const btnProfile = createElement("button", { css: { width: "40px", height: "30px", lineHeight: "35px", padding: "0" }, appendTo: rankEl });
+      const btnIconProfile = createElement("img", { width: 20, appendTo: btnProfile });
+      getTexture("ui/f-.png").then((e) => btnIconProfile.src = e);
+      btnProfile.onclick = () => ProfileInfo(App_default2.user.playerObjectId);
+      const avatar = createElement("img", {
+        css: {
+          borderRadius: "100%",
+          margin: "5px"
+        },
+        width: 100,
+        height: 100
+      });
       const nick = document.createElement("span");
-      avatar.style.borderRadius = "100%";
-      avatar.width = avatar.height = 100;
-      avatar.style.margin = "5px";
       avatar.onclick = async () => {
         App_default2.server.send(PacketDataKeys_default.USER_GET_DEFAULT_PHOTOS, {});
         const data2 = await App_default2.server.awaitPacket(PacketDataKeys_default.USER_DEFAULT_PHOTOS);
@@ -6514,11 +6621,14 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
           return na - nb;
         });
         const box = new Box({ title: "\u0424\u041E\u0422\u041E \u041F\u0420\u041E\u0424\u0418\u041B\u042F", width: 325, height: 240, canCloseAnywhere: true });
-        const e = document.createElement("div");
-        e.style.display = "flex";
-        e.style.padding = "5px";
-        e.style.alignItems = "center";
-        e.style.flexDirection = "column";
+        const e = createElement("div", {
+          css: {
+            display: "flex",
+            padding: "5px",
+            alignItems: "center",
+            flexDirection: "column"
+          }
+        });
         box.content.appendChild(e);
         const btnUpload = document.createElement("button");
         btnUpload.textContent = "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C";
@@ -6574,20 +6684,26 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
           input.remove();
         };
         e.appendChild(btnUpload);
-        const orList = document.createElement("span");
-        orList.textContent = "\u0438\u043B\u0438 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u0437 \u0441\u043F\u0438\u0441\u043A\u0430:";
-        orList.style.padding = "10px";
-        orList.style.color = "black";
+        const orList = createElement("span", {
+          css: {
+            padding: "10px",
+            color: "black"
+          },
+          text: "\u0438\u043B\u0438 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u0437 \u0441\u043F\u0438\u0441\u043A\u0430:"
+        });
         e.appendChild(orList);
-        const images = document.createElement("div");
-        images.style.display = "flex";
-        images.style.flexWrap = "wrap";
-        images.style.width = "300px";
-        images.style.height = "100px";
-        images.style.background = "#969696";
-        images.style.borderRadius = "10px";
-        images.style.overflowY = "overlay";
-        images.style.padding = "5px";
+        const images = createElement("div", {
+          css: {
+            display: "flex",
+            flexWrap: "wrap",
+            width: "300px",
+            height: "100px",
+            background: "#969696",
+            borderRadius: "10px",
+            overflowY: "overlay",
+            padding: "5px"
+          }
+        });
         for (const p of photos) {
           const img = document.createElement("img");
           img.src = `https://dottap.com/mafia/profile_photo/default/${p}.jpg`;
@@ -6661,20 +6777,6 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
       btnHistory.onclick = () => App_default2.screen = new History();
       div.appendChild(btnHistory);
       div.appendChild(document.createElement("br"));
-      const btnSettings = document.createElement("button");
-      btnSettings.textContent = "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438";
-      btnSettings.style.width = "60%";
-      btnSettings.style.margin = "3px";
-      btnSettings.onclick = () => App_default2.screen = new Settings();
-      div.appendChild(btnSettings);
-      div.appendChild(document.createElement("br"));
-      const btnProfile = document.createElement("button");
-      btnProfile.textContent = "\u041F\u0440\u043E\u0444\u0438\u043B\u044C";
-      btnProfile.style.width = "60%";
-      btnProfile.style.margin = "3px";
-      btnProfile.onclick = () => ProfileInfo(App_default2.user.playerObjectId);
-      div.appendChild(btnProfile);
-      div.appendChild(document.createElement("br"));
       if (isMobile()) {
         const btnFullScreen = document.createElement("button");
         btnFullScreen.textContent = "\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u043F\u043E\u043B\u043D\u043E\u044D\u043A\u0440\u0430\u043D\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C";
@@ -6708,6 +6810,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
         btnClose.onclick = () => App_default2.win.close();
         div.appendChild(btnClose);
       }
+      updateInfo();
       App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_DASHBOARD, {
         [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
         [PacketDataKeys_default.TOKEN]: App_default2.user.token
@@ -6718,7 +6821,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
       App_default2.user.update(du);
       App_default2.user.goldCoins = db[PacketDataKeys_default.USER_ACCOUNT_COINS][PacketDataKeys_default.GOLD_COINS];
       App_default2.user.sliverCoins = db[PacketDataKeys_default.USER_ACCOUNT_COINS][PacketDataKeys_default.SILVER_COINS];
-      nick.textContent = du[PacketDataKeys_default.USERNAME];
+      updateInfo();
       if (du[PacketDataKeys_default.USERNAME] == "") (async () => {
         async function send() {
           const uu = await PromptBox_default(`\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
@@ -10203,6 +10306,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   });
   var Launcher = class {
     win;
+    isDevMode = true;
     openedWindows = [];
     options = {
       version: "",
@@ -10283,6 +10387,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       if (!await fs_default.existsFile("/options.json")) fs_default.writeFile(`/options.json`, JSON.stringify({
         version: "",
         profile: "",
+        windowsInFS: false,
         theme: "macos"
       }));
       this.versions = JSON.parse(await fs_default.readFile(`/versions.json`));
@@ -10383,7 +10488,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
                   margin: "2px",
                   padding: "5px",
                   borderRadius: "5px",
-                  background: pr.name == self2.selectedProfile ? selected : notSelected
+                  background: pr.userId == self2.selectedProfile?.userId ? selected : notSelected
                 }
               });
               const avatar = createElement("img", {
@@ -10401,7 +10506,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
                 }
               });
               el.onclick = () => {
-                self2.selectedProfile = pr.name;
+                self2.selectedProfile = pr;
                 elems.forEach((e) => e.style.background = notSelected);
                 el.style.background = selected;
               };
@@ -10451,12 +10556,12 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
               }
             });
             remove.onclick = async () => {
-              const p = self2.profiles.findIndex((e) => e.name == self2.selectedProfile || self2.selectedProfile == e.email);
-              if (p != -1) {
-                const profile = self2.profiles[p];
+              const p2 = self2.profiles.findIndex((e) => e.userId == self2.selectedProfile?.userId || self2.selectedProfile?.email == e.email);
+              if (p2 != -1) {
+                const profile = self2.profiles[p2];
                 if (!confirm('\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u043F\u0440\u043E\u0444\u0438\u043B\u044C "' + profile.name + '"?')) return;
                 self2.win.lock();
-                self2.profiles.splice(p, 1);
+                self2.profiles.splice(p2, 1);
                 await self2.writeData();
                 self2.statusText.innerHTML = `\u041F\u0440\u043E\u0444\u0438\u043B\u044C ${profile.name} \u0443\u0434\u0430\u043B\u0435\u043D`;
                 self2.win.unlock();
@@ -10481,7 +10586,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
             remove.appendChild(removeText);
             self2.listProfiles.appendChild(remove);
           }
-          self2.selectedProfile = self2.options.profile;
+          const p = self2.profiles.find((e) => e.userId == self2.options.profile);
+          if (p) self2.selectedProfile = p;
           update();
           elem.appendChild(this.listProfiles);
         }), true);
@@ -10556,9 +10662,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.playBtn.style.background = "#b3f8b3";
       this.playBtn.onclick = async () => {
         const v = this.versions.find((e) => e.name == this.listVersions.value);
-        const p = this.profiles.find((e) => e.name == this.selectedProfile);
+        const p = this.profiles.find((e) => e.userId == this.selectedProfile?.userId);
         if (v) {
-          console.log(p);
           this.runGame(v, p);
         } else {
           alert(`\u041D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u0430 \u0432\u0435\u0440\u0441\u0438\u044F
@@ -10571,11 +10676,27 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.updateBtn.innerHTML = `\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C`;
       this.updateBtn.style.margin = "1px";
       this.updateBtn.onclick = async () => {
+        let updated = false;
         this.win.lock();
         for await (const ver of updateVersions) {
           this.statusText.textContent = "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430..";
           const version = await this.readVersion(ver.scriptPath);
-          if (version) await this.downloadVersion({ ...version, ...ver });
+          if (version && ver.sha1 != version.sha1) {
+            await this.downloadVersion({ ...version, ...ver });
+            updated = true;
+          }
+        }
+        if (!updated) {
+          this.statusText.textContent = "";
+          this.win.unlock();
+        }
+        if (this.isDevMode) {
+          const v = this.versions.find((e) => e.name == this.options.version);
+          const p = this.profiles.find((e) => e.userId == this.options.profile);
+          if (v) {
+            this.runGame(v, p);
+          }
+          return;
         }
       };
       btns.appendChild(this.updateBtn);
@@ -11125,7 +11246,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       });
     }
     async runGame(version, profile) {
-      this.win.lock();
+      this.win?.lock();
       const config2 = JSON.parse(await fs_default.readFile(`${version.path}/config.json`));
       const mainScript = await fs_default.readFile(`${version.path}/main.js`);
       window["eval"](mainScript);
@@ -11141,9 +11262,9 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
           // userId: profile.userId
         };
       }
-      if (this.options.version != version.name || this.options.profile != profile?.name) {
+      if (this.options.version != version.name || this.options.profile != profile?.userId) {
         this.options.version = version.name;
-        this.options.profile = profile ? profile.name : "";
+        this.options.profile = profile ? profile.userId : "";
         this.writeData();
       }
       const win = new Window({
@@ -11158,9 +11279,9 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       });
       window["main"](config2, win, win.content);
       this.openedWindows.push(win);
-      this.win.unlock();
+      this.win?.unlock();
       await win.wait("close");
-      this.#initContent();
+      if (this.win) this.#initContent();
     }
   };
 

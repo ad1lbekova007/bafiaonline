@@ -3,13 +3,14 @@ import { Role, Sex } from '../enums';
 import PacketDataKeys from "../../../core/src/PacketDataKeys";
 import Box from './Box';
 import fs from '../../../core/src/fs/fs';
-import { getAvatarImg } from '../utils/Resources';
+import { getAvatarImg, getTexture } from '../utils/Resources';
 import { getZoom, wait } from '../../../core/src/utils/utils';
 import Rooms from '../screen/Rooms';
 import { formatDate } from '../../../core/src/utils/format';
 import MessageBox from './MessageBox';
 import ConfirmBox from './ConfirmBox';
 import PrivateChat from '../screen/PrivateChat';
+import { createElement } from '../../../core/src/utils/DOM';
 
 function calculateStatsWithRoles(profile: any) {
   const mafiaRoles = [Role.MAFIA, Role.TERRORIST, Role.BARMAN, Role.INFORMER];
@@ -50,18 +51,24 @@ function calculateStatsWithRoles(profile: any) {
 }
 
 export default async function ProfileInfo(playerObjectId: string){
+  App.server.send(PacketDataKeys.GET_USER_PROFILE, {
+    [PacketDataKeys.USER_RECEIVER]: playerObjectId,
+    [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
+    [PacketDataKeys.TOKEN]: App.user.token
+  });
+  let data;
+  try {
+    data = await App.server.awaitPacket(PacketDataKeys.USER_PROFILE, 3000);
+  }catch{
+    return;
+  }
+
   const zoom = getZoom();
   const box = new Box({ title: 'ПРОФИЛЬ', width: (App.width/zoom)/.85, height: (App.height/zoom)/.75, canCloseAnywhere: true });
   // box.element.style.zoom = (zoom / 1.75) + '';
 
   box.content.style.overflowY = 'overlay';
 
-  App.server.send(PacketDataKeys.GET_USER_PROFILE, {
-    [PacketDataKeys.USER_RECEIVER]: playerObjectId,
-    [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
-    [PacketDataKeys.TOKEN]: App.user.token
-  });
-  const data = await App.server.awaitPacket(PacketDataKeys.USER_PROFILE);
   const ud = data[PacketDataKeys.USER_PROFILE];
   const room = ud[PacketDataKeys.ROOM];
   const pud = ud[PacketDataKeys.PROFILE_USER_DATA];
@@ -97,30 +104,72 @@ export default async function ProfileInfo(playerObjectId: string){
 
   let isViewingAvatar = false;
 
-  const div = document.createElement('div');
-  div.style.width = '100%';
-  div.style.display = 'flex';
-  div.style.flexDirection = 'column';
-  div.style.alignItems = 'center';
-  div.style.overflowY = 'overlay';
-  const badge = document.createElement('div');
-  badge.style.width = badge.style.height = '20px';
-  badge.style.minWidth = badge.style.minHeight = '20px';
-  badge.style.maxWidth = badge.style.maxHeight = '20px';
-  badge.style.boxSizing = 'border-box';
-  badge.style.background = profile.isOnline ? '#3fe33f' : '#636363';
-  badge.style.border = '2px solid white';
-  badge.style.borderRadius = '100%';
-  badge.style.position = 'relative';
-  badge.style.left = '-40px'
-  badge.style.top = '-80px'
-  const avatar = document.createElement('img');
-  avatar.src = await getAvatarImg(pud);
-  avatar.style.borderRadius = '100%'
-  avatar.width = avatar.height = 100;
-  avatar.style.margin = '5px';
-  avatar.style.transition = '.5s';
-  avatar.style.marginBottom = '-10px';
+  const div = createElement('div', {
+    css: {
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      overflowY: 'overlay',
+      fontSize: 'smaller'
+    }
+  });
+
+  const rankEl = createElement('div', {
+    css: {
+      display: 'flex',
+      width: '100%',
+      padding: '10px',
+      alignItems: 'center',
+      color: 'black'
+    },
+    appendTo: div
+  });
+  const rankImg = createElement('img', {
+    width: 20,
+    appendTo: rankEl,
+  });
+  getTexture(`rank/rank${Math.round(profile.level / 2)}_36.png`).then(e => rankImg.src = e);
+  const rankLvl = createElement('span', { text: profile.level + '', appendTo: rankEl });
+  const rankProgress = createElement('progress', {
+    css: {
+      width: `calc(100% - 140px)`,
+      margin: '5px'
+    },
+    value: '0',
+    appendTo: rankEl
+  });
+  rankProgress.max = profile.nextLevelExperience;
+  rankProgress.value = profile.prevLevelExperience;
+  const rankLvl2 = createElement('span', { appendTo: rankEl, text: `${profile.prevLevelExperience}/${profile.nextLevelExperience}` });
+
+  const badge = createElement('div', {
+    css: {
+      width: '20px',
+      minWidth: '20px',
+      minHeight: '20px',
+      maxWidth: '20px',
+      maxHeight: '20px',
+      boxSizing: 'border-box',
+      background: profile.isOnline ? '#3fe33f' : '#636363',
+      border: '2px solid white',
+      borderRadius: '100px',
+      position: 'relative',
+      left: '-40px',
+      top: '-80px'
+    }
+  });
+  const avatar = createElement('img', {
+    css: {
+      borderRadius: '100%',
+      margin: '5px',
+      transition: '.5s',
+      marginBottom: '-10px'
+    },
+    width: 100,
+    height: 100
+  });
+  getAvatarImg(pud).then(e => avatar.src = e);
   avatar.onmousedown = e => e.preventDefault();
   avatar.onclick = () => {
     const zoom = getZoom();
@@ -311,8 +360,8 @@ export default async function ProfileInfo(playerObjectId: string){
     d.style.borderRadius = '5px'
     const img = document.createElement('img');
     fs.loadImageAsDataURL(`${App.config.path}/assets/textures/roles/${id}.png`).then(e => img.src = e);
-    img.width = 50;
-    img.height = 70;
+    img.width = 40;
+    img.height = 55;
     img.onmousedown = e => e.preventDefault();
     const v = document.createElement('div');
     v.textContent = profile.roleStats[id];
@@ -337,9 +386,9 @@ export default async function ProfileInfo(playerObjectId: string){
   add(statDev, 'Пол', profile.sex == Sex.WOMEN ? 'Женский' : 'Мужской');
   add(statDev, 'Уровень', profile.level + ` (${profile.prevLevelExperience}/${profile.nextLevelExperience})`);
 
-  add(statDev, `ID Объекта`, playerObjectId);
-  add(statDev, `Последний вход`, formatDate(profile.updated));
-  add(statDev, `Сервер`, profile.serverLanguage);
+  add(statDev, `player object id`, playerObjectId);
+  // add(statDev, `Последний вход`, formatDate(profile.updated));
+  // add(statDev, `Сервер`, profile.serverLanguage);
   div.appendChild(statDev);
 
   box.content.appendChild(div);

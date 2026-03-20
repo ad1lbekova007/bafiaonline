@@ -47,10 +47,11 @@ function formatSize(bytes: number): string {
   const entries = await walk(base, base);
   const raw = encode(entries);
   const compressed = gzipSync(raw);
+  const sha1 = createHash("sha1").update(compressed).digest("hex");
   const arrayString = Array.from(compressed).join(",");
   await writeFile(
     `./run/images/${name}.js`,
-    `window["version"] = { name: "${name}" };
+    `window["version"] = { name: "${name}", sha1: "${sha1}" };
 window["image"] = [${arrayString}];`
   );
   console.log(`✅ ${name}`);

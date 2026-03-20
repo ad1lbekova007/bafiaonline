@@ -1,5 +1,6 @@
 export type Version = {
   uuid: string
+  sha1: string
   name: string
   path: string
   scriptPath?: string

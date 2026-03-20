@@ -12,7 +12,7 @@
             "color": "@main-text-color",
             "outline": "none",
             "padding": "6px 20px",
-            "font-size": "18px",
+            "font-size": "15px",
             "background": "@main-color",
             "border": "1px solid black",
             "border-radius": "7px"
@@ -86,7 +86,8 @@
             "margin": "5px",
             "padding": "3px 10px",
             "color": "@black-text-color",
-            "text-align": "left"
+            "text-align": "left",
+            "font-size": "smaller"
         },
         "& .room-lvl": {
             "width": "25px",

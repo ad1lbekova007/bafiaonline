@@ -39,12 +39,11 @@ export async function readImage(
   rewrite = false,
   options?: { startProcessFS?: (size: number) => void, processFS?: (path: string, write: boolean) => void }
 ) {
-  const obj = window
+  const obj = window as any
   let name = path.split('/').pop()?.split('.')[0] ?? "image";
   console.log(`Decompressing image ${path}..`);
-  // @ts-ignore
   if(!obj[name]) throw error('Image not found');
-  try { // @ts-ignore
+  try {
     const compressed = new Uint8Array(obj[name]);
     const decompressed = await decompress(compressed);
     const imageArray = CBOR.decode(decompressed.buffer) as Array<{ path: string, data: Uint8Array, sha1: string }>;
@@ -52,7 +51,6 @@ export async function readImage(
     for(const entry of imageArray) {
       image[entry.path] = { data: entry.data, sha1: entry.sha1 };
     }
-    // @ts-ignore
     delete obj[name];
     await writeToFS(toPath, image, rewrite, options?.startProcessFS, options?.processFS);
     return image;
