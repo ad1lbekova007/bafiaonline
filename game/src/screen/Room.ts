@@ -118,7 +118,7 @@ export default class Room extends Screen {
     if(typeof options.sendRoomEnter != 'boolean') options.sendRoomEnter = true;
     if(options.isHistory) {
       this.isHistory = true;
-      this.status = 2;
+      this.status = 3;
       this.title = options.data.title;
       this.playersData = options.data.playersData;
       this.playersStat = options.data.playersStat;
@@ -140,6 +140,7 @@ export default class Room extends Screen {
     this.oldAppSettingsData = JSON.parse(JSON.stringify(App.settings.data));
 
     (async () => {
+      this.element.style.transition = 'background 1s';
       this.element.style.background = `url(${await getBackgroundImg('day3')}) 0% 0% / cover`
       this.clearMessages = App.settings.data.game.clearMessages
     })();
@@ -952,16 +953,16 @@ export default class Room extends Screen {
 
   async changeDayTime(){
     if(this.gameDayTime < 2) {
-      this.element.style.background = `url(${await getBackgroundImg('night')}) 0% 0% / cover`;
+      this.element.style.background = `url(${await getBackgroundImg('night3')}) 0% 0% / cover`;
 
       this.playersListElem.style.outline = '2px solid rgb(128 128 128)';
-      this.playersListElem.style.background = 'rgb(255 255 255 / 50%)';
+      this.playersListElem.style.background = 'rgb(255 255 255 / 30%)';
 
       this.gameInfoElem.style.outline = '2px solid rgb(128 128 128)';
-      this.gameInfoElem.style.background = 'rgb(255 255 255 / 50%)';
+      this.gameInfoElem.style.background = 'rgb(255 255 255 / 30%)';
 
       this.messagesElem.style.outline = '2px solid rgb(128 128 128)';
-      this.messagesElem.style.background = 'rgb(255 255 255 / 50%)'
+      this.messagesElem.style.background = 'rgb(255 255 255 / 30%)'
     } else {
       this.element.style.background = `url(${await getBackgroundImg('day3')}) 0% 0% / cover`;
 
@@ -1185,12 +1186,12 @@ export default class Room extends Screen {
 
     this.messages.push(m);
 
-    if((user ? type != 2 && type != 3 && type != 13 && type != 24 && type != 25 : user) || type == 10 || type == 26 || type == 29){
-      const username = user ? user[PacketDataKeys.USERNAME] : type == 26 ? 'Информатор' : type == 29 ? 'Бармен' : type == 10 ? 'Мафия' : '???';
+    if((user ? type != 2 && type != 3 && type != 13 && type != 24 && type != 25 : user) || type == 11 || type == 26 || type == 29){
+      const username = user ? user[PacketDataKeys.USERNAME] : type == 26 ? 'Информатор' : type == 29 ? 'Бармен' : type == 11 ? 'Мафия' : '???';
       let msgText = text || '', color = 'black';
       if(type == 10 || type == 14) { msgText = `Голосует за [${text}]`; color = '#186400' }
       else if(type == 12) { color = `#545454` }
-      else if(type == 16) { msgText = `Сдался`; color = '#940000' }
+      else if(type == 28) { msgText = `Сдался`; color = '#940000' }
       else if(type == 18) { color = '#113B81' }
       else if(type == 19) { msgText = `ВЗОРВАЛ игрока [${text}]`; color = '#940000' }
       else if(type == 20) { msgText = `ВЗОРВАЛ игрока [${text}], но игрок был под защитой телохранителя и остался жив!`; color = '#940000' }
@@ -1228,7 +1229,7 @@ export default class Room extends Screen {
         }
         createElement('span', { css: { marginLeft: '2px' }, text: user && user[PacketDataKeys.VIP] ? username + ` ${user[PacketDataKeys.VIP]}` : username, appendTo: nick });
         if(username == App.user.username && App.settings.data.hideUsername) nick.style.filter = 'blur(5px)';
-        nick.style.color = type == 17 ? '#4B4483' : type == 11 ? '#545454' : 'black'
+        nick.style.color = type == 17 ? '#4B4483' : type == 12 ? '#545454' : 'black'
         nick.onclick = () => this.addNickToInput(username)
         const msg = document.createElement('span');
         // @ts-ignore
@@ -1384,6 +1385,7 @@ export default class Room extends Screen {
   }
 
   updatePlayersWaiting(players: any[]){
+    if(this.status == 4 || this.status == 3) return;
     this.usersWaiting = players.map(e => e[PacketDataKeys.OBJECT_ID]);
     this.titleElem.textContent = `${this.title} (${players.length}/${this.maxPlayers})`;
     this.gamePlayersListElem.innerHTML = '';

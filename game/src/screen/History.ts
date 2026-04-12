@@ -53,7 +53,7 @@ export class History extends Screen {
       const room = history.rooms[i];
 
       let status = 2, statusText = '';
-      const myRole = room.playersData[App.user.objectId].role;
+      const myRole = room.playersData[App.user.playerObjectId].role;
       // const mafia = Object.values(room.playersData as any[]).filter(e => e.alive && isMafia(e.role) && e.username != App.user.username).length;
       // const mir = Object.values(room.playersData as any[]).filter(e => e.alive && !isMafia(e.role) && e.username != App.user.username).length;
       const mafia = room.playersStat.m;
