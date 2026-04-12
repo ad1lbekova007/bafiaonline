@@ -1711,8 +1711,8 @@
 
   // core/version.json
   var version_default = {
-    launcher: "Beta 1.1.1",
-    vanilla: "Beta 1.1.1"
+    launcher: "Beta 1.2",
+    vanilla: "Beta 1.2"
   };
 
   // launcher/src/App.ts
@@ -2836,7 +2836,7 @@
       for (let i = 0; i < history2.rooms.length; i++) {
         const room = history2.rooms[i];
         let status = 2, statusText = "";
-        const myRole = room.playersData[App_default2.user.objectId].role;
+        const myRole = room.playersData[App_default2.user.playerObjectId].role;
         const mafia = room.playersStat.m;
         const mir = room.playersStat.c;
         if (i == history2.rooms.length - 1) {
@@ -2930,7 +2930,7 @@
       if (typeof options.sendRoomEnter != "boolean") options.sendRoomEnter = true;
       if (options.isHistory) {
         this.isHistory = true;
-        this.status = 2;
+        this.status = 3;
         this.title = options.data.title;
         this.playersData = options.data.playersData;
         this.playersStat = options.data.playersStat;
@@ -2949,6 +2949,7 @@
       }
       this.oldAppSettingsData = JSON.parse(JSON.stringify(App_default2.settings.data));
       (async () => {
+        this.element.style.transition = "background 1s";
         this.element.style.background = `url(${await getBackgroundImg("day3")}) 0% 0% / cover`;
         this.clearMessages = App_default2.settings.data.game.clearMessages;
       })();
@@ -3726,13 +3727,13 @@
     }
     async changeDayTime() {
       if (this.gameDayTime < 2) {
-        this.element.style.background = `url(${await getBackgroundImg("night")}) 0% 0% / cover`;
+        this.element.style.background = `url(${await getBackgroundImg("night3")}) 0% 0% / cover`;
         this.playersListElem.style.outline = "2px solid rgb(128 128 128)";
-        this.playersListElem.style.background = "rgb(255 255 255 / 50%)";
+        this.playersListElem.style.background = "rgb(255 255 255 / 30%)";
         this.gameInfoElem.style.outline = "2px solid rgb(128 128 128)";
-        this.gameInfoElem.style.background = "rgb(255 255 255 / 50%)";
+        this.gameInfoElem.style.background = "rgb(255 255 255 / 30%)";
         this.messagesElem.style.outline = "2px solid rgb(128 128 128)";
-        this.messagesElem.style.background = "rgb(255 255 255 / 50%)";
+        this.messagesElem.style.background = "rgb(255 255 255 / 30%)";
       } else {
         this.element.style.background = `url(${await getBackgroundImg("day3")}) 0% 0% / cover`;
         this.playersListElem.style.outline = "2px solid #c0c0c0";
@@ -3933,15 +3934,15 @@
       const objectId = m[PacketDataKeys_default.OBJECT_ID] ?? "";
       const playerObjectId = user ? user[PacketDataKeys_default.PLAYER_OBJECT_ID] : "";
       this.messages.push(m);
-      if ((user ? type != 2 && type != 3 && type != 13 && type != 24 && type != 25 : user) || type == 10 || type == 26 || type == 29) {
-        const username = user ? user[PacketDataKeys_default.USERNAME] : type == 26 ? "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0440" : type == 29 ? "\u0411\u0430\u0440\u043C\u0435\u043D" : type == 10 ? "\u041C\u0430\u0444\u0438\u044F" : "???";
+      if ((user ? type != 2 && type != 3 && type != 13 && type != 24 && type != 25 : user) || type == 11 || type == 26 || type == 29) {
+        const username = user ? user[PacketDataKeys_default.USERNAME] : type == 26 ? "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0442\u043E\u0440" : type == 29 ? "\u0411\u0430\u0440\u043C\u0435\u043D" : type == 11 ? "\u041C\u0430\u0444\u0438\u044F" : "???";
         let msgText = text || "", color = "black";
         if (type == 10 || type == 14) {
           msgText = `\u0413\u043E\u043B\u043E\u0441\u0443\u0435\u0442 \u0437\u0430 [${text}]`;
           color = "#186400";
         } else if (type == 12) {
           color = `#545454`;
-        } else if (type == 16) {
+        } else if (type == 28) {
           msgText = `\u0421\u0434\u0430\u043B\u0441\u044F`;
           color = "#940000";
         } else if (type == 18) {
@@ -3986,7 +3987,7 @@
           }
           createElement("span", { css: { marginLeft: "2px" }, text: user && user[PacketDataKeys_default.VIP] ? username + ` ${user[PacketDataKeys_default.VIP]}` : username, appendTo: nick });
           if (username == App_default2.user.username && App_default2.settings.data.hideUsername) nick.style.filter = "blur(5px)";
-          nick.style.color = type == 17 ? "#4B4483" : type == 11 ? "#545454" : "black";
+          nick.style.color = type == 17 ? "#4B4483" : type == 12 ? "#545454" : "black";
           nick.onclick = () => this.addNickToInput(username);
           const msg = document.createElement("span");
           let cleanText = users_default[objectId] == "dev" ? msgText : noXSS(msgText);
@@ -4162,6 +4163,7 @@
       this.messagesElem.scroll({ top: this.messagesElem.scrollHeight, behavior: "smooth" });
     }
     updatePlayersWaiting(players) {
+      if (this.status == 4 || this.status == 3) return;
       this.usersWaiting = players.map((e) => e[PacketDataKeys_default.OBJECT_ID]);
       this.titleElem.textContent = `${this.title} (${players.length}/${this.maxPlayers})`;
       this.gamePlayersListElem.innerHTML = "";
