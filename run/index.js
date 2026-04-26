@@ -6899,6 +6899,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
             }
             App_default2.server.send(PacketDataKeys_default.UPLOAD_PHOTO, {
               [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
+              [PacketDataKeys_default.PLAYER_OBJECT_ID]: App_default2.user.playerObjectId,
               [PacketDataKeys_default.TOKEN]: App_default2.user.token,
               [PacketDataKeys_default.FILE]: base64
             });
@@ -6911,7 +6912,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
               return;
             }
             delete App_default2.resources[`avatars_${App_default2.user.objectId}`];
-            App_default2.user.photo = "1";
+            App_default2.user.photo = data3 ? data3.db && data3.db?.du?.ph || "1" : "1";
             await box.close();
             App_default2.screen = new _Dashboard();
           };
@@ -6950,6 +6951,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
           img.onclick = async () => {
             App_default2.server.send("ussdph", {
               [PacketDataKeys_default.PHOTO]: p,
+              [PacketDataKeys_default.PLAYER_OBJECT_ID]: App_default2.user.playerObjectId,
               [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
               [PacketDataKeys_default.TOKEN]: App_default2.user.token
             });

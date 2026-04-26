@@ -205,6 +205,7 @@ export default class Dashboard extends Screen {
 
           App.server.send(PacketDataKeys.UPLOAD_PHOTO, {
             [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
+            [PacketDataKeys.PLAYER_OBJECT_ID]: App.user.playerObjectId,
             [PacketDataKeys.TOKEN]: App.user.token,
             [PacketDataKeys.FILE]: base64
           });
@@ -220,7 +221,7 @@ export default class Dashboard extends Screen {
           }
 
           delete App.resources[`avatars_${App.user.objectId}`];
-          App.user.photo = '1';
+          App.user.photo = data ? data.db && data.db?.du?.ph || '1' : '1';
           await box.close();
           App.screen = new Dashboard();
         }
@@ -260,6 +261,7 @@ export default class Dashboard extends Screen {
         img.onclick = async() => {
           App.server.send('ussdph', {
             [PacketDataKeys.PHOTO]: p,
+            [PacketDataKeys.PLAYER_OBJECT_ID]: App.user.playerObjectId,
             [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
             [PacketDataKeys.TOKEN]: App.user.token
           });
