@@ -1590,6 +1590,21 @@
   };
   var fs_default = new FS();
 
+  // core/src/utils/mobile.ts
+  function isMobile() {
+    return window.navigator.maxTouchPoints || "ontouchstart" in document;
+  }
+  function isIOS() {
+    return [
+      "iPad Simulator",
+      "iPhone Simulator",
+      "iPod Simulator",
+      "iPad",
+      "iPhone",
+      "iPod"
+    ].includes(navigator.platform) || navigator.userAgent.includes("Mac") && "ontouchend" in document;
+  }
+
   // core/src/Events.ts
   var EventHandle = class {
     constructor(event, callback, owner, priorityName = 2 /* NORMAL */) {
@@ -1720,6 +1735,7 @@
     version = version_default.launcher;
     windowsElem;
     launcher;
+    dock;
     constructor() {
       super();
       this.windowsElem = document.createElement("div");
@@ -1740,53 +1756,6 @@
     }
   };
   var App_default = new App();
-
-  // core/src/utils/mobile.ts
-  function isMobile() {
-    return window.navigator.maxTouchPoints || "ontouchstart" in document;
-  }
-  function isIOS() {
-    return [
-      "iPad Simulator",
-      "iPhone Simulator",
-      "iPod Simulator",
-      "iPad",
-      "iPhone",
-      "iPod"
-    ].includes(navigator.platform) || navigator.userAgent.includes("Mac") && "ontouchend" in document;
-  }
-
-  // core/src/utils/TypeScript.ts
-  var WhenBuilder = class {
-    constructor(value) {
-      this.value = value;
-    }
-    matched = false;
-    case(condition, callback) {
-      if (!this.matched && this.value === condition) {
-        callback();
-        this.matched = true;
-      }
-      return this;
-    }
-    else(defaultResult) {
-      return typeof defaultResult === "function" ? defaultResult() : defaultResult;
-    }
-  };
-  function when(value) {
-    return new WhenBuilder(value);
-  }
-  function wrap(obj, prop, onSet, onGet) {
-    let val = obj[prop];
-    Object.defineProperty(obj, prop, {
-      get: () => onGet ? onGet() : val,
-      set: (v) => {
-        onSet?.(v);
-        val = v;
-      },
-      enumerable: true
-    });
-  }
 
   // core/src/utils/utils.ts
   var global2 = window;
@@ -1928,6 +1897,38 @@
       this.element.remove();
     }
   };
+
+  // core/src/utils/TypeScript.ts
+  var WhenBuilder = class {
+    constructor(value) {
+      this.value = value;
+    }
+    matched = false;
+    case(condition, callback) {
+      if (!this.matched && this.value === condition) {
+        callback();
+        this.matched = true;
+      }
+      return this;
+    }
+    else(defaultResult) {
+      return typeof defaultResult === "function" ? defaultResult() : defaultResult;
+    }
+  };
+  function when(value) {
+    return new WhenBuilder(value);
+  }
+  function wrap(obj, prop, onSet, onGet) {
+    let val = obj[prop];
+    Object.defineProperty(obj, prop, {
+      get: () => onGet ? onGet() : val,
+      set: (v) => {
+        onSet?.(v);
+        val = v;
+      },
+      enumerable: true
+    });
+  }
 
   // game/src/screen/Loading.ts
   var Loading = class extends Screen {
@@ -9803,6 +9804,12 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         this.call("deactivate", win);
       }
     }
+    min(win) {
+      this.call("min", win);
+    }
+    max(win) {
+      this.call("max", win);
+    }
   }();
   var Window = class extends Events {
     constructor(options) {
@@ -9810,6 +9817,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.options = options;
       const zoom = getZoom();
       this.title = options.title ?? "Window";
+      this.icon = options.icon ?? "";
       this.width = options.width ?? 500;
       this.height = options.height ?? 500;
       this.minWidth = options.minWidth ?? 100;
@@ -9823,6 +9831,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.closeButton = options.closeButton ?? true;
       this.minButton = options.minButton ?? true;
       this.maxButton = options.maxButton ?? true;
+      this.hasShadow = options.hasShadow ?? true;
+      this.alwaysTop = options.alwaysTop ?? false;
       this.zoom = options.zoom ?? 1;
       const isM = isMobile() && !options.noMobile;
       const fs = isM || options.fillScreen;
@@ -9869,6 +9879,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     id = WindowManager.id++;
     pid = -1;
     title = "Window";
+    icon = "";
     x = 0;
     y = 0;
     width = 0;
@@ -9882,6 +9893,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     closeButton = false;
     minButton = false;
     maxButton = false;
+    hasShadow = false;
+    alwaysTop = false;
     zoom = 0;
     oldPos = { x: 0, y: 0, width: 0, height: 0 };
     #init() {
@@ -9898,6 +9911,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
           height: isM ? "100%" : this.height + "px",
           left: this.x + "px",
           top: this.y + "px",
+          boxShadow: this.hasShadow ? "0 0 20px 5px rgb(0 0 0 / 50%)" : "none",
           ...this.options.css ?? {}
         }
       });
@@ -9953,9 +9967,10 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       }
       const content = document.createElement("div");
       content.classList.add("content");
+      if (this.options.noBackground) content.style.background = "transparent";
       content.tabIndex = 1;
       content.style.height = `calc(100% - ${this.titleBarHeight}px)`;
-      content.style.borderRadius = "0 0 7px 7px";
+      content.style.borderRadius = this.options.roundRadius ? "0 0 7px 7px" : "0";
       content.onmousedown = (e) => this.activate.bind(this);
       this.content = document.createElement("div");
       this.content.style.display = "block";
@@ -9986,7 +10001,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       if (this.doActivate) WindowManager.activate(this);
       this.isActivated = true;
       this.zIndex = WindowManager.addzIndex(this);
-      this.el.style.zIndex = this.zIndex + "";
+      this.el.style.zIndex = (this.alwaysTop ? this.zIndex + 100 : this.zIndex) + "";
     }
     deactivate() {
       this.isActivated = false;
@@ -10015,8 +10030,10 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     }
     min() {
       this.hide();
+      WindowManager.min(this);
     }
     max() {
+      WindowManager.max(this);
       this.isMaximum = !this.isMaximum;
       if (!this.isMaximum) {
         App_default.removeByKey(`max_win_${this.id}`);
@@ -10026,6 +10043,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         this.y = this.oldPos.y;
         this.width = this.oldPos.width;
         this.height = this.oldPos.height;
+        this.titleBar.style.borderRadius = "7px 7px 0 0";
         wait(500).then(() => this.el.style.transition = "");
         return;
       }
@@ -10036,11 +10054,14 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.y = 1;
       this.width = innerWidth / zoom;
       this.height = innerHeight / zoom;
-      if (!isMobile()) App_default.on("resize", () => {
-        const zoom2 = getZoom();
-        this.width = innerWidth / zoom2;
-        this.height = innerHeight / zoom2;
-      }).key(`max_win_${this.id}`);
+      this.titleBar.style.borderRadius = "0";
+      if (!isMobile()) {
+        App_default.on("resize", () => {
+          const zoom2 = getZoom();
+          this.width = innerWidth / zoom2;
+          this.height = innerHeight / zoom2;
+        }).key(`max_win_${this.id}`);
+      }
       wait(500).then(() => {
         this.el.style.transition = "";
         this.el.style.outline = "none";
@@ -10091,6 +10112,119 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       this.el.remove();
       this.removeAllEvents();
       WindowManager.remove(this);
+    }
+  };
+
+  // launcher/src/Dock.ts
+  var Dock = class {
+    win;
+    dockEl;
+    constructor() {
+      const zoom = getZoom();
+      const width = 2e3, height = 80;
+      this.win = new Window({
+        title: "Dock",
+        width,
+        height,
+        noMobile: true,
+        resizable: false,
+        moveable: false,
+        hasTitleBar: false,
+        hasShadow: false,
+        roundRadius: 0,
+        noBackground: true,
+        alwaysTop: true,
+        animations: {
+          open: "dock .5s ease"
+        }
+      });
+      this.win.x = (window.innerWidth / zoom - width) / 2;
+      this.win.y = window.innerHeight / zoom - height + 10;
+      this.win.content.style.display = "flex";
+      this.win.content.style.justifyContent = "center";
+      this.dockEl = createElement("div", {
+        className: "dock",
+        appendTo: this.win.content
+      });
+      App_default.on("resize", () => {
+        this.win.x = (window.innerWidth / zoom - width) / 2;
+        this.win.y = window.innerHeight / zoom - height + 10;
+      });
+      WindowManager.on("open", (win) => {
+        if (win.options.noMobile) return;
+        if (win === this.win) return;
+        this.add(win);
+      });
+      WindowManager.on("close", (win) => {
+        if (win.options.noMobile) return;
+        if (win === this.win) return;
+        this.remove(win);
+        this.showHide(win.isMaximum);
+      });
+      WindowManager.on("min", (win) => {
+        if (win.el.style.display == "none" && !win.isMaximum) return;
+        this.showHide(win.isMaximum);
+      });
+      WindowManager.on("max", (win) => {
+        this.showHide(win.isMaximum);
+      });
+    }
+    showHide(isMaximum) {
+      if (isMaximum)
+        this.show();
+      else
+        this.hide();
+    }
+    show() {
+      if (this.win.el.style.animationDirection == "normal") return;
+      this.win.el.style.animation = "none";
+      void this.win.el.offsetWidth;
+      this.win.el.style.animation = "dock forwards .5s ease";
+    }
+    hide() {
+      if (this.win.el.style.animationDirection == "reverse") return;
+      this.win.el.style.animation = "none";
+      void this.win.el.offsetWidth;
+      this.win.el.style.animation = "dock forwards reverse .5s ease";
+    }
+    add(win) {
+      const icon = createElement("div", {
+        className: "dock-icon",
+        id: `dock-icon-${win.id}`,
+        appendTo: this.dockEl
+      });
+      if (win.options.icon && win.options.icon.startsWith("https://")) {
+        const img = createElement("img", {
+          src: win.options.icon || `https://www.google.com/s2/favicons?sz=64&domain=github.com`,
+          appendTo: icon
+        });
+        img.onmousedown = (e) => e.preventDefault();
+      } else {
+        const span = createElement("span", {
+          text: win.options.icon || ``,
+          appendTo: icon
+        });
+      }
+      icon.onclick = () => {
+        if (win.el.style.display == "none")
+          win.show();
+        if (win.isActivated) {
+          win.min();
+        } else {
+          win.activate();
+        }
+        this.showHide(!win.isMaximum);
+      };
+    }
+    remove(win) {
+      const icon = document.getElementById(`dock-icon-${win.id}`);
+      if (icon) {
+        icon.style.animation = "icon-disappear 1s ease forwards";
+        icon.style.pointerEvents = "none";
+        setTimeout(() => {
+          icon.remove();
+        }, 1e3);
+      }
     }
   };
 
@@ -10593,6 +10727,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       await this.readData();
       this.win = new Window({
         title: `\u041B\u0430\u0443\u043D\u0447\u0435\u0440 (${App_default.version})`,
+        icon: `\u{1F680}`,
+        closeButton: false,
         // width: 700,
         width: 400,
         height: 300,
@@ -10967,6 +11103,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       const width = isMobile() ? window.innerWidth - 150 : 300;
       const win = new Window({
         title: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
+        icon: "\u{1F6E0}",
         width,
         height: 220,
         resizable: false,
@@ -11367,6 +11504,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       const width = isMobile() ? window.innerWidth - 150 : 300;
       const win = new Window({
         title: "\u0414\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u0432\u0435\u0440\u0441\u0438\u0438",
+        icon: "\u2795",
         width,
         height: 200,
         resizable: false,
@@ -11511,6 +11649,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       }
       const win = new Window({
         title: `${version.name}`,
+        icon: "\u{1F3AE}",
         width: 400,
         height: 500,
         minWidth: 250,
@@ -11530,6 +11669,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   // launcher/src/index.ts
   async function main() {
     await fs_default.init("Indexeddb");
+    if (!isMobile())
+      App_default.dock = new Dock();
     App_default.launcher = new Launcher();
   }
   (async function() {

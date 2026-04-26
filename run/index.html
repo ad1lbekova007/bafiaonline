@@ -19,7 +19,8 @@
       color: white;
       /* outline: 1px solid white; */
       /* border-radius: 9px; */
-      box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.2);
+      /* box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.2); */
+      
       & > .content {
         background-color: black;
         overflow: auto;
@@ -27,7 +28,7 @@
     }
     .titleBar {
       color: black;
-      height: 20px;
+      height: 15px;
       width: 100%;
       --tw-gradient-from: #EAE8EA;
       --tw-gradient-to: #D3D1D3;
@@ -40,8 +41,11 @@
       user-select: none;
       display: grid;
       align-items: center;
+      align-content: center;
       grid-template: "start title end";
       grid-template-columns: .5fr 2fr .5fr;
+      transition: .5s border-radius;
+
       &.dark {
         color: white;
         --tw-gradient-from: #282828;
@@ -54,7 +58,7 @@
         margin: 0;
         text-align: center;
         display: flex;
-        font-size: 12px;
+        font-size: 11px;
         align-items: center;
         flex-direction: column-reverse;
         justify-content: center
@@ -139,6 +143,75 @@
       }
     }
 
+    .dock {
+      display: flex;
+      background-color: #131f22;
+      outline: 2px solid #3d4748;
+      border-radius: 20px;
+      width: auto; 
+      padding: 0 10px;
+      gap: 10px;
+      margin: 5px;
+      height: 50px;
+      transition: 1s all;
+    }
+    .dock-icon {
+      width: 30px;
+      height: 30px;
+      margin: auto;
+      user-select: none;
+      flex-shrink: 0;
+      overflow: hidden;
+      animation: icon-appear .3s ease forwards;
+    }
+    .dock-icon > span {
+      font-size: 30px;
+      line-height: 30px;
+    }
+    .dock-icon > img {
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+    }
+
+    @keyframes icon-appear {
+      0% {
+        width: 0;
+        opacity: 0;
+        transform: scale(0);
+        margin-left: 0;
+        margin-right: 0;
+      }
+      100% {
+        width: 30px;
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    @keyframes icon-disappear {
+      0% {
+        width: 30px;
+        opacity: 1;
+        transform: scale(1);
+        margin-left: 0;
+        margin-right: 0;
+      }
+      100% {
+        width: 0;
+        opacity: 0;
+        transform: scale(0);
+      }
+    }
+    @keyframes dock{
+      0% {
+        opacity: 0;
+        transform: translateY(100px)
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
     @keyframes open{
       0% {
         opacity: 0.4;
@@ -195,6 +268,6 @@
   <!-- <div id="captcha" class="g-recaptcha" data-sitekey="6LeppQksAAAAAI9be-f3gQPNKDIOKeQdyEAE-zle"></div> -->
   <!-- </div> -->
   <!-- <script src="https://www.recaptcha.net/recaptcha/api.js?render=6LeppQksAAAAAI9be-f3gQPNKDIOKeQdyEAE-zle"></script> -->
-  <script src="./index.js?v=28"></script>
+  <script src="./index.js?v=29"></script>
 </body>
 </html>

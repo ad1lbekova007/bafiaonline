@@ -1,5 +1,6 @@
 import Events from "../../core/src/Events";
 import versions from '../../core/version.json';
+import Dock from "./Dock";
 import Launcher from "./Launcher";
 
 interface AppEvents {
@@ -19,6 +20,7 @@ class App extends Events<AppEvents> {
   windowsElem!: HTMLElement
 
   launcher?: Launcher
+  dock?: Dock
 
   constructor(){
     super();

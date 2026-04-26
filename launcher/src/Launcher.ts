@@ -102,6 +102,8 @@ export default class Launcher {
     
     this.win = new Window({
       title: `Лаунчер (${App.version})`,
+      icon: `🚀`,
+      closeButton: false,
       // width: 700,
       width: 400,
       height: 300,
@@ -502,6 +504,7 @@ export default class Launcher {
     const width = isMobile() ? window.innerWidth-150 : 300
     const win = new Window({
       title: 'Настройки',
+      icon: '🛠',
       width,
       height: 220,
       resizable: false,
@@ -921,6 +924,7 @@ export default class Launcher {
     const width = isMobile() ? window.innerWidth-150 : 300
     const win = new Window({
       title: 'Добавление версии',
+      icon: '➕',
       width,
       height: 200,
       resizable: false,
@@ -1084,6 +1088,7 @@ export default class Launcher {
 
     const win = new Window({
       title: `${version.name}`,
+      icon: '🎮',
       width: 400,
       height: 500,
       minWidth: 250,

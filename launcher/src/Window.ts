@@ -22,6 +22,9 @@ interface WindowManagerEvents {
   close: (win: Window) => void
   activate: (win: Window) => void
   deactivate: (win: Window) => void
+
+  min: (win: Window) => void
+  max: (win: Window) => void
 }
 
 function drag(win: Window, event: MouseEvent) {
@@ -189,6 +192,13 @@ export const WindowManager = new class extends Events<WindowManagerEvents> {
       this.call('deactivate', win);
     }
   }
+
+  min(win: Window){
+    this.call('min', win);
+  }
+  max(win: Window){
+    this.call('max', win);
+  }
 }
 
 // @ts-ignore
@@ -209,6 +219,7 @@ export default class Window extends Events<WindowEvents> implements IWindow {
   readonly pid = -1
 
   title = "Window"
+  icon = ""
   x = 0
   y = 0
   width = 0
@@ -222,12 +233,15 @@ export default class Window extends Events<WindowEvents> implements IWindow {
   closeButton = false
   minButton = false
   maxButton = false
+  hasShadow = false;
+  alwaysTop = false;
   zoom = 0
 
   oldPos = { x: 0, y: 0, width: 0, height: 0 };
 
   constructor(public options: {
     title?: string
+    icon?: string
     width?: number
     height?: number
     minWidth?: number
@@ -252,12 +266,16 @@ export default class Window extends Events<WindowEvents> implements IWindow {
       close?: string
     }
     fillScreen?: boolean
+    hasShadow?: boolean
+    noBackground?: boolean
+    alwaysTop?: boolean
   }){
     super();
 
     const zoom = getZoom();
 
     this.title = options.title ?? 'Window';
+    this.icon = options.icon ?? '';
     this.width = options.width ?? 500
     this.height = options.height ?? 500
     this.minWidth = options.minWidth ?? 100
@@ -271,6 +289,8 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     this.closeButton = options.closeButton ?? true
     this.minButton = options.minButton ?? true
     this.maxButton = options.maxButton ?? true
+    this.hasShadow = options.hasShadow ?? true;
+    this.alwaysTop = options.alwaysTop ?? false;
     this.zoom = options.zoom ?? 1
 
     const isM = isMobile() && !options.noMobile;
@@ -316,6 +336,7 @@ export default class Window extends Events<WindowEvents> implements IWindow {
         height: isM ? '100%' : this.height + 'px',
         left: this.x + 'px',
         top: this.y + 'px',
+        boxShadow: this.hasShadow ? '0 0 20px 5px rgb(0 0 0 / 50%)' : 'none',
         ...(this.options.css ?? {})
       }
     });
@@ -376,9 +397,10 @@ export default class Window extends Events<WindowEvents> implements IWindow {
 
     const content = document.createElement('div');
     content.classList.add('content');
+    if(this.options.noBackground) content.style.background = 'transparent';
     content.tabIndex = 1;
     content.style.height = `calc(100% - ${this.titleBarHeight}px)`;
-    content.style.borderRadius = '0 0 7px 7px';
+    content.style.borderRadius = this.options.roundRadius ? '0 0 7px 7px' : '0';
     content.onmousedown = e => this.activate.bind(this);
     this.content = document.createElement('div');
     this.content.style.display = 'block';
@@ -412,7 +434,7 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     if(this.doActivate) WindowManager.activate(this);
     this.isActivated = true;
     this.zIndex = WindowManager.addzIndex(this);
-    this.el.style.zIndex = this.zIndex + '';
+    this.el.style.zIndex = (this.alwaysTop ? this.zIndex + 100 : this.zIndex) + '';
   }
   deactivate(){
     this.isActivated = false;
@@ -445,9 +467,11 @@ export default class Window extends Events<WindowEvents> implements IWindow {
   min(){
     // if(!this.info.minButton) return;
     this.hide();
+    WindowManager.min(this);
     // startGenie(this.el, "right", () => console.log('done'));
   }
   max(){
+    WindowManager.max(this);
     this.isMaximum = !this.isMaximum;
     if(!this.isMaximum){
       App.removeByKey(`max_win_${this.id}`);
@@ -457,6 +481,7 @@ export default class Window extends Events<WindowEvents> implements IWindow {
       this.y = this.oldPos.y;
       this.width = this.oldPos.width;
       this.height = this.oldPos.height;
+      this.titleBar.style.borderRadius = '7px 7px 0 0';
       wait(500).then(() => this.el.style.transition = '');
       return;
     }
@@ -467,11 +492,14 @@ export default class Window extends Events<WindowEvents> implements IWindow {
     this.y = 1;
     this.width = innerWidth / zoom;
     this.height = innerHeight / zoom;
-    if(!isMobile()) App.on('resize', () => {
-      const zoom = getZoom();
-      this.width = innerWidth / zoom;
-      this.height = innerHeight / zoom;
-    }).key(`max_win_${this.id}`);
+    this.titleBar.style.borderRadius = '0';
+    if(!isMobile()) {
+      App.on('resize', () => {
+        const zoom = getZoom();
+        this.width = innerWidth / zoom;
+        this.height = innerHeight / zoom;
+      }).key(`max_win_${this.id}`);
+    }
     wait(500).then(() => {
       this.el.style.transition = '';
       this.el.style.outline = 'none';
