@@ -161,8 +161,9 @@ export default class Auth {
   async signUp({ email, password }: { email: string, password: string }) {
     if(!email || !password) return;
 
-    await MessageBox('Эта регистрация может не работать', { btnText: 'ЛАДНО' });
-
+    await MessageBox('Регистрация не работает из-за ограничений браузера\nВы можете написать нам @bafiaonlinebot, если нужно зарегистрировать аккаунт', { btnText: 'ЛАДНО' });
+    return;
+    
     let response: Response
     let result: any
 

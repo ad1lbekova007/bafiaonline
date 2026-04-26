@@ -201,7 +201,7 @@ export default class Friends extends Screen {
         isClicked = true;
         ProfileInfo(userObjectId);
       }
-      getAvatarImg(user).then(s => avatar.src = s);
+      getAvatarImg(this.isSearch ? { photo: f[PacketDataKeys.PHOTO] } : user).then(s => avatar.src = s);
       e.appendChild(avatar);
 
       const badge = document.createElement('div');
@@ -229,7 +229,7 @@ export default class Friends extends Screen {
       d.appendChild(nick);
 
       const date = document.createElement('span');
-      date.textContent = formatDate(f[PacketDataKeys.UPDATED]);
+      date.textContent = this.isSearch ? f[PacketDataKeys.IS_ONLINE] ? 'В сети' : 'Не в сети' : formatDate(f[PacketDataKeys.UPDATED]);
       date.style.padding = '0 5px 0 5px';
       date.style.fontSize = '11px'
       date.style.color = 'black';

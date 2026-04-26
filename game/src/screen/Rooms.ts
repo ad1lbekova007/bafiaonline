@@ -76,7 +76,9 @@ export default class Rooms extends Screen {
       [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
       [PacketDataKeys.TOKEN]: App.user.token
     });
+    // const loading = LoadingBox();
     const data = await App.server.awaitPacket(PacketDataKeys.ROOMS);
+    // loading.done();
 
     const filterElem = document.createElement('div');
     filterElem.className = 'rooms-filter';
@@ -331,7 +333,7 @@ export default class Rooms extends Screen {
     div.onclick = () => join();
     if(!isProfileInfo) div.oncontextmenu = async(e)=>{
       e.preventDefault();
-      const joinPl = `Зайти когда ${room[PacketDataKeys.MAX_PLAYERS]-1} игроков будет`;
+      const joinPl = `Зайти, когда ${room[PacketDataKeys.MAX_PLAYERS]-1} игроков будет`;
       const cx = new ContextMenu(isHistory ? ['Посмотреть', 'Удалить'] : ['Зайти',joinPl,'Скопировать object id'], e);
       const result = await cx.waitForResult();
       when(result)

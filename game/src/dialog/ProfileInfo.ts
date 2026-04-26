@@ -11,6 +11,7 @@ import MessageBox from './MessageBox';
 import ConfirmBox from './ConfirmBox';
 import PrivateChat from '../screen/PrivateChat';
 import { createElement } from '../../../core/src/utils/DOM';
+import { Avatar } from './Avatar';
 
 function calculateStatsWithRoles(profile: any) {
   const mafiaRoles = [Role.MAFIA, Role.TERRORIST, Role.BARMAN, Role.INFORMER];
@@ -171,22 +172,23 @@ export default async function ProfileInfo(playerObjectId: string){
   });
   getAvatarImg(pud).then(e => avatar.src = e);
   avatar.onmousedown = e => e.preventDefault();
-  avatar.onclick = () => {
-    const zoom = getZoom();
-    if(isViewingAvatar){
-      avatar.style.position = 'static';
-      avatar.style.width = ''
-      avatar.style.height = ''
-      avatar.style.borderRadius = '100%';
-      wait(500).then(() => badge.style.display = 'block');
-    } else {
-      avatar.style.position = 'relative';
-      avatar.style.width = (App.width/zoom)/1.75 + 'px';
-      avatar.style.height = (App.width/zoom)/1.75 + 'px';
-      avatar.style.borderRadius = '0'
-      badge.style.display = 'none';
-    }
-    isViewingAvatar = !isViewingAvatar;
+  avatar.onclick = async () => {
+    // const zoom = getZoom();
+    // if(isViewingAvatar){
+    //   avatar.style.position = 'static';
+    //   avatar.style.width = ''
+    //   avatar.style.height = ''
+    //   avatar.style.borderRadius = '100%';
+    //   wait(500).then(() => badge.style.display = 'block');
+    // } else {
+    //   avatar.style.position = 'relative';
+    //   avatar.style.width = (App.width/zoom)/1.75 + 'px';
+    //   avatar.style.height = (App.width/zoom)/1.75 + 'px';
+    //   avatar.style.borderRadius = '0'
+    //   badge.style.display = 'none';
+    // }
+    // isViewingAvatar = !isViewingAvatar;
+    await Avatar({ photo: profile.photo, objectId: profile.playerObjectId });
   }
   div.appendChild(avatar);
   div.appendChild(badge);

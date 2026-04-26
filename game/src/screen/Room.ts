@@ -231,6 +231,10 @@ export default class Room extends Screen {
         App.screen = new Rooms();
         MessageBox('Комната переполнена');
         return;
+      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_IS_NOT_VIP) {
+        App.screen = new Rooms();
+        MessageBox('Только VIP игроки могут присоединиться к VIP комнате');
+        return;
       } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_CREATED) {
       } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.ROOM_STATISTICS) {
         stats = rData;

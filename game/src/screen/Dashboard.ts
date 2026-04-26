@@ -18,6 +18,7 @@ import { History } from "./History";
 // @ts-ignore
 import Matchmaking from "./Matchmaking";
 import { createElement } from "../../../core/src/utils/DOM";
+import Backpack from "./Backpack";
 
 function pngToJpgBase64(file: File, quality = 0.9): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -325,13 +326,13 @@ export default class Dashboard extends Screen {
     div.appendChild(btnHistory);
     div.appendChild(document.createElement('br'));
 
-    // const btnBackpack = document.createElement('button');
-    // btnBackpack.textContent = 'Рюкзак';
-    // btnBackpack.style.width = '60%'
-    // btnBackpack.style.margin = '3px'
-    // btnBackpack.disabled = true;
-    // div.appendChild(btnBackpack);
-    // div.appendChild(document.createElement('br'));
+    const btnBackpack = document.createElement('button');
+    btnBackpack.textContent = 'Рюкзак';
+    btnBackpack.style.width = '60%'
+    btnBackpack.style.margin = '3px'
+    btnBackpack.onclick = () => App.screen = new Backpack();
+    div.appendChild(btnBackpack);
+    div.appendChild(document.createElement('br'));
 
     // const btnShop = document.createElement('button');
     // btnShop.textContent = 'Магазин';
