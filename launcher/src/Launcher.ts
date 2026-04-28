@@ -10,6 +10,7 @@ import MD5 from '../../core/src/utils/md5'
 import { isMobile } from '../../core/src/utils/mobile';
 import App from './App';
 import { createElement } from '../../core/src/utils/DOM';
+import Dock from './Dock';
 
 function uuidv4() {
   return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16));
@@ -58,6 +59,8 @@ export default class Launcher {
     version: '',
     profile: '',
     windowsInFS: false,
+    hideDock: false,
+    devMode: false,
     theme: 'macos'
   }
   versions: Version[] = [];
@@ -99,6 +102,9 @@ export default class Launcher {
 
   async #init(){
     await this.readData();
+
+    if(!isMobile() && !this.options.hideDock && !this.options.windowsInFS)
+      App.dock = new Dock();
     
     this.win = new Window({
       title: `Лаунчер (${App.version})`,
@@ -181,7 +187,7 @@ export default class Launcher {
 
       const btns = createElement('div', {
         css: {
-          display: 'flex',
+          display: this.options.devMode ? 'flex' : 'none',
           justifyContent: 'center',
           width: '100%'
         }
@@ -266,7 +272,7 @@ export default class Launcher {
                 borderRadius: '100%'
               }
             });
-            loadImage(`https://dottap.com/mafia/profile_photo/${pr.playerUserId}?v=${Math.random()}`).then(e => avatar.src = e);
+            loadImage(`https://dottap.com/mafia/profile_photo/${pr.photo}?v=${Math.random()}`).then(e => avatar.src = e);
             const nick = createElement('span', {
               text: pr.name || pr.email,
               css: {
@@ -329,11 +335,11 @@ export default class Launcher {
             const p = self.profiles.findIndex(e => e.userId == self.selectedProfile?.userId || self.selectedProfile?.email == e.email);
             if(p != -1) {
               const profile = self.profiles[p];
-              if(!confirm('Вы уверены что хотите удалить профиль "'+profile.name+'"?')) return;
+              if(!confirm('Вы уверены что хотите удалить профиль "'+(profile.name || profile.email)+'"?')) return;
               self.win.lock();
               self.profiles.splice(p, 1);
               await self.writeData();
-              self.statusText.innerHTML = `Профиль ${profile.name} удален`;
+              self.statusText.innerHTML = `Профиль ${profile.name || profile.email} удален`;
               self.win.unlock();
               update();
             } else {
@@ -426,12 +432,16 @@ export default class Launcher {
     btns.style.margin = '5px';
     btns.style.justifyContent = 'center';
     div.appendChild(btns);
-    this.playBtn = document.createElement('button');
-    this.playBtn.innerHTML = `Играть`;
-    this.playBtn.style.margin = '1px';
-    this.playBtn.style.width = '100%';
-    this.playBtn.style.padding = '10px';
-    this.playBtn.style.background = '#b3f8b3'
+    this.playBtn = createElement('button', {
+      text: 'Играть',
+      css: {
+        margin: '1px',
+        width: '100%',
+        padding: '10px',
+        background: '#b3f8b3',
+        borderRadius: '7px'
+      }
+    });
     this.playBtn.onclick = async() => {
       const v = this.versions.find(e => e.name == this.listVersions.value);
       const p = this.profiles.find(e => e.userId == this.selectedProfile?.userId);
@@ -444,9 +454,13 @@ export default class Launcher {
     };
     btns.appendChild(this.playBtn);
 
-    this.updateBtn = document.createElement('button');
-    this.updateBtn.innerHTML = `Обновить`;
-    this.updateBtn.style.margin = '1px';
+    this.updateBtn = createElement('button', {
+      text: 'Обновить',
+      css: {
+        margin: '1px',
+        borderRadius: '7px'
+      }
+    });
     this.updateBtn.onclick = async () => {
       let updated = false;
       this.win.lock();
@@ -455,7 +469,7 @@ export default class Launcher {
 
         const version = await this.readVersion(ver.scriptPath!);
         if(version && ver.sha1 != version.sha1) {
-          await this.downloadVersion({...version, ...ver});
+          await this.downloadVersion({ ...version, ...ver });
           updated = true;
         }
       }
@@ -475,9 +489,13 @@ export default class Launcher {
     }
     btns.appendChild(this.updateBtn);
 
-    this.settingsBtn = document.createElement('button');
-    this.settingsBtn.innerHTML = `Настройки`;
-    this.settingsBtn.style.margin = '1px';
+    this.settingsBtn = createElement('button', {
+      text: 'Настройки',
+      css: {
+        margin: '1px',
+        borderRadius: '7px'
+      }
+    });
     this.settingsBtn.onclick = async () => {
       this.openSettings();
     }
@@ -491,8 +509,9 @@ export default class Launcher {
 
     const extra = document.createElement('div');
     extra.style.fontSize = '12px'
-    extra.innerHTML = `\nЕсть идеи что-то добавить? Нашли баг? Проблемы? <a href="https://t.me/bafiaonlinebot">@bafiaonlinebot</a>
-Исходный код: <a href="https://github.com/lumik0/bafiaonline">Github</a>`.replaceAll('\n', '<br/>');
+    extra.innerHTML = `\nИдеи/Баги/Проблемы? <a href="https://t.me/bafiaonlinebot">@bafiaonlinebot</a>
+Github: <a href="https://github.com/lumik0/bafiaonline">Github</a>
+Telegram канал: <a href="https://t.me/bafiaonline"></a>`.replaceAll('\n', '<br/>');
     div.appendChild(extra);
 
     this.updateBtn.click();
@@ -608,7 +627,24 @@ export default class Launcher {
         await this.writeData();
         location.reload();
       }, this.options.windowsInFS);
+      if(!this.options.windowsInFS){
+        addCheckbox('Скрывать Dock', async v => {
+          this.options.hideDock = v;
+          await this.writeData();
+          if(v){
+            App.dock?.win.close();
+            App.dock = undefined;
+          } else {
+            App.dock = new Dock();
+          }
+        }, this.options.hideDock);
+      }
     }
+    addCheckbox('Режим разработчиков', async v => {
+      this.options.devMode = v;
+      await this.writeData();
+      location.reload();
+    }, this.options.devMode);
   }
 
   addProfile() {
@@ -621,284 +657,6 @@ export default class Launcher {
       }
       return;
     }
-
-    const self = this;
-    this.win.lock();
-    let webSocket: WebSocket;
-    const width = isMobile() ? window.innerWidth-150 : 300
-    const win = new Window({
-      title: 'Добавление профиля',
-      width,
-      height: 220,
-      resizable: false,
-      moveable: false,
-      noMobile: true,
-      minButton: false,
-      maxButton: false,
-      x: this.win.x + (this.win.width - width) / 2,
-      y: this.win.y + (this.win.height - 200) / 2,
-    });
-    win.content.style.overflow = 'hidden'
-    win.on('close', () => {
-      this.win.unlock();
-    });
-
-    const div = document.createElement('div');
-    div.style.padding = '10px';
-    win.content.appendChild(div);
-
-    const status = document.createElement('div');
-    status.innerHTML = `Подключение к серверу..`
-    status.style.textAlign = 'center';
-    const inputEmail = document.createElement('input');
-    inputEmail.style.width = '-webkit-fill-available';
-    inputEmail.placeholder = 'e-mail или никнейм';
-    div.appendChild(inputEmail);
-    const inputPassword = document.createElement('input');
-    inputPassword.style.width = '-webkit-fill-available';
-    inputPassword.placeholder = 'пароль';
-    div.appendChild(inputPassword);
-    const or = document.createElement('div');
-    or.style.textAlign = 'center';
-    or.style.width = '100%';
-    or.style.margin = '2px';
-    or.innerHTML = 'или';
-    div.appendChild(or);
-    const inputToken = document.createElement('input');
-    inputToken.style.width = '-webkit-fill-available';
-    inputToken.placeholder = 'токен';
-    div.appendChild(inputToken);
-    const inputUserId = document.createElement('input');
-    inputUserId.style.width = '-webkit-fill-available';
-    inputUserId.placeholder = 'ID пользователя';
-    div.appendChild(inputUserId);
-    const btn = document.createElement('button');
-    btn.style.width = '100%'
-    btn.innerHTML = 'Создать';
-    btn.disabled = true;
-
-    function createWebSocket(){
-      webSocket = new WebSocket(uriServer);
-      webSocket.onerror = e => console.error(e);
-      webSocket.onmessage = async e => {
-        const json = JSON.parse(e.data);
-
-        if(json[PacketDataKeys.TYPE] == PacketDataKeys.SIGN_IN_ERROR){
-          btn.disabled = false;
-          status.innerHTML = `Ошибка. Код ошибки: ${json[PacketDataKeys.ERROR]}`;
-          status.style.color = 'red';
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USER_SIGN_IN){
-          const u = json[PacketDataKeys.USER][PacketDataKeys.USERNAME];
-          if(u == '') return;
-          self.profiles.push({
-            name: u,
-            email: inputEmail.value,
-            password: inputPassword.value,
-            token: json[PacketDataKeys.USER][PacketDataKeys.TOKEN],
-            userId: json[PacketDataKeys.USER][PacketDataKeys.OBJECT_ID]
-          });
-          await self.writeData();
-          win.close();
-          self.#initContent();
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USERNAME_HAS_WRONG_SYMBOLS){
-          alert(`Для никнейма вы можете использовать только 0-9 а-Я a-Z символы`);
-          const uu = prompt(`Для игры и общения с другими игроками у вас должен быть установлен Никнэйм`);
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys.TYPE]: PacketDataKeys.USERNAME_SET,
-            [PacketDataKeys.OBJECT_ID]: inputUserId.value,
-            [PacketDataKeys.TOKEN]: inputToken.value,
-            [PacketDataKeys.USERNAME]: uu
-          }));
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USERNAME_IS_EXISTS){
-          alert(`Данный никнейм уже зарегистрирован`);
-          const uu = prompt(`Для игры и общения с другими игроками у вас должен быть установлен Никнэйм`);
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys.TYPE]: PacketDataKeys.USERNAME_SET,
-            [PacketDataKeys.OBJECT_ID]: inputUserId.value,
-            [PacketDataKeys.TOKEN]: inputToken.value,
-            [PacketDataKeys.USERNAME]: uu
-          }));
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USERNAME_IS_OUT_OF_BOUNDS){
-          alert(`Никнейм слишком короткий или длинный.\nНикнейм должен состоять из 3-12 символы`);
-          const uu = prompt(`Для игры и общения с другими игроками у вас должен быть установлен Никнэйм`);
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys.TYPE]: PacketDataKeys.USERNAME_SET,
-            [PacketDataKeys.OBJECT_ID]: inputUserId.value,
-            [PacketDataKeys.TOKEN]: inputToken.value,
-            [PacketDataKeys.USERNAME]: uu
-          }));
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USERNAME_IS_EMPTY){
-          alert(`Никнейм не может быть пустым`);
-          const uu = prompt(`Для игры и общения с другими игроками у вас должен быть установлен Никнэйм`);
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys.TYPE]: PacketDataKeys.USERNAME_SET,
-            [PacketDataKeys.OBJECT_ID]: inputUserId.value,
-            [PacketDataKeys.TOKEN]: inputToken.value,
-            [PacketDataKeys.USERNAME]: uu
-          }));
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USERNAME_SET){
-          const acc = self.profiles.find(e => e.name == '');
-          if(!acc){
-            alert('Нет аккаунта');
-            return;
-          }
-          acc.name = json[PacketDataKeys.USERNAME];
-          await self.writeData();
-          win.close();
-          self.#initContent();
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USER_RESET_PASSWORD_SENDED){
-          alert(`Отправлено письмо на сброс пароля`);
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USER_WITH_EMAIL_NOT_EXISTS){
-          alert(`Пользователь с таким email не найден. Возможно, вы забыли свой email?`);
-        } else if(json[PacketDataKeys.TYPE] == PacketDataKeys.USTMR){
-          alert(`Вы можете запросить сброс пароля после ${json[PacketDataKeys.USRSFR]} секунд`);
-        }
-        console.log(json);
-      }
-      webSocket.onopen = () => {
-        status.innerHTML = `Подключено`
-        btn.disabled = false;
-      }
-      webSocket.onclose = () => {
-        btn.disabled = true;
-        status.innerHTML = `Соединение закрыто.. Нажмите чтобы переподключиться`
-        status.onclick = () => {
-          status.innerHTML = `Подключение к серверу..`
-          status.onclick = null;
-          createWebSocket();
-        }
-      }
-    }
-    createWebSocket();
-
-    btn.onclick = () => {
-      status.innerHTML = ``;
-
-      if(inputEmail.value != '' && inputPassword.value != ''){
-        btn.disabled = true;
-        webSocket.send(JSON.stringify({
-          [PacketDataKeys.TYPE]: PacketDataKeys.SIGN_IN,
-          [PacketDataKeys.EMAIL]: inputEmail.value,
-          [PacketDataKeys.PASSWORD]: MD5(inputPassword.value),
-          [PacketDataKeys.DEVICE_ID]: tokenHex(8)
-        }));
-      } else if(inputToken.value != '' && inputUserId.value != '') {
-        btn.disabled = true;
-        webSocket.send(JSON.stringify({
-          [PacketDataKeys.TYPE]: PacketDataKeys.SIGN_IN,
-          [PacketDataKeys.OBJECT_ID]: inputUserId.value,
-          [PacketDataKeys.TOKEN]: inputToken.value
-        }));
-      }
-    }
-    div.appendChild(btn);
-
-    const regBtn = document.createElement('button');
-    regBtn.style.width = '100%'
-    regBtn.innerHTML = 'Регистрация';
-    regBtn.onclick = async() => {
-      if(this.profiles.find(e => e.name == '')){
-        const uu = prompt(`Найден аккаунт без никнейма.\nДля игры и общения с другими игроками у вас должен быть установлен Никнэйм`);
-        webSocket.send(JSON.stringify({
-          [PacketDataKeys.TYPE]: PacketDataKeys.USERNAME_SET,
-          [PacketDataKeys.OBJECT_ID]: inputUserId.value,
-          [PacketDataKeys.TOKEN]: inputToken.value,
-          [PacketDataKeys.USERNAME]: uu
-        }));
-        return;
-      }
-
-      if(inputEmail.value != '' && inputPassword.value != ''){
-        const data = await fetch(`https://api.mafia.dottap.com/user/sign_up`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-          },
-          body: new URLSearchParams({
-            email: inputEmail.value,
-            username: '',
-            password: MD5(inputPassword.value),
-            deviceId: tokenHex(8),
-            lang: 'RUS'
-          })
-        });
-        const result = await data.json();
-        if(result.error){
-          if(result.error == 'USING_TEMP_EMAIL'){
-            alert(`Запрещено использовать сервисы для временной регистрации email.\nИспользуйте популярные сервисы, например Gmail, Mail.Ru, Yandex, Yahoo и тд.`);
-          } else if(result.error == 'EMAIL_EXISTS'){
-            alert(`Данный email уже зарегистрирован`);
-          }
-          return;
-        }
-
-        if(result[PacketDataKeys.OBJECT_ID]){
-          btn.disabled = true;
-
-          self.profiles.push({
-            name: '',
-            email: inputEmail.value,
-            password: inputPassword.value,
-            token: result[PacketDataKeys.TOKEN],
-            userId: result[PacketDataKeys.OBJECT_ID]
-          });
-          this.writeData();
-
-          const uu = prompt(`Для игры и общения с другими игроками у вас должен быть установлен Никнэйм`);
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys.TYPE]: PacketDataKeys.USERNAME_SET,
-            [PacketDataKeys.OBJECT_ID]: inputUserId.value,
-            [PacketDataKeys.TOKEN]: inputToken.value,
-            [PacketDataKeys.USERNAME]: uu
-          }));
-        }
-      }
-    }
-    div.appendChild(regBtn);
-
-    div.appendChild(status);
-
-    const links = document.createElement('div');
-    links.style.display = 'flex';
-    links.style.justifyContent = 'center';
-    div.appendChild(links);
-
-    const why = document.createElement('div');
-    why.style.margin = '3px';
-    why.style.textAlign = 'center';
-    why.style.fontSize = '12px';
-    why.style.color = '#8888f8';
-    why.style.textDecoration = 'underline';
-    why.style.cursor = 'pointer';
-    why.style.userSelect = 'none';
-    why.innerHTML = 'Почему?';
-    why.onclick = async() => {
-      // const alert = Alert(win);
-      // alert.message = `Мы не собираем данные аккаунтов\n\nНаш исходный код открыт https://github.com/lumik0/bafiaonline\n\nВы в любом случае можете войти с второго аккаунта`;
-      // alert.addButton('Ладно');
-      // await alert.runModal();
-      alert(`Мы не собираем данные аккаунтов\n\nНаш исходный код открыт https://github.com/lumik0/bafiaonline\n\nВы в любом случае можете войти с второго аккаунта`);
-    }
-    links.appendChild(why);
-
-    const forgetPass = document.createElement('div');
-    forgetPass.style.margin = '3px';
-    forgetPass.style.textAlign = 'center';
-    forgetPass.style.fontSize = '12px';
-    forgetPass.style.color = '#8888f8';
-    forgetPass.style.textDecoration = 'underline';
-    forgetPass.style.cursor = 'pointer';
-    forgetPass.style.userSelect = 'none';
-    forgetPass.innerHTML = 'Забыл пароль?';
-    forgetPass.onclick = () => {
-      const email = prompt(`Для сброса пароля, пожалуйста, введите зарегистрированный в игре email`);
-      if(email != '') webSocket.send(JSON.stringify({
-        [PacketDataKeys.TYPE]: PacketDataKeys.USER_RESET_PASSWORD,
-        [PacketDataKeys.EMAIL]: email,
-        [PacketDataKeys.APP_LANGUAGE]: 'RUS',
-      }));
-    }
-    links.appendChild(forgetPass);
   }
 
   async addVersion(version?: Version){

@@ -81,6 +81,7 @@ export default class Dashboard extends Screen {
     this.init();
   }
   async init(){
+    let changedAvatar = false;
     const div = createElement('div', {
       css: {
         textAlign: 'center',
@@ -95,7 +96,11 @@ export default class Dashboard extends Screen {
       getAvatarImg({
         [PacketDataKeys.PLAYER_OBJECT_ID]: App.user.playerObjectId,
         [PacketDataKeys.PHOTO]: App.user.photo,
-      }).then(e => avatar.src = e);
+      }).then(e => {
+        if(changedAvatar) return;
+        changedAvatar = true;
+        avatar.src = e;
+      });
       rankLvl.textContent = `${App.user.level}`;
       rankProgress.max = App.user.nextLevelExperience;
       rankProgress.value = App.user.previousLevelExperience;

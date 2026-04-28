@@ -152,13 +152,16 @@ export default class Backpack extends Screen {
             this.update();
           }
           const timer = createElement('span', { text: formatSeconds(bait.iea), appendTo: baitEl });
-          this.setInterval('bait_timer_' + id, () => {
-            timer.innerText = formatSeconds(--bait.iea);
-          }, 1000);
-          // @ts-ignore
-          this.once('update_backpack', () => {
-            this.removeInterval('bait_timer_' + id);
-          });
+          if(bait.iea > 0) {
+            this.setInterval('bait_timer_' + id, () => {
+              if(bait.iea < 1) return;
+              timer.innerText = formatSeconds(--bait.iea);
+            }, 1000);
+            // @ts-ignore
+            this.once('update_backpack', () => {
+              this.removeInterval('bait_timer_' + id);
+            });
+          }
         }
       });
     }

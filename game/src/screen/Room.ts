@@ -191,7 +191,7 @@ export default class Room extends Screen {
 
     if(this.isHistory) return;
 
-    const self = this
+    const self = this;
     if(this.options.sendRoomEnter) App.server.send(PacketDataKeys.ROOM_ENTER, {
       [PacketDataKeys.ROOM_PASS]: this.options.password ? md5salt(this.options.password) : '',
       [PacketDataKeys.ROOM_OBJECT_ID]: this.roomObjectId
@@ -210,14 +210,6 @@ export default class Room extends Screen {
       } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_IN_ANOTHER_ROOM){
         App.screen = new Rooms();
         MessageBox('Нельзя зайти');
-        return;
-      } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_USING_DOUBLE_ACCOUNT){
-        App.screen = new Rooms();
-        MessageBox(`В данной комнате уже есть игрок, который подключен к тому же интернет подключению, что и вы
-
-  Вероятно вы и этот игрок используете общую точку доступа к сети интернет
-
-  Если вы хотите играть с данным игроком в одной комнате - создайте комнату с паролем или убедитесь, что вы подключены каждый к своей точке доступа или мобильным данным`, { height: 360 });
         return;
       } else if(rData[PacketDataKeys.TYPE] == PacketDataKeys.USER_LEVEL_NOT_ENOUGH){
         App.screen = new Rooms();
@@ -349,6 +341,16 @@ export default class Room extends Screen {
     this.loadingDivElem.remove();
 
     if(!this.isHistory) this.on('message', async data => {
+      if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_USING_DOUBLE_ACCOUNT){
+        App.screen = new Rooms();
+        MessageBox(`В данной комнате уже есть игрок, который подключен к тому же интернет подключению, что и вы
+
+  Вероятно вы и этот игрок используете общую точку доступа к сети интернет
+
+  Если вы хотите играть с данным игроком в одной комнате - создайте комнату с паролем или убедитесь, что вы подключены каждый к своей точке доступа или мобильным данным`, { height: 360 });
+        return;
+      }
+
       if(data[PacketDataKeys.TYPE] == PacketDataKeys.MESSAGE){
         this.addMessage(data[PacketDataKeys.MESSAGE]);
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USERS && !this.isGame){
@@ -715,7 +717,9 @@ export default class Room extends Screen {
 
     if(this.isGame) this.initGame();
 
-    this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+    this.setTimeout('scroll messages', () => {
+      this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+    }, 500);
   }
   
   #changeHeightMessagesElem(){

@@ -188,7 +188,7 @@ export default async function ProfileInfo(playerObjectId: string){
     //   badge.style.display = 'none';
     // }
     // isViewingAvatar = !isViewingAvatar;
-    await Avatar({ photo: profile.photo, objectId: profile.playerObjectId });
+    await Avatar({ photo: profile.photo, playerObjectId: profile.playerObjectId });
   }
   div.appendChild(avatar);
   div.appendChild(badge);
@@ -296,7 +296,7 @@ export default async function ProfileInfo(playerObjectId: string){
         if(c){
           App.server.send(PacketDataKeys.KICK_USER, {
             [PacketDataKeys.ROOM_OBJECT_ID]: room[PacketDataKeys.OBJECT_ID],
-            [PacketDataKeys.USER_OBJECT_ID]: playerObjectId
+            [PacketDataKeys.PLAYER_OBJECT_ID]: playerObjectId
           });
           box.destroy();
         }

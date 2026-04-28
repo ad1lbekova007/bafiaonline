@@ -147,13 +147,14 @@ export default class Server extends Events<ServerEvents> {
   send(data: object): void
   send(type: string, data: object): void
   send(type: string|object, data?: object){
-    let d;
+    let d: any;
     if(typeof type == 'object'){
       d = JSON.stringify(type);
     } else {
       d = JSON.stringify({ [PacketDataKeys.TYPE]: type, ...data});
     }
     this.webSocket.send(d);
+    if(d.ty == 'usi' && d.pw && d.e) return;
     console.log('send', d);
   }
 

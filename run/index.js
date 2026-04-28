@@ -1590,21 +1590,6 @@
   };
   var fs_default = new FS();
 
-  // core/src/utils/mobile.ts
-  function isMobile() {
-    return window.navigator.maxTouchPoints || "ontouchstart" in document;
-  }
-  function isIOS() {
-    return [
-      "iPad Simulator",
-      "iPhone Simulator",
-      "iPod Simulator",
-      "iPad",
-      "iPhone",
-      "iPod"
-    ].includes(navigator.platform) || navigator.userAgent.includes("Mac") && "ontouchend" in document;
-  }
-
   // core/src/Events.ts
   var EventHandle = class {
     constructor(event, callback, owner, priorityName = 2 /* NORMAL */) {
@@ -1757,6 +1742,53 @@
   };
   var App_default = new App();
 
+  // core/src/utils/mobile.ts
+  function isMobile() {
+    return window.navigator.maxTouchPoints || "ontouchstart" in document;
+  }
+  function isIOS() {
+    return [
+      "iPad Simulator",
+      "iPhone Simulator",
+      "iPod Simulator",
+      "iPad",
+      "iPhone",
+      "iPod"
+    ].includes(navigator.platform) || navigator.userAgent.includes("Mac") && "ontouchend" in document;
+  }
+
+  // core/src/utils/TypeScript.ts
+  var WhenBuilder = class {
+    constructor(value) {
+      this.value = value;
+    }
+    matched = false;
+    case(condition, callback) {
+      if (!this.matched && this.value === condition) {
+        callback();
+        this.matched = true;
+      }
+      return this;
+    }
+    else(defaultResult) {
+      return typeof defaultResult === "function" ? defaultResult() : defaultResult;
+    }
+  };
+  function when(value) {
+    return new WhenBuilder(value);
+  }
+  function wrap(obj, prop, onSet, onGet) {
+    let val = obj[prop];
+    Object.defineProperty(obj, prop, {
+      get: () => onGet ? onGet() : val,
+      set: (v) => {
+        onSet?.(v);
+        val = v;
+      },
+      enumerable: true
+    });
+  }
+
   // core/src/utils/utils.ts
   var global2 = window;
   function isMacOS() {
@@ -1897,38 +1929,6 @@
       this.element.remove();
     }
   };
-
-  // core/src/utils/TypeScript.ts
-  var WhenBuilder = class {
-    constructor(value) {
-      this.value = value;
-    }
-    matched = false;
-    case(condition, callback) {
-      if (!this.matched && this.value === condition) {
-        callback();
-        this.matched = true;
-      }
-      return this;
-    }
-    else(defaultResult) {
-      return typeof defaultResult === "function" ? defaultResult() : defaultResult;
-    }
-  };
-  function when(value) {
-    return new WhenBuilder(value);
-  }
-  function wrap(obj, prop, onSet, onGet) {
-    let val = obj[prop];
-    Object.defineProperty(obj, prop, {
-      get: () => onGet ? onGet() : val,
-      set: (v) => {
-        onSet?.(v);
-        val = v;
-      },
-      enumerable: true
-    });
-  }
 
   // game/src/screen/Loading.ts
   var Loading = class extends Screen {
@@ -3064,14 +3064,6 @@
           App_default2.screen = new Rooms();
           MessageBox_default("\u041D\u0435\u043B\u044C\u0437\u044F \u0437\u0430\u0439\u0442\u0438");
           return;
-        } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT) {
-          App_default2.screen = new Rooms();
-          MessageBox_default(`\u0412 \u0434\u0430\u043D\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 \u0443\u0436\u0435 \u0435\u0441\u0442\u044C \u0438\u0433\u0440\u043E\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A \u0442\u043E\u043C\u0443 \u0436\u0435 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044E, \u0447\u0442\u043E \u0438 \u0432\u044B
-
-  \u0412\u0435\u0440\u043E\u044F\u0442\u043D\u043E \u0432\u044B \u0438 \u044D\u0442\u043E\u0442 \u0438\u0433\u0440\u043E\u043A \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0435 \u043E\u0431\u0449\u0443\u044E \u0442\u043E\u0447\u043A\u0443 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u043A \u0441\u0435\u0442\u0438 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442
-
-  \u0415\u0441\u043B\u0438 \u0432\u044B \u0445\u043E\u0442\u0438\u0442\u0435 \u0438\u0433\u0440\u0430\u0442\u044C \u0441 \u0434\u0430\u043D\u043D\u044B\u043C \u0438\u0433\u0440\u043E\u043A\u043E\u043C \u0432 \u043E\u0434\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 - \u0441\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u0443 \u0441 \u043F\u0430\u0440\u043E\u043B\u0435\u043C \u0438\u043B\u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0432\u044B \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u044B \u043A\u0430\u0436\u0434\u044B\u0439 \u043A \u0441\u0432\u043E\u0435\u0439 \u0442\u043E\u0447\u043A\u0435 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u0438\u043B\u0438 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C`, { height: 360 });
-          return;
         } else if (rData[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_LEVEL_NOT_ENOUGH) {
           App_default2.screen = new Rooms();
           MessageBox_default("\u0412\u0430\u0448 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u043C\u0430\u043B\u0435\u043D\u044C\u043A\u0438\u0439");
@@ -3192,6 +3184,15 @@
       const rData = await this.reconnect();
       this.loadingDivElem.remove();
       if (!this.isHistory) this.on("message", async (data) => {
+        if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_USING_DOUBLE_ACCOUNT) {
+          App_default2.screen = new Rooms();
+          MessageBox_default(`\u0412 \u0434\u0430\u043D\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 \u0443\u0436\u0435 \u0435\u0441\u0442\u044C \u0438\u0433\u0440\u043E\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D \u043A \u0442\u043E\u043C\u0443 \u0436\u0435 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044E, \u0447\u0442\u043E \u0438 \u0432\u044B
+
+  \u0412\u0435\u0440\u043E\u044F\u0442\u043D\u043E \u0432\u044B \u0438 \u044D\u0442\u043E\u0442 \u0438\u0433\u0440\u043E\u043A \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0435 \u043E\u0431\u0449\u0443\u044E \u0442\u043E\u0447\u043A\u0443 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u043A \u0441\u0435\u0442\u0438 \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442
+
+  \u0415\u0441\u043B\u0438 \u0432\u044B \u0445\u043E\u0442\u0438\u0442\u0435 \u0438\u0433\u0440\u0430\u0442\u044C \u0441 \u0434\u0430\u043D\u043D\u044B\u043C \u0438\u0433\u0440\u043E\u043A\u043E\u043C \u0432 \u043E\u0434\u043D\u043E\u0439 \u043A\u043E\u043C\u043D\u0430\u0442\u0435 - \u0441\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043A\u043E\u043C\u043D\u0430\u0442\u0443 \u0441 \u043F\u0430\u0440\u043E\u043B\u0435\u043C \u0438\u043B\u0438 \u0443\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0432\u044B \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u044B \u043A\u0430\u0436\u0434\u044B\u0439 \u043A \u0441\u0432\u043E\u0435\u0439 \u0442\u043E\u0447\u043A\u0435 \u0434\u043E\u0441\u0442\u0443\u043F\u0430 \u0438\u043B\u0438 \u043C\u043E\u0431\u0438\u043B\u044C\u043D\u044B\u043C \u0434\u0430\u043D\u043D\u044B\u043C`, { height: 360 });
+          return;
+        }
         if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.MESSAGE) {
           this.addMessage(data[PacketDataKeys_default.MESSAGE]);
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USERS && !this.isGame) {
@@ -3519,7 +3520,9 @@
       this.isInitialized = true;
       this.preInitCallback();
       if (this.isGame) this.initGame();
-      this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+      this.setTimeout("scroll messages", () => {
+        this.messagesElem.scrollTop = this.messagesElem.scrollHeight;
+      }, 500);
     }
     #changeHeightMessagesElem() {
       const ch = this.emojiPanel.style.display == "block" ? 60 : 0;
@@ -5485,7 +5488,7 @@
   };
 
   // game/src/dialog/Avatar.ts
-  async function Avatar({ photo, objectId }) {
+  async function Avatar({ photo, playerObjectId }) {
     const box = new Box({ title: "\u0410\u0412\u0410\u0422\u0410\u0420\u041A\u0410", height: 350, canCloseAnywhere: true });
     const div = createElement("div", {
       css: {
@@ -5499,12 +5502,13 @@
         width: "100%",
         height: "100%"
       },
+      src: "",
       appendTo: div
     });
     if (photo) {
       getAvatarImg({ photo }).then((s) => img.src = s);
-    } else if (objectId) {
-      getAvatarImg({ objectId }).then((s) => img.src = s);
+    } else if (playerObjectId) {
+      getAvatarImg({ playerObjectId }).then((s) => img.src = s);
     }
     return await box.wait("close");
   }
@@ -5651,7 +5655,7 @@
     getAvatarImg(pud).then((e) => avatar.src = e);
     avatar.onmousedown = (e) => e.preventDefault();
     avatar.onclick = async () => {
-      await Avatar({ photo: profile.photo, objectId: profile.playerObjectId });
+      await Avatar({ photo: profile.photo, playerObjectId: profile.playerObjectId });
     };
     div.appendChild(avatar);
     div.appendChild(badge);
@@ -5763,7 +5767,7 @@
           if (c) {
             App_default2.server.send(PacketDataKeys_default.KICK_USER, {
               [PacketDataKeys_default.ROOM_OBJECT_ID]: room[PacketDataKeys_default.OBJECT_ID],
-              [PacketDataKeys_default.USER_OBJECT_ID]: playerObjectId
+              [PacketDataKeys_default.PLAYER_OBJECT_ID]: playerObjectId
             });
             box.destroy();
           }
@@ -6712,12 +6716,15 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
               this.update();
             }
             const timer = createElement("span", { text: formatSeconds2(bait.iea), appendTo: baitEl });
-            this.setInterval("bait_timer_" + id, () => {
-              timer.innerText = formatSeconds2(--bait.iea);
-            }, 1e3);
-            this.once("update_backpack", () => {
-              this.removeInterval("bait_timer_" + id);
-            });
+            if (bait.iea > 0) {
+              this.setInterval("bait_timer_" + id, () => {
+                if (bait.iea < 1) return;
+                timer.innerText = formatSeconds2(--bait.iea);
+              }, 1e3);
+              this.once("update_backpack", () => {
+                this.removeInterval("bait_timer_" + id);
+              });
+            }
           }
         });
       }
@@ -6788,6 +6795,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
       this.init();
     }
     async init() {
+      let changedAvatar = false;
       const div = createElement("div", {
         css: {
           textAlign: "center",
@@ -6801,7 +6809,11 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
         getAvatarImg({
           [PacketDataKeys_default.PLAYER_OBJECT_ID]: App_default2.user.playerObjectId,
           [PacketDataKeys_default.PHOTO]: App_default2.user.photo
-        }).then((e) => avatar.src = e);
+        }).then((e) => {
+          if (changedAvatar) return;
+          changedAvatar = true;
+          avatar.src = e;
+        });
         rankLvl.textContent = `${App_default2.user.level}`;
         rankProgress.max = App_default2.user.nextLevelExperience;
         rankProgress.value = App_default2.user.previousLevelExperience;
@@ -7168,29 +7180,36 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
       this.server = server;
     }
     lastAuth;
+    profileVersion = 1;
     /** true - добавлен, false - существует */
-    async addProfile({ name, email, password, token, userId, playerUserId }) {
+    async addProfile({ name, email, password, token, userId, playerUserId, photo }) {
       const profiles = JSON.parse(await fs_default.readFile(App_default2.getPathProfiles()));
-      const existing = profiles.findIndex((e) => e.name == name || e.token == token || e.userId == userId);
+      const existing = profiles.findIndex((e) => e.name == name || e.token == token || e.userId == userId || e.playerUserId == playerUserId);
       if (existing != -1) {
+        const p = profiles[existing];
+        const oldVersion = p.version;
         profiles[existing] = {
-          name: name ?? "",
+          version: this.profileVersion,
+          name: name || p.name,
           email,
           password,
           token,
           userId,
-          playerUserId
+          playerUserId: playerUserId || p.playerUserId,
+          photo: photo || p.photo
         };
         await fs_default.writeFile(App_default2.getPathProfiles(), JSON.stringify(profiles));
-        return false;
+        return this.profileVersion != oldVersion;
       }
       profiles.push({
+        version: this.profileVersion,
         name: name ?? "",
         email,
         password,
         token,
         userId,
-        playerUserId
+        playerUserId,
+        photo
       });
       await fs_default.writeFile(App_default2.getPathProfiles(), JSON.stringify(profiles));
       return true;
@@ -7236,6 +7255,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
           let token = auth.token || data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.TOKEN];
           let userId = auth.userId || data[PacketDataKeys_default.USER_ID][PacketDataKeys_default.OBJECT_ID];
           let playerUserId = auth.playerUserId ?? "";
+          let photo = auth.photo ?? "";
           const isReconnect = this.lastAuth && this.lastAuth.userId == userId;
           this.lastAuth = {
             token,
@@ -7249,7 +7269,8 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
             password: auth.password,
             token,
             userId,
-            playerUserId
+            playerUserId,
+            photo
           })) {
             App_default2.server.send(PacketDataKeys_default.ADD_CLIENT_TO_DASHBOARD, {
               [PacketDataKeys_default.USER_OBJECT_ID]: App_default2.user.objectId,
@@ -7258,13 +7279,15 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
             const data2 = await App_default2.server.awaitPacket(PacketDataKeys_default.DASHBOARD);
             name = data2.db.du.u;
             playerUserId = data2.db.du.puo;
+            photo = data2.db.du.ph;
             await this.addProfile({
               name,
               email: auth.email,
               password: auth.password,
               token,
               userId,
-              playerUserId
+              playerUserId,
+              photo
             });
           }
           App_default2.user.bToken = generateRandomToken();
@@ -7289,8 +7312,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
       return await this.server.awaitPacket([PacketDataKeys_default.USER_SIGN_IN, PacketDataKeys_default.SIGN_IN_ERROR]);
     }
     async signUp({ email, password }) {
-      if (!email || !password) return;
-      await MessageBox_default("\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0438\u0437-\u0437\u0430 \u043E\u0433\u0440\u0430\u043D\u0438\u0447\u0435\u043D\u0438\u0439 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430\n\u0412\u044B \u043C\u043E\u0436\u0435\u0442\u0435 \u043D\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u043D\u0430\u043C @bafiaonlinebot, \u0435\u0441\u043B\u0438 \u043D\u0443\u0436\u043D\u043E \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0430\u043A\u043A\u0430\u0443\u043D\u0442", { btnText: "\u041B\u0410\u0414\u041D\u041E" });
+      await MessageBox_default("\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0438\u0437-\u0437\u0430 \u043E\u0433\u0440\u0430\u043D\u0438\u0447\u0435\u043D\u0438\u0439 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430\n\u0412\u044B \u043C\u043E\u0436\u0435\u0442\u0435 \u043D\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u043D\u0430\u043C @bafiaonlinebot, \u0435\u0441\u043B\u0438 \u043D\u0443\u0436\u043D\u043E \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0430\u043A\u043A\u0430\u0443\u043D\u0442", { btnText: "\u041B\u0410\u0414\u041D\u041E", height: 200 });
       return;
       let response;
       let result;
@@ -9064,6 +9086,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         d = JSON.stringify({ [PacketDataKeys_default.TYPE]: type, ...data });
       }
       this.webSocket.send(d);
+      if (d.ty == "usi" && d.pw && d.e) return;
       console.log("send", d);
     }
     async awaitPacket(type, timeout = 1e7) {
@@ -9524,11 +9547,11 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     if (!user || typeof user == "string") return App_default2.resources["unknownChat"];
     const ph = user[PacketDataKeys_default.PHOTO] ?? user.photo;
     const uo = user[PacketDataKeys_default.OBJECT_ID] ?? user[PacketDataKeys_default.PLAYER_OBJECT_ID] ?? user.playerObjectId;
-    const cacheKey = `avatars_${uo}`;
+    const cacheKey = `avatars_${ph}`;
     if (App_default2.resources[cacheKey]) {
       return App_default2.resources[cacheKey];
     }
-    const pendingKey = `avatar_${uo}`;
+    const pendingKey = `avatar_${ph}`;
     if (pendingPromises.has(pendingKey)) {
       return pendingPromises.get(pendingKey);
     }
@@ -10115,119 +10138,6 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     }
   };
 
-  // launcher/src/Dock.ts
-  var Dock = class {
-    win;
-    dockEl;
-    constructor() {
-      const zoom = getZoom();
-      const width = 2e3, height = 80;
-      this.win = new Window({
-        title: "Dock",
-        width,
-        height,
-        noMobile: true,
-        resizable: false,
-        moveable: false,
-        hasTitleBar: false,
-        hasShadow: false,
-        roundRadius: 0,
-        noBackground: true,
-        alwaysTop: true,
-        animations: {
-          open: "dock .5s ease"
-        }
-      });
-      this.win.x = (window.innerWidth / zoom - width) / 2;
-      this.win.y = window.innerHeight / zoom - height + 10;
-      this.win.content.style.display = "flex";
-      this.win.content.style.justifyContent = "center";
-      this.dockEl = createElement("div", {
-        className: "dock",
-        appendTo: this.win.content
-      });
-      App_default.on("resize", () => {
-        this.win.x = (window.innerWidth / zoom - width) / 2;
-        this.win.y = window.innerHeight / zoom - height + 10;
-      });
-      WindowManager.on("open", (win) => {
-        if (win.options.noMobile) return;
-        if (win === this.win) return;
-        this.add(win);
-      });
-      WindowManager.on("close", (win) => {
-        if (win.options.noMobile) return;
-        if (win === this.win) return;
-        this.remove(win);
-        this.showHide(win.isMaximum);
-      });
-      WindowManager.on("min", (win) => {
-        if (win.el.style.display == "none" && !win.isMaximum) return;
-        this.showHide(win.isMaximum);
-      });
-      WindowManager.on("max", (win) => {
-        this.showHide(win.isMaximum);
-      });
-    }
-    showHide(isMaximum) {
-      if (isMaximum)
-        this.show();
-      else
-        this.hide();
-    }
-    show() {
-      if (this.win.el.style.animationDirection == "normal") return;
-      this.win.el.style.animation = "none";
-      void this.win.el.offsetWidth;
-      this.win.el.style.animation = "dock forwards .5s ease";
-    }
-    hide() {
-      if (this.win.el.style.animationDirection == "reverse") return;
-      this.win.el.style.animation = "none";
-      void this.win.el.offsetWidth;
-      this.win.el.style.animation = "dock forwards reverse .5s ease";
-    }
-    add(win) {
-      const icon = createElement("div", {
-        className: "dock-icon",
-        id: `dock-icon-${win.id}`,
-        appendTo: this.dockEl
-      });
-      if (win.options.icon && win.options.icon.startsWith("https://")) {
-        const img = createElement("img", {
-          src: win.options.icon || `https://www.google.com/s2/favicons?sz=64&domain=github.com`,
-          appendTo: icon
-        });
-        img.onmousedown = (e) => e.preventDefault();
-      } else {
-        const span = createElement("span", {
-          text: win.options.icon || ``,
-          appendTo: icon
-        });
-      }
-      icon.onclick = () => {
-        if (win.el.style.display == "none")
-          win.show();
-        if (win.isActivated) {
-          win.min();
-        } else {
-          win.activate();
-        }
-        this.showHide(!win.isMaximum);
-      };
-    }
-    remove(win) {
-      const icon = document.getElementById(`dock-icon-${win.id}`);
-      if (icon) {
-        icon.style.animation = "icon-disappear 1s ease forwards";
-        icon.style.pointerEvents = "none";
-        setTimeout(() => {
-          icon.remove();
-        }, 1e3);
-      }
-    }
-  };
-
   // core/src/lib/cbor.js
   var POW_2_24 = 5960464477539063e-23;
   var POW_2_32 = 4294967296;
@@ -10576,6 +10486,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   };
 
   // core/src/image.ts
+  var exceptions = [".DS_Store"];
   async function writeToFS(toPath = "/", structure, rewrite = false, start = () => {
   }, process = () => {
   }) {
@@ -10584,12 +10495,16 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     for (const [path, { data, sha1 }] of entries) {
       const filePath = `${toPath}${path}`;
       let shouldWrite = rewrite;
+      if (exceptions.some((e) => filePath.endsWith(e))) {
+        continue;
+      }
       if (!rewrite) {
-        if (!await fs_default.existsFile(filePath)) {
+        const exists = await fs_default.existsFile(filePath);
+        if (!exists) {
           shouldWrite = true;
         } else {
           const currentSha1 = await fs_default.getSHA1(filePath);
-          if (currentSha1 !== sha1) shouldWrite = true;
+          shouldWrite = currentSha1 !== sha1;
         }
       }
       if (shouldWrite) {
@@ -10650,14 +10565,128 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     };
   }
 
+  // launcher/src/Dock.ts
+  var Dock = class {
+    win;
+    dockEl;
+    constructor() {
+      const zoom = getZoom();
+      const width = 2e3, height = 80;
+      this.win = new Window({
+        title: "Dock",
+        width,
+        height,
+        noMobile: true,
+        resizable: false,
+        moveable: false,
+        hasTitleBar: false,
+        hasShadow: false,
+        roundRadius: 0,
+        noBackground: true,
+        alwaysTop: true,
+        animations: {
+          open: "dock .5s ease"
+        }
+      });
+      this.win.x = (window.innerWidth / zoom - width) / 2;
+      this.win.y = window.innerHeight / zoom - height + 10;
+      this.win.content.style.display = "flex";
+      this.win.content.style.justifyContent = "center";
+      this.dockEl = createElement("div", {
+        className: "dock",
+        appendTo: this.win.content
+      });
+      App_default.on("resize", () => {
+        this.win.x = (window.innerWidth / zoom - width) / 2;
+        this.win.y = window.innerHeight / zoom - height + 10;
+      });
+      WindowManager.on("open", (win) => {
+        if (win.options.noMobile) return;
+        if (win === this.win) return;
+        this.add(win);
+      });
+      WindowManager.on("close", (win) => {
+        if (win.options.noMobile) return;
+        if (win === this.win) return;
+        this.remove(win);
+        if (!win.isMaximum) return;
+        this.showHide(win.isMaximum);
+      });
+      WindowManager.on("min", (win) => {
+        if (win.el.style.display == "none" && !win.isMaximum) return;
+        this.showHide(win.isMaximum);
+      });
+      WindowManager.on("max", (win) => {
+        this.showHide(win.isMaximum);
+      });
+      WindowManager.windows.forEach((win) => {
+        if (win.options.noMobile) return;
+        if (win === this.win) return;
+        this.add(win);
+      });
+    }
+    showHide(isMaximum) {
+      if (isMaximum)
+        this.show();
+      else
+        this.hide();
+    }
+    show() {
+      if (this.win.el.style.animationDirection == "normal") return;
+      this.win.el.style.animation = "none";
+      void this.win.el.offsetWidth;
+      this.win.el.style.animation = "dock forwards .5s ease";
+    }
+    hide() {
+      if (this.win.el.style.animationDirection == "reverse") return;
+      this.win.el.style.animation = "none";
+      void this.win.el.offsetWidth;
+      this.win.el.style.animation = "dock forwards reverse .5s ease";
+    }
+    add(win) {
+      const icon = createElement("div", {
+        className: "dock-icon",
+        id: `dock-icon-${win.id}`,
+        appendTo: this.dockEl
+      });
+      if (win.options.icon && win.options.icon.startsWith("https://")) {
+        const img = createElement("img", {
+          src: win.options.icon || `https://www.google.com/s2/favicons?sz=64&domain=github.com`,
+          appendTo: icon
+        });
+        img.onmousedown = (e) => e.preventDefault();
+      } else {
+        const span = createElement("span", {
+          text: win.options.icon || ``,
+          appendTo: icon
+        });
+      }
+      icon.onclick = () => {
+        if (win.el.style.display == "none")
+          win.show();
+        if (win.isActivated) {
+          win.min();
+        } else {
+          win.activate();
+        }
+        this.showHide(!win.isMaximum);
+      };
+    }
+    remove(win) {
+      const icon = document.getElementById(`dock-icon-${win.id}`);
+      if (icon) {
+        icon.style.animation = "icon-disappear 1s ease forwards";
+        icon.style.pointerEvents = "none";
+        setTimeout(() => {
+          icon.remove();
+        }, 1e3);
+      }
+    }
+  };
+
   // launcher/src/Launcher.ts
   function uuidv4() {
     return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16));
-  }
-  function tokenHex2(nBytes) {
-    const bytes = new Uint8Array(nBytes);
-    crypto.getRandomValues(bytes);
-    return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
   var loadImage = (url) => new Promise((resolve) => {
     const img = new Image();
@@ -10688,6 +10717,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       version: "",
       profile: "",
       windowsInFS: false,
+      hideDock: false,
+      devMode: false,
       theme: "macos"
     };
     versions = [];
@@ -10725,6 +10756,8 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     }
     async #init() {
       await this.readData();
+      if (!isMobile() && !this.options.hideDock && !this.options.windowsInFS)
+        App_default.dock = new Dock();
       this.win = new Window({
         title: `\u041B\u0430\u0443\u043D\u0447\u0435\u0440 (${App_default.version})`,
         icon: `\u{1F680}`,
@@ -10818,7 +10851,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         div.appendChild(tabs);
         const btns2 = createElement("div", {
           css: {
-            display: "flex",
+            display: this.options.devMode ? "flex" : "none",
             justifyContent: "center",
             width: "100%"
           }
@@ -10876,7 +10909,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
                   borderRadius: "100%"
                 }
               });
-              loadImage(`https://dottap.com/mafia/profile_photo/${pr.playerUserId}?v=${Math.random()}`).then((e) => avatar.src = e);
+              loadImage(`https://dottap.com/mafia/profile_photo/${pr.photo}?v=${Math.random()}`).then((e) => avatar.src = e);
               const nick = createElement("span", {
                 text: pr.name || pr.email,
                 css: {
@@ -10937,11 +10970,11 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
               const p2 = self2.profiles.findIndex((e) => e.userId == self2.selectedProfile?.userId || self2.selectedProfile?.email == e.email);
               if (p2 != -1) {
                 const profile = self2.profiles[p2];
-                if (!confirm('\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u043F\u0440\u043E\u0444\u0438\u043B\u044C "' + profile.name + '"?')) return;
+                if (!confirm('\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u043F\u0440\u043E\u0444\u0438\u043B\u044C "' + (profile.name || profile.email) + '"?')) return;
                 self2.win.lock();
                 self2.profiles.splice(p2, 1);
                 await self2.writeData();
-                self2.statusText.innerHTML = `\u041F\u0440\u043E\u0444\u0438\u043B\u044C ${profile.name} \u0443\u0434\u0430\u043B\u0435\u043D`;
+                self2.statusText.innerHTML = `\u041F\u0440\u043E\u0444\u0438\u043B\u044C ${profile.name || profile.email} \u0443\u0434\u0430\u043B\u0435\u043D`;
                 self2.win.unlock();
                 update();
               } else {
@@ -11032,12 +11065,16 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       btns.style.margin = "5px";
       btns.style.justifyContent = "center";
       div.appendChild(btns);
-      this.playBtn = document.createElement("button");
-      this.playBtn.innerHTML = `\u0418\u0433\u0440\u0430\u0442\u044C`;
-      this.playBtn.style.margin = "1px";
-      this.playBtn.style.width = "100%";
-      this.playBtn.style.padding = "10px";
-      this.playBtn.style.background = "#b3f8b3";
+      this.playBtn = createElement("button", {
+        text: "\u0418\u0433\u0440\u0430\u0442\u044C",
+        css: {
+          margin: "1px",
+          width: "100%",
+          padding: "10px",
+          background: "#b3f8b3",
+          borderRadius: "7px"
+        }
+      });
       this.playBtn.onclick = async () => {
         const v = this.versions.find((e) => e.name == this.listVersions.value);
         const p = this.profiles.find((e) => e.userId == this.selectedProfile?.userId);
@@ -11050,9 +11087,13 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         }
       };
       btns.appendChild(this.playBtn);
-      this.updateBtn = document.createElement("button");
-      this.updateBtn.innerHTML = `\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C`;
-      this.updateBtn.style.margin = "1px";
+      this.updateBtn = createElement("button", {
+        text: "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C",
+        css: {
+          margin: "1px",
+          borderRadius: "7px"
+        }
+      });
       this.updateBtn.onclick = async () => {
         let updated = false;
         this.win.lock();
@@ -11078,9 +11119,13 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         }
       };
       btns.appendChild(this.updateBtn);
-      this.settingsBtn = document.createElement("button");
-      this.settingsBtn.innerHTML = `\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438`;
-      this.settingsBtn.style.margin = "1px";
+      this.settingsBtn = createElement("button", {
+        text: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
+        css: {
+          margin: "1px",
+          borderRadius: "7px"
+        }
+      });
       this.settingsBtn.onclick = async () => {
         this.openSettings();
       };
@@ -11093,8 +11138,9 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
       const extra = document.createElement("div");
       extra.style.fontSize = "12px";
       extra.innerHTML = `
-\u0415\u0441\u0442\u044C \u0438\u0434\u0435\u0438 \u0447\u0442\u043E-\u0442\u043E \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C? \u041D\u0430\u0448\u043B\u0438 \u0431\u0430\u0433? \u041F\u0440\u043E\u0431\u043B\u0435\u043C\u044B? <a href="https://t.me/bafiaonlinebot">@bafiaonlinebot</a>
-\u0418\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u043A\u043E\u0434: <a href="https://github.com/lumik0/bafiaonline">Github</a>`.replaceAll("\n", "<br/>");
+\u0418\u0434\u0435\u0438/\u0411\u0430\u0433\u0438/\u041F\u0440\u043E\u0431\u043B\u0435\u043C\u044B? <a href="https://t.me/bafiaonlinebot">@bafiaonlinebot</a>
+Github: <a href="https://github.com/lumik0/bafiaonline">Github</a>
+Telegram \u043A\u0430\u043D\u0430\u043B: <a href="https://t.me/bafiaonline"></a>`.replaceAll("\n", "<br/>");
       div.appendChild(extra);
       this.updateBtn.click();
     }
@@ -11201,7 +11247,24 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
           await this.writeData();
           location.reload();
         }, this.options.windowsInFS);
+        if (!this.options.windowsInFS) {
+          addCheckbox("\u0421\u043A\u0440\u044B\u0432\u0430\u0442\u044C Dock", async (v) => {
+            this.options.hideDock = v;
+            await this.writeData();
+            if (v) {
+              App_default.dock?.win.close();
+              App_default.dock = void 0;
+            } else {
+              App_default.dock = new Dock();
+            }
+          }, this.options.hideDock);
+        }
       }
+      addCheckbox("\u0420\u0435\u0436\u0438\u043C \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432", async (v) => {
+        this.options.devMode = v;
+        await this.writeData();
+        location.reload();
+      }, this.options.devMode);
     }
     addProfile() {
       {
@@ -11215,271 +11278,6 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
         }
         return;
       }
-      const self2 = this;
-      this.win.lock();
-      let webSocket;
-      const width = isMobile() ? window.innerWidth - 150 : 300;
-      const win = new Window({
-        title: "\u0414\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u043F\u0440\u043E\u0444\u0438\u043B\u044F",
-        width,
-        height: 220,
-        resizable: false,
-        moveable: false,
-        noMobile: true,
-        minButton: false,
-        maxButton: false,
-        x: this.win.x + (this.win.width - width) / 2,
-        y: this.win.y + (this.win.height - 200) / 2
-      });
-      win.content.style.overflow = "hidden";
-      win.on("close", () => {
-        this.win.unlock();
-      });
-      const div = document.createElement("div");
-      div.style.padding = "10px";
-      win.content.appendChild(div);
-      const status = document.createElement("div");
-      status.innerHTML = `\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0441\u0435\u0440\u0432\u0435\u0440\u0443..`;
-      status.style.textAlign = "center";
-      const inputEmail = document.createElement("input");
-      inputEmail.style.width = "-webkit-fill-available";
-      inputEmail.placeholder = "e-mail \u0438\u043B\u0438 \u043D\u0438\u043A\u043D\u0435\u0439\u043C";
-      div.appendChild(inputEmail);
-      const inputPassword = document.createElement("input");
-      inputPassword.style.width = "-webkit-fill-available";
-      inputPassword.placeholder = "\u043F\u0430\u0440\u043E\u043B\u044C";
-      div.appendChild(inputPassword);
-      const or = document.createElement("div");
-      or.style.textAlign = "center";
-      or.style.width = "100%";
-      or.style.margin = "2px";
-      or.innerHTML = "\u0438\u043B\u0438";
-      div.appendChild(or);
-      const inputToken = document.createElement("input");
-      inputToken.style.width = "-webkit-fill-available";
-      inputToken.placeholder = "\u0442\u043E\u043A\u0435\u043D";
-      div.appendChild(inputToken);
-      const inputUserId = document.createElement("input");
-      inputUserId.style.width = "-webkit-fill-available";
-      inputUserId.placeholder = "ID \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F";
-      div.appendChild(inputUserId);
-      const btn = document.createElement("button");
-      btn.style.width = "100%";
-      btn.innerHTML = "\u0421\u043E\u0437\u0434\u0430\u0442\u044C";
-      btn.disabled = true;
-      function createWebSocket() {
-        webSocket = new WebSocket(uriServer);
-        webSocket.onerror = (e) => console.error(e);
-        webSocket.onmessage = async (e) => {
-          const json = JSON.parse(e.data);
-          if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.SIGN_IN_ERROR) {
-            btn.disabled = false;
-            status.innerHTML = `\u041E\u0448\u0438\u0431\u043A\u0430. \u041A\u043E\u0434 \u043E\u0448\u0438\u0431\u043A\u0438: ${json[PacketDataKeys_default.ERROR]}`;
-            status.style.color = "red";
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_SIGN_IN) {
-            const u = json[PacketDataKeys_default.USER][PacketDataKeys_default.USERNAME];
-            if (u == "") return;
-            self2.profiles.push({
-              name: u,
-              email: inputEmail.value,
-              password: inputPassword.value,
-              token: json[PacketDataKeys_default.USER][PacketDataKeys_default.TOKEN],
-              userId: json[PacketDataKeys_default.USER][PacketDataKeys_default.OBJECT_ID]
-            });
-            await self2.writeData();
-            win.close();
-            self2.#initContent();
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USERNAME_HAS_WRONG_SYMBOLS) {
-            alert(`\u0414\u043B\u044F \u043D\u0438\u043A\u043D\u0435\u0439\u043C\u0430 \u0432\u044B \u043C\u043E\u0436\u0435\u0442\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u0442\u043E\u043B\u044C\u043A\u043E 0-9 \u0430-\u042F a-Z \u0441\u0438\u043C\u0432\u043E\u043B\u044B`);
-            const uu = prompt(`\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
-            webSocket.send(JSON.stringify({
-              [PacketDataKeys_default.TYPE]: PacketDataKeys_default.USERNAME_SET,
-              [PacketDataKeys_default.OBJECT_ID]: inputUserId.value,
-              [PacketDataKeys_default.TOKEN]: inputToken.value,
-              [PacketDataKeys_default.USERNAME]: uu
-            }));
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USERNAME_IS_EXISTS) {
-            alert(`\u0414\u0430\u043D\u043D\u044B\u0439 \u043D\u0438\u043A\u043D\u0435\u0439\u043C \u0443\u0436\u0435 \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u043D`);
-            const uu = prompt(`\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
-            webSocket.send(JSON.stringify({
-              [PacketDataKeys_default.TYPE]: PacketDataKeys_default.USERNAME_SET,
-              [PacketDataKeys_default.OBJECT_ID]: inputUserId.value,
-              [PacketDataKeys_default.TOKEN]: inputToken.value,
-              [PacketDataKeys_default.USERNAME]: uu
-            }));
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USERNAME_IS_OUT_OF_BOUNDS) {
-            alert(`\u041D\u0438\u043A\u043D\u0435\u0439\u043C \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u043A\u043E\u0440\u043E\u0442\u043A\u0438\u0439 \u0438\u043B\u0438 \u0434\u043B\u0438\u043D\u043D\u044B\u0439.
-\u041D\u0438\u043A\u043D\u0435\u0439\u043C \u0434\u043E\u043B\u0436\u0435\u043D \u0441\u043E\u0441\u0442\u043E\u044F\u0442\u044C \u0438\u0437 3-12 \u0441\u0438\u043C\u0432\u043E\u043B\u044B`);
-            const uu = prompt(`\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
-            webSocket.send(JSON.stringify({
-              [PacketDataKeys_default.TYPE]: PacketDataKeys_default.USERNAME_SET,
-              [PacketDataKeys_default.OBJECT_ID]: inputUserId.value,
-              [PacketDataKeys_default.TOKEN]: inputToken.value,
-              [PacketDataKeys_default.USERNAME]: uu
-            }));
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USERNAME_IS_EMPTY) {
-            alert(`\u041D\u0438\u043A\u043D\u0435\u0439\u043C \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043F\u0443\u0441\u0442\u044B\u043C`);
-            const uu = prompt(`\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
-            webSocket.send(JSON.stringify({
-              [PacketDataKeys_default.TYPE]: PacketDataKeys_default.USERNAME_SET,
-              [PacketDataKeys_default.OBJECT_ID]: inputUserId.value,
-              [PacketDataKeys_default.TOKEN]: inputToken.value,
-              [PacketDataKeys_default.USERNAME]: uu
-            }));
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USERNAME_SET) {
-            const acc = self2.profiles.find((e2) => e2.name == "");
-            if (!acc) {
-              alert("\u041D\u0435\u0442 \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u0430");
-              return;
-            }
-            acc.name = json[PacketDataKeys_default.USERNAME];
-            await self2.writeData();
-            win.close();
-            self2.#initContent();
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_RESET_PASSWORD_SENDED) {
-            alert(`\u041E\u0442\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043F\u0438\u0441\u044C\u043C\u043E \u043D\u0430 \u0441\u0431\u0440\u043E\u0441 \u043F\u0430\u0440\u043E\u043B\u044F`);
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_WITH_EMAIL_NOT_EXISTS) {
-            alert(`\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C \u0441 \u0442\u0430\u043A\u0438\u043C email \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D. \u0412\u043E\u0437\u043C\u043E\u0436\u043D\u043E, \u0432\u044B \u0437\u0430\u0431\u044B\u043B\u0438 \u0441\u0432\u043E\u0439 email?`);
-          } else if (json[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USTMR) {
-            alert(`\u0412\u044B \u043C\u043E\u0436\u0435\u0442\u0435 \u0437\u0430\u043F\u0440\u043E\u0441\u0438\u0442\u044C \u0441\u0431\u0440\u043E\u0441 \u043F\u0430\u0440\u043E\u043B\u044F \u043F\u043E\u0441\u043B\u0435 ${json[PacketDataKeys_default.USRSFR]} \u0441\u0435\u043A\u0443\u043D\u0434`);
-          }
-          console.log(json);
-        };
-        webSocket.onopen = () => {
-          status.innerHTML = `\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043E`;
-          btn.disabled = false;
-        };
-        webSocket.onclose = () => {
-          btn.disabled = true;
-          status.innerHTML = `\u0421\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0437\u0430\u043A\u0440\u044B\u0442\u043E.. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0447\u0442\u043E\u0431\u044B \u043F\u0435\u0440\u0435\u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u044C\u0441\u044F`;
-          status.onclick = () => {
-            status.innerHTML = `\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0441\u0435\u0440\u0432\u0435\u0440\u0443..`;
-            status.onclick = null;
-            createWebSocket();
-          };
-        };
-      }
-      createWebSocket();
-      btn.onclick = () => {
-        status.innerHTML = ``;
-        if (inputEmail.value != "" && inputPassword.value != "") {
-          btn.disabled = true;
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys_default.TYPE]: PacketDataKeys_default.SIGN_IN,
-            [PacketDataKeys_default.EMAIL]: inputEmail.value,
-            [PacketDataKeys_default.PASSWORD]: md5salt(inputPassword.value),
-            [PacketDataKeys_default.DEVICE_ID]: tokenHex2(8)
-          }));
-        } else if (inputToken.value != "" && inputUserId.value != "") {
-          btn.disabled = true;
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys_default.TYPE]: PacketDataKeys_default.SIGN_IN,
-            [PacketDataKeys_default.OBJECT_ID]: inputUserId.value,
-            [PacketDataKeys_default.TOKEN]: inputToken.value
-          }));
-        }
-      };
-      div.appendChild(btn);
-      const regBtn = document.createElement("button");
-      regBtn.style.width = "100%";
-      regBtn.innerHTML = "\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F";
-      regBtn.onclick = async () => {
-        if (this.profiles.find((e) => e.name == "")) {
-          const uu = prompt(`\u041D\u0430\u0439\u0434\u0435\u043D \u0430\u043A\u043A\u0430\u0443\u043D\u0442 \u0431\u0435\u0437 \u043D\u0438\u043A\u043D\u0435\u0439\u043C\u0430.
-\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
-          webSocket.send(JSON.stringify({
-            [PacketDataKeys_default.TYPE]: PacketDataKeys_default.USERNAME_SET,
-            [PacketDataKeys_default.OBJECT_ID]: inputUserId.value,
-            [PacketDataKeys_default.TOKEN]: inputToken.value,
-            [PacketDataKeys_default.USERNAME]: uu
-          }));
-          return;
-        }
-        if (inputEmail.value != "" && inputPassword.value != "") {
-          const data = await fetch(`https://api.mafia.dottap.com/user/sign_up`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-            },
-            body: new URLSearchParams({
-              email: inputEmail.value,
-              username: "",
-              password: md5salt(inputPassword.value),
-              deviceId: tokenHex2(8),
-              lang: "RUS"
-            })
-          });
-          const result = await data.json();
-          if (result.error) {
-            if (result.error == "USING_TEMP_EMAIL") {
-              alert(`\u0417\u0430\u043F\u0440\u0435\u0449\u0435\u043D\u043E \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0440\u0432\u0438\u0441\u044B \u0434\u043B\u044F \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u0438 email.
-\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043F\u043E\u043F\u0443\u043B\u044F\u0440\u043D\u044B\u0435 \u0441\u0435\u0440\u0432\u0438\u0441\u044B, \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440 Gmail, Mail.Ru, Yandex, Yahoo \u0438 \u0442\u0434.`);
-            } else if (result.error == "EMAIL_EXISTS") {
-              alert(`\u0414\u0430\u043D\u043D\u044B\u0439 email \u0443\u0436\u0435 \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u043D`);
-            }
-            return;
-          }
-          if (result[PacketDataKeys_default.OBJECT_ID]) {
-            btn.disabled = true;
-            self2.profiles.push({
-              name: "",
-              email: inputEmail.value,
-              password: inputPassword.value,
-              token: result[PacketDataKeys_default.TOKEN],
-              userId: result[PacketDataKeys_default.OBJECT_ID]
-            });
-            this.writeData();
-            const uu = prompt(`\u0414\u043B\u044F \u0438\u0433\u0440\u044B \u0438 \u043E\u0431\u0449\u0435\u043D\u0438\u044F \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u0438\u0433\u0440\u043E\u043A\u0430\u043C\u0438 \u0443 \u0432\u0430\u0441 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D \u041D\u0438\u043A\u043D\u044D\u0439\u043C`);
-            webSocket.send(JSON.stringify({
-              [PacketDataKeys_default.TYPE]: PacketDataKeys_default.USERNAME_SET,
-              [PacketDataKeys_default.OBJECT_ID]: inputUserId.value,
-              [PacketDataKeys_default.TOKEN]: inputToken.value,
-              [PacketDataKeys_default.USERNAME]: uu
-            }));
-          }
-        }
-      };
-      div.appendChild(regBtn);
-      div.appendChild(status);
-      const links = document.createElement("div");
-      links.style.display = "flex";
-      links.style.justifyContent = "center";
-      div.appendChild(links);
-      const why = document.createElement("div");
-      why.style.margin = "3px";
-      why.style.textAlign = "center";
-      why.style.fontSize = "12px";
-      why.style.color = "#8888f8";
-      why.style.textDecoration = "underline";
-      why.style.cursor = "pointer";
-      why.style.userSelect = "none";
-      why.innerHTML = "\u041F\u043E\u0447\u0435\u043C\u0443?";
-      why.onclick = async () => {
-        alert(`\u041C\u044B \u043D\u0435 \u0441\u043E\u0431\u0438\u0440\u0430\u0435\u043C \u0434\u0430\u043D\u043D\u044B\u0435 \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u043E\u0432
-
-\u041D\u0430\u0448 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u043A\u043E\u0434 \u043E\u0442\u043A\u0440\u044B\u0442 https://github.com/lumik0/bafiaonline
-
-\u0412\u044B \u0432 \u043B\u044E\u0431\u043E\u043C \u0441\u043B\u0443\u0447\u0430\u0435 \u043C\u043E\u0436\u0435\u0442\u0435 \u0432\u043E\u0439\u0442\u0438 \u0441 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u0430`);
-      };
-      links.appendChild(why);
-      const forgetPass = document.createElement("div");
-      forgetPass.style.margin = "3px";
-      forgetPass.style.textAlign = "center";
-      forgetPass.style.fontSize = "12px";
-      forgetPass.style.color = "#8888f8";
-      forgetPass.style.textDecoration = "underline";
-      forgetPass.style.cursor = "pointer";
-      forgetPass.style.userSelect = "none";
-      forgetPass.innerHTML = "\u0417\u0430\u0431\u044B\u043B \u043F\u0430\u0440\u043E\u043B\u044C?";
-      forgetPass.onclick = () => {
-        const email = prompt(`\u0414\u043B\u044F \u0441\u0431\u0440\u043E\u0441\u0430 \u043F\u0430\u0440\u043E\u043B\u044F, \u043F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u0432 \u0438\u0433\u0440\u0435 email`);
-        if (email != "") webSocket.send(JSON.stringify({
-          [PacketDataKeys_default.TYPE]: PacketDataKeys_default.USER_RESET_PASSWORD,
-          [PacketDataKeys_default.EMAIL]: email,
-          [PacketDataKeys_default.APP_LANGUAGE]: "RUS"
-        }));
-      };
-      links.appendChild(forgetPass);
     }
     async addVersion(version) {
       const self2 = this;
@@ -11669,8 +11467,6 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
   // launcher/src/index.ts
   async function main() {
     await fs_default.init("Indexeddb");
-    if (!isMobile())
-      App_default.dock = new Dock();
     App_default.launcher = new Launcher();
   }
   (async function() {

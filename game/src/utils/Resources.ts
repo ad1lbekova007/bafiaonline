@@ -82,12 +82,12 @@ export async function getAvatarImg(user?: any): Promise<string> {
   const ph = user[PacketDataKeys.PHOTO] ?? user.photo;
   const uo = user[PacketDataKeys.OBJECT_ID] ?? user[PacketDataKeys.PLAYER_OBJECT_ID] ?? user.playerObjectId;
 
-  const cacheKey = `avatars_${uo}`;
+  const cacheKey = `avatars_${ph}`;
   if(App.resources[cacheKey]) {
     return App.resources[cacheKey];
   }
 
-  const pendingKey = `avatar_${uo}`;
+  const pendingKey = `avatar_${ph}`;
   if(pendingPromises.has(pendingKey)) {
     return pendingPromises.get(pendingKey)!;
   }

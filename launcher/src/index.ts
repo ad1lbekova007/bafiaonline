@@ -8,8 +8,6 @@ import Window from './Window';
 
 async function main(){
   await fs.init('Indexeddb');
-  if(!isMobile())
-    App.dock = new Dock();
   App.launcher = new Launcher();
 
   // const msg = new Window({

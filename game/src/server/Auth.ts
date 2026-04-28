@@ -31,40 +31,48 @@ export default class Auth {
     userId: string
   }
 
+  profileVersion = 1;
+
   constructor(private server: Server) {}
 
   /** true - добавлен, false - существует */
-  async addProfile({ name, email, password, token, userId, playerUserId }: { name?: string, email?: string, password?: string, token?: string, userId?: string, playerUserId?: string }): Promise<boolean> {
+  async addProfile({ name, email, password, token, userId, playerUserId, photo }: { name?: string, email?: string, password?: string, token?: string, userId?: string, playerUserId?: string, photo?: string }): Promise<boolean> {
     const profiles = JSON.parse(await fs.readFile(App.getPathProfiles())) as Profile[];
 
-    const existing = profiles.findIndex(e => e.name == name || e.token == token || e.userId == userId);
+    const existing = profiles.findIndex(e => e.name == name || e.token == token || e.userId == userId || e.playerUserId == playerUserId);
     if(existing != -1) {
+      const p = profiles[existing];
+      const oldVersion = p.version;
       profiles[existing] = {
-        name: name ?? '',
+        version: this.profileVersion,
+        name: name || p.name,
         email,
         password,
         token,
         userId,
-        playerUserId
+        playerUserId: playerUserId || p.playerUserId,
+        photo: photo || p.photo
       }
       await fs.writeFile(App.getPathProfiles(), JSON.stringify(profiles));
-      return false;
+      return this.profileVersion != oldVersion;
     }
 
     profiles.push({
+      version: this.profileVersion,
       name: name ?? '',
       email,
       password,
       token,
       userId,
-      playerUserId
+      playerUserId,
+      photo
     });
 
     await fs.writeFile(App.getPathProfiles(), JSON.stringify(profiles));
     return true;
   }
 
-  async auth(auth?: { email?: string, password?: string, token?: string, userId?: string, playerUserId?: string }){
+  async auth(auth?: { email?: string, password?: string, token?: string, userId?: string, playerUserId?: string, photo?: string }){
     // @ts-ignore
     if(!auth) auth = App.config.auth;
 
@@ -99,6 +107,7 @@ export default class Auth {
         let token = auth.token || data[PacketDataKeys.USER_ID][PacketDataKeys.TOKEN];
         let userId = auth.userId || data[PacketDataKeys.USER_ID][PacketDataKeys.OBJECT_ID];
         let playerUserId = auth.playerUserId ?? '';
+        let photo = auth.photo ?? '';
 
         const isReconnect = this.lastAuth && this.lastAuth.userId == userId;
 
@@ -116,7 +125,8 @@ export default class Auth {
           password: auth.password,
           token,
           userId,
-          playerUserId
+          playerUserId,
+          photo
         })) {
           App.server.send(PacketDataKeys.ADD_CLIENT_TO_DASHBOARD, {
             [PacketDataKeys.USER_OBJECT_ID]: App.user.objectId,
@@ -125,13 +135,15 @@ export default class Auth {
           const data = await App.server.awaitPacket(PacketDataKeys.DASHBOARD);
           name = data.db.du.u;
           playerUserId = data.db.du.puo;
+          photo = data.db.du.ph;
           await this.addProfile({
             name,
             email: auth.email,
             password: auth.password,
             token,
             userId,
-            playerUserId
+            playerUserId,
+            photo
           });
         }
 
@@ -159,9 +171,9 @@ export default class Auth {
   }
 
   async signUp({ email, password }: { email: string, password: string }) {
-    if(!email || !password) return;
+    // if(!email || !password) return;
 
-    await MessageBox('Регистрация не работает из-за ограничений браузера\nВы можете написать нам @bafiaonlinebot, если нужно зарегистрировать аккаунт', { btnText: 'ЛАДНО' });
+    await MessageBox('Регистрация не работает из-за ограничений браузера\nВы можете написать нам @bafiaonlinebot, если нужно зарегистрировать аккаунт', { btnText: 'ЛАДНО', height: 200 });
     return;
     
     let response: Response

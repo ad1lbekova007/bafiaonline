@@ -7,10 +7,12 @@ export type Version = {
 }
 
 export type Profile = {
+  version: number
   name: string
   email?: string
   password?: string
   token?: string
   userId?: string
   playerUserId?: string
+  photo?: string
 }

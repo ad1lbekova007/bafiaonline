@@ -53,6 +53,7 @@ export default class Dock {
       if(win === this.win) return;
       
       this.remove(win);
+      if(!win.isMaximum) return;
       this.showHide(win.isMaximum);
     });
     WindowManager.on('min', win => {
@@ -61,6 +62,13 @@ export default class Dock {
     });
     WindowManager.on('max', win => {
       this.showHide(win.isMaximum);
+    });
+
+    WindowManager.windows.forEach(win => {
+      if(win.options.noMobile) return;
+      if(win === this.win) return;
+
+      this.add(win);
     });
   }
 

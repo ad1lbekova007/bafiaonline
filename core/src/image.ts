@@ -2,6 +2,8 @@ import FS, { FSType } from "./fs/fs";
 import { createScript, decompress, error } from './utils/utils';
 import CBOR from './lib/cbor';
 
+const exceptions = ['.DS_Store'];
+
 async function writeToFS(
   toPath = "/",
   structure: Record<string, { data: Uint8Array, sha1: string }>,
@@ -15,12 +17,17 @@ async function writeToFS(
     const filePath = `${toPath}${path}`;
     let shouldWrite = rewrite;
 
+    if(exceptions.some(e => filePath.endsWith(e))) {
+      continue; 
+    }
+
     if(!rewrite) {
-      if(!(await FS.existsFile(filePath))) {
+      const exists = await FS.existsFile(filePath);
+      if(!exists) {
         shouldWrite = true;
       } else {
         const currentSha1 = await FS.getSHA1(filePath);
-        if(currentSha1 !== sha1) shouldWrite = true;
+        shouldWrite = currentSha1 !== sha1;
       }
     }
 
