@@ -171,7 +171,7 @@ export default class Friends extends Screen {
         photo: f[PacketDataKeys.PHOTO],
         objectId
       } : f[PacketDataKeys.USER];
-      const userObjectId = user[PacketDataKeys.PLAYER_OBJECT_ID];
+      const userObjectId = this.isSearch ? f[PacketDataKeys.PLAYER_OBJECT_ID] : user[PacketDataKeys.PLAYER_OBJECT_ID];
       const username = !this.isSearch ? user[PacketDataKeys.USERNAME] : f[PacketDataKeys.USERNAME];
       const newMessages = Number(f[PacketDataKeys.NEW_MESSAGES]);
       const accepted = f[PacketDataKeys.ACCEPTED];

@@ -5135,7 +5135,7 @@
           photo: f[PacketDataKeys_default.PHOTO],
           objectId
         } : f[PacketDataKeys_default.USER];
-        const userObjectId = user[PacketDataKeys_default.PLAYER_OBJECT_ID];
+        const userObjectId = this.isSearch ? f[PacketDataKeys_default.PLAYER_OBJECT_ID] : user[PacketDataKeys_default.PLAYER_OBJECT_ID];
         const username = !this.isSearch ? user[PacketDataKeys_default.USERNAME] : f[PacketDataKeys_default.USERNAME];
         const newMessages = Number(f[PacketDataKeys_default.NEW_MESSAGES]);
         const accepted = f[PacketDataKeys_default.ACCEPTED];
