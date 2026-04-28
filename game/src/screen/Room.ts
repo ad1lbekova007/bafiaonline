@@ -1202,7 +1202,7 @@ export default class Room extends Screen {
       else if(type == 28) { msgText = `Сдался`; color = '#940000' }
       else if(type == 18) { color = '#113B81' }
       else if(type == 19) { msgText = `ВЗОРВАЛ игрока [${text}]`; color = '#940000' }
-      else if(type == 20) { msgText = `ВЗОРВАЛ игрока [${text}], но игрок был под защитой телохранителя и остался жив!`; color = '#940000' }
+      else if(type == 22) { msgText = `ВЗОРВАЛ игрока [${text}], но игрок был под защитой телохранителя и остался жив!`; color = '#940000' }
       if(this.lastMessage && this.lastMessage.divM && this.lastMessage.username == username){
         const msg = document.createElement('span');
         // @ts-ignore
