@@ -108,7 +108,7 @@ export default class Server extends Events<ServerEvents> {
         const reason = data[PacketDataKeys.REASON];
         const tsr = data[PacketDataKeys.TIME_SEC_REMAINING];
         App.screen = new Dashboard();
-        MessageBox(`Вы были заблокированы по причине [${reason}]\n\nОставшееся время блокировки:\n${format(tsr, 'genitive')}`, { height: 250 });
+        MessageBox(`Вы были заблокированы по причине [${reason}]\n\nОставшееся время блокировки:\n${format(tsr, 'genitive')}`, { height: 300 });
       } else if(data[PacketDataKeys.TYPE] == PacketDataKeys.USER_INACTIVE_BLOCKED){
         App.screen = new Dashboard();
         const tsr = data[PacketDataKeys.TIME_SEC_REMAINING];

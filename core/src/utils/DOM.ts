@@ -99,6 +99,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   type?: string
   checked?: boolean
   value?: string
+  placeholder?: string
   width?: number
   height?: number
   src?: string
@@ -115,6 +116,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K,
   if(options.type) (elem as HTMLInputElement).type = options.type;
   if(options.checked) (elem as HTMLInputElement).checked = options.checked;
   if(options.value) (elem as HTMLInputElement).value = options.value;
+  if(options.placeholder) (elem as HTMLInputElement).placeholder = options.placeholder;
   if(options.width) (elem as HTMLImageElement).width = options.width;
   if(options.height) (elem as HTMLImageElement).height = options.height;
   if(options.src) (elem as HTMLImageElement).src = options.src;

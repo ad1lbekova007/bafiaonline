@@ -51,44 +51,45 @@ export class History extends Screen {
 
     for(let i = 0; i < history.rooms.length; i++) {
       const room = history.rooms[i];
+      try {
+        let status = 2, statusText = '';
+        const myRole = room.playersData[App.user.playerObjectId].role;
+        // const mafia = Object.values(room.playersData as any[]).filter(e => e.alive && isMafia(e.role) && e.username != App.user.username).length;
+        // const mir = Object.values(room.playersData as any[]).filter(e => e.alive && !isMafia(e.role) && e.username != App.user.username).length;
+        const mafia = room.playersStat.m;
+        const mir = room.playersStat.c;//Object.values(room.playersData as any[]).filter(e => e.alive && !isMafia(e.role) && e.username != App.user.username).length;
+        if(i == history.rooms.length-1) {
+          console.log(room)
+          console.log(mafia, mir, myRole);
+        }
+        if(mafia > mir){
+          status = isMafia(myRole) ? 0 : 1;
+          // statusText = isMafia(myRole) ? 'Победа' : 'Проигрыш';
+        } else if(mir > mafia) {
+          status = isMafia(myRole) ? 1 : 0;
+          // statusText = isMafia(myRole) ? 'Проигрыш' : 'Победа';
+        } else {
+          statusText = 'Ничья';
+        }
 
-      let status = 2, statusText = '';
-      const myRole = room.playersData[App.user.playerObjectId].role;
-      // const mafia = Object.values(room.playersData as any[]).filter(e => e.alive && isMafia(e.role) && e.username != App.user.username).length;
-      // const mir = Object.values(room.playersData as any[]).filter(e => e.alive && !isMafia(e.role) && e.username != App.user.username).length;
-      const mafia = room.playersStat.m;
-      const mir = room.playersStat.c;//Object.values(room.playersData as any[]).filter(e => e.alive && !isMafia(e.role) && e.username != App.user.username).length;
-      if(i == history.rooms.length-1) {
-        console.log(room)
-        console.log(mafia, mir, myRole);
-      }
-      if(mafia > mir){
-        status = isMafia(myRole) ? 0 : 1;
-        // statusText = isMafia(myRole) ? 'Победа' : 'Проигрыш';
-      } else if(mir > mafia) {
-        status = isMafia(myRole) ? 1 : 0;
-        // statusText = isMafia(myRole) ? 'Проигрыш' : 'Победа';
-      } else {
-        statusText = 'Ничья';
-      }
+        const elem = Rooms.getRoomElement({
+          isHistory: true,
+          created: room.createdAt,
+          data: room,
+          status,
+          statusText,
+          [PacketDataKeys.OBJECT_ID]: `${i}`,
+          [PacketDataKeys.TITLE]: room.title,
+          [PacketDataKeys.MAX_PLAYERS]: room.maxPlayers,
+          [PacketDataKeys.MIN_PLAYERS]: room.minPlayers,
+          [PacketDataKeys.MIN_LEVEL]: room.minLevel,
+          [PacketDataKeys.PLAYERS_NUM]: Object.keys(room.playersData).length,
+          [PacketDataKeys.ROOM_STATUS]: 2,
+          [PacketDataKeys.SELECTED_ROLES]: room.selectedRoles,
+        });
 
-      const elem = Rooms.getRoomElement({
-        isHistory: true,
-        created: room.createdAt,
-        data: room,
-        status,
-        statusText,
-        [PacketDataKeys.OBJECT_ID]: `${i}`,
-        [PacketDataKeys.TITLE]: room.title,
-        [PacketDataKeys.MAX_PLAYERS]: room.maxPlayers,
-        [PacketDataKeys.MIN_PLAYERS]: room.minPlayers,
-        [PacketDataKeys.MIN_LEVEL]: room.minLevel,
-        [PacketDataKeys.PLAYERS_NUM]: Object.keys(room.playersData).length,
-        [PacketDataKeys.ROOM_STATUS]: 2,
-        [PacketDataKeys.SELECTED_ROLES]: room.selectedRoles,
-      });
-
-      div.appendChild(elem.elem);
+        div.appendChild(elem.elem);
+      }catch{}
     }
   }
 }

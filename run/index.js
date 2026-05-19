@@ -2836,37 +2836,40 @@
       this.element.appendChild(div);
       for (let i = 0; i < history2.rooms.length; i++) {
         const room = history2.rooms[i];
-        let status = 2, statusText = "";
-        const myRole = room.playersData[App_default2.user.playerObjectId].role;
-        const mafia = room.playersStat.m;
-        const mir = room.playersStat.c;
-        if (i == history2.rooms.length - 1) {
-          console.log(room);
-          console.log(mafia, mir, myRole);
+        try {
+          let status = 2, statusText = "";
+          const myRole = room.playersData[App_default2.user.playerObjectId].role;
+          const mafia = room.playersStat.m;
+          const mir = room.playersStat.c;
+          if (i == history2.rooms.length - 1) {
+            console.log(room);
+            console.log(mafia, mir, myRole);
+          }
+          if (mafia > mir) {
+            status = isMafia(myRole) ? 0 : 1;
+          } else if (mir > mafia) {
+            status = isMafia(myRole) ? 1 : 0;
+          } else {
+            statusText = "\u041D\u0438\u0447\u044C\u044F";
+          }
+          const elem = Rooms.getRoomElement({
+            isHistory: true,
+            created: room.createdAt,
+            data: room,
+            status,
+            statusText,
+            [PacketDataKeys_default.OBJECT_ID]: `${i}`,
+            [PacketDataKeys_default.TITLE]: room.title,
+            [PacketDataKeys_default.MAX_PLAYERS]: room.maxPlayers,
+            [PacketDataKeys_default.MIN_PLAYERS]: room.minPlayers,
+            [PacketDataKeys_default.MIN_LEVEL]: room.minLevel,
+            [PacketDataKeys_default.PLAYERS_NUM]: Object.keys(room.playersData).length,
+            [PacketDataKeys_default.ROOM_STATUS]: 2,
+            [PacketDataKeys_default.SELECTED_ROLES]: room.selectedRoles
+          });
+          div.appendChild(elem.elem);
+        } catch {
         }
-        if (mafia > mir) {
-          status = isMafia(myRole) ? 0 : 1;
-        } else if (mir > mafia) {
-          status = isMafia(myRole) ? 1 : 0;
-        } else {
-          statusText = "\u041D\u0438\u0447\u044C\u044F";
-        }
-        const elem = Rooms.getRoomElement({
-          isHistory: true,
-          created: room.createdAt,
-          data: room,
-          status,
-          statusText,
-          [PacketDataKeys_default.OBJECT_ID]: `${i}`,
-          [PacketDataKeys_default.TITLE]: room.title,
-          [PacketDataKeys_default.MAX_PLAYERS]: room.maxPlayers,
-          [PacketDataKeys_default.MIN_PLAYERS]: room.minPlayers,
-          [PacketDataKeys_default.MIN_LEVEL]: room.minLevel,
-          [PacketDataKeys_default.PLAYERS_NUM]: Object.keys(room.playersData).length,
-          [PacketDataKeys_default.ROOM_STATUS]: 2,
-          [PacketDataKeys_default.SELECTED_ROLES]: room.selectedRoles
-        });
-        div.appendChild(elem.elem);
       }
     }
   };
@@ -5778,7 +5781,34 @@
       roomElem.elem.style.width = "90%";
       div.appendChild(roomElem.elem);
     }
-    if (!isMe) addButton("\u041F\u043E\u0434\u0430\u0442\u044C \u0436\u0430\u043B\u043E\u0431\u0443");
+    if (!isMe) addButton("\u041F\u043E\u0434\u0430\u0442\u044C \u0436\u0430\u043B\u043E\u0431\u0443", async () => {
+      "MAKE_COMPLAINT";
+      const w = new Box({ title: "\u041F\u041E\u0414\u0410\u0422\u042C \u0416\u0410\u041B\u041E\u0411\u0423", height: 200, canCloseAnywhere: true });
+      const div2 = createElement("div", {
+        css: {
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-around",
+          alignItems: "center",
+          height: "100%",
+          color: "black"
+        }
+      });
+      const input = createElement("input", { type: "text", placeholder: "\u041F\u0440\u0438\u0447\u0438\u043D\u0430" });
+      const btn = createElement("button", { text: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C", css: { width: "100%" } });
+      btn.onclick = () => {
+        App_default2.server.send(PacketDataKeys_default.MAKE_COMPLAINT, {
+          [PacketDataKeys_default.REASON]: input.value,
+          [PacketDataKeys_default.PLAYER_OBJECT_ID]: profile.playerObjectId
+        });
+        w.close();
+      };
+      div2.appendChild(createElement("div", { text: `\u041F\u043E\u0434\u0430\u0442\u044C \u0436\u0430\u043B\u043E\u0431\u0443 \u043D\u0430 \u0438\u0433\u0440\u043E\u043A\u0430: [${profile.username}]` }));
+      div2.appendChild(createElement("div", { text: `\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430 \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u043F\u0440\u0438\u0447\u0438\u043D\u0443` }));
+      div2.appendChild(input);
+      div2.appendChild(btn);
+      w.content.appendChild(div2);
+    });
     addH(`\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430`);
     const stat = document.createElement("div");
     stat.style.display = "flex";
@@ -9034,7 +9064,7 @@ ${format_default(timeout, "genitive")}`, { height: 250 });
           MessageBox_default(`\u0412\u044B \u0431\u044B\u043B\u0438 \u0437\u0430\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D\u044B \u043F\u043E \u043F\u0440\u0438\u0447\u0438\u043D\u0435 [${reason}]
 
 \u041E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u043A\u0438:
-${format_default(tsr, "genitive")}`, { height: 250 });
+${format_default(tsr, "genitive")}`, { height: 300 });
         } else if (data[PacketDataKeys_default.TYPE] == PacketDataKeys_default.USER_INACTIVE_BLOCKED) {
           App_default2.screen = new Dashboard();
           const tsr = data[PacketDataKeys_default.TIME_SEC_REMAINING];
@@ -9672,6 +9702,7 @@ ${format_default(tsr, "genitive")}`, { height: 250 });
     if (options.type) elem.type = options.type;
     if (options.checked) elem.checked = options.checked;
     if (options.value) elem.value = options.value;
+    if (options.placeholder) elem.placeholder = options.placeholder;
     if (options.width) elem.width = options.width;
     if (options.height) elem.height = options.height;
     if (options.src) elem.src = options.src;

@@ -21,7 +21,7 @@
     "nbuildgame": "esbuild game/src/index.ts --bundle --minify --outfile=game/image/main.js && pnpm run nbuild",
     "buildtest": "esbuild build/generateImage.ts --bundle --minify --platform=node --outfile=build/generateImage.js",
     "buildG": "pnpm run aM && pnpm run nbuild && pnpm run e",
-    "dev": "pnpm run a && pnpm run nbuild && pnpm run b",
+    "dev": "pnpm run a & pnpm run nbuild & pnpm run b",
     "devLauncher": "pnpm run b"
   }
 }
