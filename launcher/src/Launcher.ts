@@ -129,9 +129,12 @@ export default class Launcher {
         if(version) {
           await this.downloadVersion({ ...version, scriptPath: src });
           this.options.version = version.name;
+        } else {
+          alert(`Не удалось скачать версию по умолчанию.\nКод ошибки: 1\nОбратитесь в техподдержку`);
         }
       }catch(e){
         console.error(e);
+        alert(`Не удалось скачать версию по умолчанию.\nКод ошибки: 0\nОбратитесь в техподдержку`);
       }
       this.win.unlock();
     }
