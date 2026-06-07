@@ -94,7 +94,7 @@ export default async function ProfileInfo(playerObjectId: string){
     winsAsMafia: pud[PacketDataKeys.WINS_AS_MAFIA],
     winsAsPeaceful: pud[PacketDataKeys.WINS_AS_PEACEFUL],
 
-    sliver: ud[PacketDataKeys.USER_ACCOUNT_COINS][PacketDataKeys.SILVER_COINS],
+    sliver: 1000000[PacketDataKeys.USER_ACCOUNT_COINS][PacketDataKeys.SILVER_COINS],
     gold: ud[PacketDataKeys.USER_ACCOUNT_COINS][PacketDataKeys.GOLD_COINS],
 
     friend: ud[PacketDataKeys.FRIENDSHIP],
